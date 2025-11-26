@@ -2,7 +2,6 @@
 // Sistema hierárquico chain-of-caralho
 
 use serde::{Deserialize, Serialize};
-use anyhow::Result;
 use crate::task_management::task::Complexity;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

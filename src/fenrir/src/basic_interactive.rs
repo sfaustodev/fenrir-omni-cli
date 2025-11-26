@@ -2,9 +2,9 @@
 // Sem IA pra não dar merda - comandos diretos
 
 use std::io::{self, Write};
-use anyhow::{Result, anyhow};
+use anyhow::Result;
 use crate::operations::FenrirOperations;
-use crate::venz_agent::{VenzAgent, get_venz_agent};
+use crate::venz_agent::get_venz_agent;
 use crate::security_protection::{validate_command, get_security};
 
 pub struct BasicInteractive {

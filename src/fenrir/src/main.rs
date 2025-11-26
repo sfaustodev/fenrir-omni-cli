@@ -25,12 +25,10 @@ use indicatif::{ProgressBar, ProgressStyle};
 use std::env;
 use std::io::{self, Write};
 use std::time::Duration;
-use terminal::{bootstrap_terminal_interface, detect_terminal_capabilities};
-use executor::{ask_for_confirmation, handle_execute_command, handle_open_editor, log_task, FenrirTask};
+use terminal::detect_terminal_capabilities;
 use starship::{initialize_fenrir_starship, FenrirStarship};
 use config::FenrirConfig;
 use operations::FenrirOperations;
-use interactive_trinity::InteractiveTrinity;
 use multi_ai_coordinator::MultiAICoordinator;
 use venice_client::VeniceClient;
 use task_management::{chain_coordinator::ChainOfCaralhoManager, tarefinha_mode::TarefinhaMode};
@@ -42,7 +40,7 @@ async fn main() {
     let pb = ProgressBar::new_spinner(); // Spinner pra gente ver rodando
 
     // 🔴 FENRIR GOD MODE - Inicialização automática
-    let mut fenrir_config = match FenrirConfig::load() {
+    let fenrir_config = match FenrirConfig::load() {
         Ok(config) => {
             println!("🔴 FENRIR GOD MODE - Configuração carregada!");
             config
@@ -76,7 +74,7 @@ async fn main() {
     let (has_ghostty, _has_colors, _has_unicode) = detect_terminal_capabilities();
 
     // Inicializar Fenrir-Starship
-    let mut fenrir_starship = initialize_fenrir_starship();
+    let fenrir_starship = initialize_fenrir_starship();
 
     if has_ghostty {
         println!("🐺 Ghostty + Starship detectados! Inicializando interface divina...");

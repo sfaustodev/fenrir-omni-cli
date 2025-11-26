@@ -1,10 +1,9 @@
 // 🔥 FENRIR GOD MODE - MÓDULO DE OPERAÇÕES TÁTICAS
 
-use crate::config::{FenrirConfig, DataCategory, TargetType, ScanDepth, ExtractionDepth};
+use crate::config::{FenrirConfig, DataCategory, ScanDepth};
 use anyhow::{Context, Result};
 use colored::*;
 use std::fs;
-use std::path::PathBuf;
 use std::process::Command;
 use chrono::Utc;
 use serde_json::json;

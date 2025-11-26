@@ -9,8 +9,3 @@ pub mod chain_coordinator;
 pub mod tarefinha_mode;
 
 pub use task::*;
-pub use team_profiles::*;
-pub use commit_system::*;
-pub use review_system::*;
-pub use chain_coordinator::*;
-pub use tarefinha_mode::*;
