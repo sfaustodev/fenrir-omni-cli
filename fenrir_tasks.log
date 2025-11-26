@@ -151,3 +151,12 @@
   "target_path": null,
   "application": null
 }
+
+--- [ 2025-11-25 20:57:29 ] ---
+{
+  "task_type": "execute_command",
+  "ia_explanation": "O usuário quer listar todas as chaves de API declaradas nas variáveis de ambiente.",
+  "command_to_run": "env | grep -i \"KEY\"",
+  "target_path": null,
+  "application": null
+}

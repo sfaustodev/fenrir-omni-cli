@@ -3,36 +3,25 @@
 Cargo.lock
 **/*.rs.bk
 
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
+# Build artifacts
+dist/
+build/
 
-# macOS
-.DS_Store
-.AppleDouble
-.LSOverride
-Icon
-._*
+# Dependencies
+node_modules/
 
 # Logs
 *.log
 logs/
 
-# Temporary files
+# Temporary files and caches
 tmp/
 temp/
 .tmp/
 *.tmp
 *.temp
-
-# Cache directories
 .cache/
 cache/
-
-# Backup files
 *.bak
 *.backup
 
@@ -41,32 +30,38 @@ cache/
 .env.local
 .env.*.local
 
-# Build artifacts
-dist/
-build/
-
-# Dependency directories
-node_modules/
-
 # Database files
 *.db
 *.sqlite
 *.sqlite3
 
-# OS generated files
-Thumbs.db
+# OS-generated files
+.DS_Store
 .DS_Store?
+.AppleDouble
+.LSOverride
+Icon
+._*
+Thumbs.db
 ehthumbs.db
 Desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 
 # Fenrir specific
 .fenrir/
 reports/
 fenrir_tasks.log
-*.log
-
-# Temporary upload directories
 .tmp.driveupload/
-
-# Qodo
 .qodo/
+
+# User-requested exclusions
+*Brave*
+*brave*
+*Binance*
+*binance*
