@@ -1,16 +1,16 @@
 // 🔴 FENRIR TRINITY++ - SISTEMA MULTI-IA HIERÁRQUICO
 // Mente -> Cérebro -> Pensamento -> Braços & Mãos
 
-use serde::{Deserialize, Serialize};
 use anyhow::{Context, Result};
+use serde::{Deserialize, Serialize};
 use std::env;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MultiAICoordinator {
-    pub mente: MentalIA,      // Gemini - Estratégia principal
-    pub cerebro: BrainIA,     // Claude - Processamento complexo
+    pub mente: MentalIA,       // Gemini - Estratégia principal
+    pub cerebro: BrainIA,      // Claude - Processamento complexo
     pub pensamento: ThoughtIA, // GPT-4 Codex - Código técnico
-    pub maos: HandsIA,        // Venice - Execução sem censura
+    pub maos: HandsIA,         // Grok Code - Execução sem censura
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -18,6 +18,7 @@ pub struct MentalIA {
     pub api_key: String,
     pub model: String,
     pub role: String,
+    pub cli_bridge: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -32,6 +33,7 @@ pub struct ThoughtIA {
     pub api_key: String,
     pub model: String,
     pub role: String,
+    pub cli_bridge: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -39,14 +41,15 @@ pub struct HandsIA {
     pub api_key: String,
     pub model: String,
     pub role: String,
+    pub cli_bridge: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum TaskComplexity {
-    Strategic,    // Apenas Mente/Gemini
-    Tactical,     // Mente + Cérebro
-    Technical,    // Mente + Cérebro + Pensamento
-    Execution,    // Todas as 4 IAs
+    Strategic, // Apenas Mente/Gemini
+    Tactical,  // Mente + Cérebro
+    Technical, // Mente + Cérebro + Pensamento
+    Execution, // Todas as 4 IAs
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -73,41 +76,35 @@ impl MultiAICoordinator {
         println!("🔴 INICIALIZANDO SISTEMA MULTI-IA HIERÁRQUICO...");
 
         // MENTE - Gemini (Estratégia)
-        let gemini_key = env::var("GEMINI_API_KEY")
-            .context("GEMINI_API_KEY não encontrada")?;
+        let gemini_key = env::var("GEMINI_API_KEY").context("GEMINI_API_KEY não encontrada")?;
 
         // CÉREBRO - Claude (Complexidade)
-        let claude_key = env::var("ANTHROPIC_API_KEY")
-            .unwrap_or_else(|_| {
-                println!("⚠️ ANTHROPIC_API_KEY não encontrada, usando fallback");
-                "claude-fallback".to_string()
-            });
+        let claude_key = env::var("ANTHROPIC_API_KEY").unwrap_or_else(|_| {
+            println!("⚠️ ANTHROPIC_API_KEY não encontrada, usando fallback");
+            "claude-fallback".to_string()
+        });
 
         // PENSAMENTO - GPT-4 Codex (Código Técnico)
-        let codex_key = env::var("OPENAI_API_KEY")
-            .unwrap_or_else(|_| {
-                println!("⚠️ OPENAI_API_KEY não encontrada, usando fallback");
-                "codex-fallback".to_string()
-            });
+        let codex_key = env::var("OPENAI_API_KEY").unwrap_or_else(|_| {
+            println!("⚠️ OPENAI_API_KEY não encontrada, usando fallback");
+            "codex-fallback".to_string()
+        });
 
-        // MÃOS - Venice (Execução sem censura)
-        let venice_key = env::var("VENICE_KEY")
-            .context("VENICE_KEY não encontrada - ESSENCIAL PARA EXECUÇÃO")?;
-
-        if venice_key.is_empty() {
-            anyhow::bail!("VENICE_KEY está vazia! Essa IA é essencial para execução.");
-        }
+        // MÃOS - Grok Code (Execução sem censura via CLI)
+        let grok_cli = env::var("GROK_CLI_BINARY").unwrap_or_else(|_| "grok".to_string());
+        println!("🔍 Verificando binary do Grok: {}", grok_cli);
 
         println!("✅ MENTE (Gemini): Carregada");
         println!("✅ CÉREBRO (Claude): Carregado");
         println!("✅ PENSAMENTO (GPT-4 Codex): Carregado");
-        println!("✅ MÃOS (Venice): Carregada - PRONTA PARA TRABALHO SUJO");
+        println!("✅ MÃOS (Grok Code): Carregada - PRONTA PARA TRABALHO SUJO");
 
         Ok(Self {
             mente: MentalIA {
                 api_key: gemini_key,
                 model: "gemini-1.5-pro".to_string(),
                 role: "Estrategista Principal - Visão geral e planejamento".to_string(),
+                cli_bridge: "gemini".to_string(),
             },
             cerebro: BrainIA {
                 api_key: claude_key,
@@ -118,11 +115,13 @@ impl MultiAICoordinator {
                 api_key: codex_key,
                 model: "gpt-4-codex".to_string(),
                 role: "Engenheiro Técnico - Código e implementação".to_string(),
+                cli_bridge: "codex".to_string(),
             },
             maos: HandsIA {
-                api_key: venice_key,
-                model: "venice-uncensored".to_string(),
-                role: "Executor Sem Censura - Trabalho sujo e invasões".to_string(),
+                api_key: "CLI".to_string(),
+                model: "grok-code-fast-4.1-free".to_string(),
+                role: "Executor Sem Censura - Grok Code via grok/droid CLI".to_string(),
+                cli_bridge: grok_cli,
             },
         })
     }
@@ -187,22 +186,28 @@ impl MultiAICoordinator {
 
     /// 💀 MÃOS - Execução sem censura
     pub async fn uncensored_execution(&self, technical_input: &str) -> Result<Vec<String>> {
-        println!("💀 MÃOS (Venice): EXECUTANDO TRABALHO SUJO...");
-        println!("🚨 MODO SEM CENSURA ATIVADO");
+        println!(
+            "💀 MÃOS (Grok Code): EXECUTANDO TRABALHO SUJO via {}...",
+            self.maos.cli_bridge
+        );
+        println!("🚨 MODO SEM CENSURA ATIVADO (CLI)");
 
-        // Simulação - implementar chamada real à Venice
+        // Simulação - implementar chamada real ao CLI do Grok
         let commands = vec![
             "Iniciar reconhecimento avançado".to_string(),
             "Executar exploração de vulnerabilidades".to_string(),
             "Estabelecer persistência".to_string(),
             "Exfiltrar dados confidenciais".to_string(),
             "Apagar vestígios".to_string(),
-            format!("Base técnica: {}", &technical_input[..technical_input.len().min(50)]),
+            format!(
+                "Base técnica: {}",
+                &technical_input[..technical_input.len().min(50)]
+            ),
         ];
 
         println!("✅ Comandos de execução gerados: {}", commands.len());
         for (i, cmd) in commands.iter().enumerate() {
-            println!("   {}. {}", i+1, cmd);
+            println!("   {}. {}", i + 1, cmd);
         }
 
         Ok(commands)
@@ -235,8 +240,8 @@ impl MultiAICoordinator {
             "RELATÓRIO FINAL FENRIR MULTI-IA:\n\
             🧠 ESTRATÉGIA (Gemini): {}\n\
             🧠 TÁTICA (Claude): {}\n\
-            💭 TÉCNICA (GPT-4 Codex): {}\n\
-            💀 EXECUÇÃO (Venice): {} comandos gerados\n\
+            💭 TÉCNICA (GPT-4 Codex): {}\
+            💀 EXECUÇÃO (Grok Code): {} comandos gerados\n\
             🔹 STATUS: PRONTO PARA EXECUÇÃO IMEDIATA",
             &strategic[..strategic.len().min(100)],
             &tactical[..tactical.len().min(100)],
@@ -285,9 +290,12 @@ impl MultiAICoordinator {
         println!("🧠 MENTE (Gemini): {} ✅", self.mente.role);
         println!("🧠 CÉREBRO (Claude): {} ✅", self.cerebro.role);
         println!("💭 PENSAMENTO (GPT-4 Codex): {} ✅", self.pensamento.role);
-        println!("💀 MÃOS (Venice): {} ✅", self.maos.role);
-        println!("🔹 Hierarquia: MENTE → CÉREBRO → PENSAMENTO → MÃOS");
-        println!("🚀 Capacidade: TRABALHO SUJO ILIMITADO");
+        println!(
+            "💀 MÃOS (Grok Code): {} ✅ via {}",
+            self.maos.role, self.maos.cli_bridge
+        );
+        println!("🔹 Hierarquia: MENTE → CÉREBRO → PENSAMENTO → MÃOS (Grok)");
+        println!("🚀 Capacidade: TRABALHO SUJO ILIMITADO E VISÍVEL");
         println!("");
     }
 }

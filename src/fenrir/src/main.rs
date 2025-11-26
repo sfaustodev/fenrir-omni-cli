@@ -1,43 +1,55 @@
 // --- ARQUIVOS DE MÓDULO ---
 // FENRIR GOD MODE - Sistema operacional completo
-mod executor;
-mod oraculo;
-mod ferramentas;
-mod terminal;
-mod starship;
+mod agent_manifest;
+mod basic_interactive;
 mod config;
-mod operations;
+mod executor;
+mod ferramentas;
+mod grok_code_client;
 mod grok_coordinator;
 mod interactive_trinity;
 mod multi_ai_coordinator;
-mod venice_client;
-mod task_management;
+mod operations;
+mod oraculo;
 mod security_protection;
+mod starship;
+mod task_management;
+mod terminal;
 mod venz_agent;
-mod basic_interactive;
 
 // --- IMPORTS (use) ---
 // Agora a gente chama as funções dos *nossos* módulos.
 
-
-
+use agent_manifest::print_agent_manifest;
+use basic_interactive::start_basic_interactive_mode;
+use config::FenrirConfig;
+use grok_code_client::GrokCodeClient;
 use indicatif::{ProgressBar, ProgressStyle};
+use multi_ai_coordinator::MultiAICoordinator;
+use operations::FenrirOperations;
+use starship::{initialize_fenrir_starship, FenrirStarship};
 use std::env;
 use std::io::{self, Write};
 use std::time::Duration;
-use terminal::detect_terminal_capabilities;
-use starship::{initialize_fenrir_starship, FenrirStarship};
-use config::FenrirConfig;
-use operations::FenrirOperations;
-use multi_ai_coordinator::MultiAICoordinator;
-use venice_client::VeniceClient;
 use task_management::{chain_coordinator::ChainOfCaralhoManager, tarefinha_mode::TarefinhaMode};
-use basic_interactive::start_basic_interactive_mode;
+use terminal::detect_terminal_capabilities;
+
+fn matches_command(input: &str, commands: &[&str]) -> bool {
+    commands.iter().any(|cmd| input.starts_with(cmd))
+}
 
 #[tokio::main]
 async fn main() {
     let args: Vec<String> = env::args().collect();
     let pb = ProgressBar::new_spinner(); // Spinner pra gente ver rodando
+
+    // Manifesto hardcoded dos agentes - nada de depender de markdown
+    print_agent_manifest();
+
+    // Convocação explícita sempre que Fenrir acorda
+    println!("🐺 QUE FOI AGORA CARALHO?");
+    println!("❓ Para que invocastes Fenrir sua besta abissal?");
+    println!("🔊 Chain-of-Caralho: TODAS as vozes internas vão gritar no terminal.");
 
     // 🔴 FENRIR GOD MODE - Inicialização automática
     let fenrir_config = match FenrirConfig::load() {
@@ -96,14 +108,14 @@ async fn main() {
         }
     };
 
-    // Inicializar Cliente Venice (Trabalho Sujo)
-    let venice = match VeniceClient::new() {
+    // Inicializar Cliente Grok Code (Trabalho Sujo via CLI)
+    let grok_code = match GrokCodeClient::new() {
         Ok(client) => {
-            println!("💀 Cliente Venice (Trabalho Sujo) PRONTO");
+            println!("💀 Grok Code Fast 4.1 Free PRONTO via CLI/Droid");
             Some(client)
         }
         Err(e) => {
-            println!("⚠️ Erro ao inicializar Venice: {}", e);
+            println!("⚠️ Erro ao inicializar Grok Code: {}", e);
             println!("💀 Operações sujas serão limitadas...");
             None
         }
@@ -113,7 +125,7 @@ async fn main() {
         // Modo Multi-IA - Hierarquia completa
         println!("🔴🔴🔴 FENRIR MULTI-IA - HIERARQUIA COMPLETA 🔴🔴🔴");
         if let Some(coordinator) = multi_ai {
-            if let Err(e) = start_multi_ia_mode(coordinator, venice).await {
+            if let Err(e) = start_multi_ia_mode(coordinator, grok_code).await {
                 eprintln!("❌ Erro no modo Multi-IA: {}", e);
             }
         } else {
@@ -155,7 +167,12 @@ async fn main() {
 }
 
 // Modo interativo com interface Ghostty + Starship avançada
-async fn interativo(pb: &ProgressBar, fenrir_terminal: &terminal::FenrirTerminal, fenrir_starship: &mut FenrirStarship, fenrir_ops: &mut FenrirOperations) {
+async fn interativo(
+    pb: &ProgressBar,
+    fenrir_terminal: &terminal::FenrirTerminal,
+    fenrir_starship: &mut FenrirStarship,
+    fenrir_ops: &mut FenrirOperations,
+) {
     let stdin = io::stdin();
     let mut input_buffer = String::new();
     let mut last_command_status = 0;
@@ -165,7 +182,8 @@ async fn interativo(pb: &ProgressBar, fenrir_terminal: &terminal::FenrirTerminal
         fenrir_starship.update_context();
 
         // Renderizar prompt Starship personalizado
-        let prompt = fenrir_starship.render_for_terminal(fenrir_terminal.ghostty_available, last_command_status);
+        let prompt = fenrir_starship
+            .render_for_terminal(fenrir_terminal.ghostty_available, last_command_status);
         print!("{}", prompt);
         io::stdout().flush().unwrap();
 
@@ -182,20 +200,33 @@ async fn interativo(pb: &ProgressBar, fenrir_terminal: &terminal::FenrirTerminal
                     break;
                 }
                 if trimado == "ghostty" {
-                    println!("\n🎯 Ghostty Status: {}",
-                        if fenrir_terminal.ghostty_available { "ATIVO ✅" } else { "NÃO DISPONÍVEL ❌" });
+                    println!(
+                        "\n🎯 Ghostty Status: {}",
+                        if fenrir_terminal.ghostty_available {
+                            "ATIVO ✅"
+                        } else {
+                            "NÃO DISPONÍVEL ❌"
+                        }
+                    );
                     last_command_status = 0;
                     continue;
                 }
                 if trimado == "status" {
                     println!("\n📊 STATUS DO FENRIR-STARSHIP:");
-                    println!("   🐺 Interface: Ghostty {}",
-                        if fenrir_terminal.ghostty_available { "✅" } else { "❌" });
+                    println!(
+                        "   🐺 Interface: Ghostty {}",
+                        if fenrir_terminal.ghostty_available {
+                            "✅"
+                        } else {
+                            "❌"
+                        }
+                    );
                     println!("   🌟 Starship: ATIVO ✅");
                     println!("   🎨 Tema: {}", fenrir_terminal.config.theme);
-                    println!("   🔤 Fonte: {} ({:.1}px)",
-                        fenrir_terminal.config.font_family,
-                        fenrir_terminal.config.font_size);
+                    println!(
+                        "   🔤 Fonte: {} ({:.1}px)",
+                        fenrir_terminal.config.font_family, fenrir_terminal.config.font_size
+                    );
                     last_command_status = 0;
                     continue;
                 }
@@ -203,7 +234,10 @@ async fn interativo(pb: &ProgressBar, fenrir_terminal: &terminal::FenrirTerminal
                     println!("\n🌟 FENRIR-STARSHIP CONFIGURATION:");
                     println!("   🎯 Formato: {}", fenrir_starship.config.format);
                     println!("   📦 Módulos: {:?}", fenrir_starship.config.modules);
-                    println!("   🐺 Símbolo Fenrir: {}", fenrir_starship.config.fenrir.symbol);
+                    println!(
+                        "   🐺 Símbolo Fenrir: {}",
+                        fenrir_starship.config.fenrir.symbol
+                    );
                     last_command_status = 0;
                     continue;
                 }
@@ -215,7 +249,7 @@ async fn interativo(pb: &ProgressBar, fenrir_terminal: &terminal::FenrirTerminal
                 }
 
                 // 🐺 COMANDOS FENRIR GOD MODE - OPERAÇÕES TÁTICAS
-                if trimado.starts_with("rosnar") {
+                if matches_command(&trimado, &["rosnar", "rosna"]) {
                     println!("\n🐺💀 FENRIR ROSNANDO - MODO ANTIVÍRUS EVOLUTIVO!");
                     println!("🔥 O Lobo está farejando ameaças internas... PREPARANDO DEFESA!");
 
@@ -249,7 +283,7 @@ async fn interativo(pb: &ProgressBar, fenrir_terminal: &terminal::FenrirTerminal
                     continue;
                 }
 
-                if trimado.starts_with("morder") {
+                if matches_command(&trimado, &["morder", "morde"]) {
                     println!("\n💀🔥 FENRIR MORDENDO - MODO OFENSIVO EXTERNO!");
                     println!("🔥 O Lobo está preparando ataque brutal... ALVO EXTERNO!");
 
@@ -283,7 +317,7 @@ async fn interativo(pb: &ProgressBar, fenrir_terminal: &terminal::FenrirTerminal
                     continue;
                 }
 
-                if trimado.starts_with("devorar") {
+                if matches_command(&trimado, &["devorar", "devora"]) {
                     println!("\n💀🔥 FENRIR DEVORANDO - ENGENHARIA REVERSA COMPLETA!");
                     println!("🔥 O Lobo vai devorar e recriar o alvo em RUST!");
 
@@ -302,7 +336,10 @@ async fn interativo(pb: &ProgressBar, fenrir_terminal: &terminal::FenrirTerminal
                         // Executar operação DEVORAR
                         match fenrir_ops.execute_devorar(&target).await {
                             Ok(_) => {
-                                println!("💀 FENRIR DEVORADO - {} dominado e recriado em Rust!", target);
+                                println!(
+                                    "💀 FENRIR DEVORADO - {} dominado e recriado em Rust!",
+                                    target
+                                );
                                 last_command_status = 0;
                             }
                             Err(e) => {
@@ -340,7 +377,11 @@ async fn interativo(pb: &ProgressBar, fenrir_terminal: &terminal::FenrirTerminal
 }
 
 // Modo interativo fallback quando Ghostty falha (mas Starship funciona!)
-async fn interativo_fallback(pb: &ProgressBar, fenrir_starship: &mut FenrirStarship, fenrir_ops: &mut FenrirOperations) {
+async fn interativo_fallback(
+    pb: &ProgressBar,
+    fenrir_starship: &mut FenrirStarship,
+    fenrir_ops: &mut FenrirOperations,
+) {
     let stdin = io::stdin();
     let mut input_buffer = String::new();
     let mut last_command_status = 0;
@@ -384,7 +425,7 @@ async fn interativo_fallback(pb: &ProgressBar, fenrir_starship: &mut FenrirStars
                 }
 
                 // 🐺 COMANDOS FENRIR GOD MODE - OPERAÇÕES TÁTICAS (Fallback)
-                if trimado.starts_with("rosnar") {
+                if matches_command(&trimado, &["rosnar", "rosna"]) {
                     println!("\n🐺💀 FENRIR ROSNANDO - MODO ANTIVÍRUS EVOLUTIVO!");
                     println!("🔥 O Lobo está farejando ameaças internas... PREPARANDO DEFESA!");
 
@@ -418,7 +459,7 @@ async fn interativo_fallback(pb: &ProgressBar, fenrir_starship: &mut FenrirStars
                     continue;
                 }
 
-                if trimado.starts_with("morder") {
+                if matches_command(&trimado, &["morder", "morde"]) {
                     println!("\n💀🔥 FENRIR MORDENDO - MODO OFENSIVO EXTERNO!");
                     println!("🔥 O Lobo está preparando ataque brutal... ALVO EXTERNO!");
 
@@ -452,7 +493,7 @@ async fn interativo_fallback(pb: &ProgressBar, fenrir_starship: &mut FenrirStars
                     continue;
                 }
 
-                if trimado.starts_with("devorar") {
+                if matches_command(&trimado, &["devorar", "devora"]) {
                     println!("\n💀🔥 FENRIR DEVORANDO - ENGENHARIA REVERSA COMPLETA!");
                     println!("🔥 O Lobo vai devorar e recriar o alvo em RUST!");
 
@@ -471,7 +512,10 @@ async fn interativo_fallback(pb: &ProgressBar, fenrir_starship: &mut FenrirStars
                         // Executar operação DEVORAR
                         match fenrir_ops.execute_devorar(&target).await {
                             Ok(_) => {
-                                println!("💀 FENRIR DEVORADO - {} dominado e recriado em Rust!", target);
+                                println!(
+                                    "💀 FENRIR DEVORADO - {} dominado e recriado em Rust!",
+                                    target
+                                );
                                 last_command_status = 0;
                             }
                             Err(e) => {
@@ -501,10 +545,35 @@ async fn interativo_fallback(pb: &ProgressBar, fenrir_starship: &mut FenrirStars
 // --- O CÉREBRO DO FENRIR ---
 // O main.rs agora só "orquestra".
 // Ele chama o Oráculo, depois chama o Executor.
-async fn processar_solicitacao(consulta: &str, pb: &ProgressBar, fenrir_ops: &mut FenrirOperations) {
+async fn processar_solicitacao(
+    consulta: &str,
+    pb: &ProgressBar,
+    fenrir_ops: &mut FenrirOperations,
+) {
+    // Chain-of-Caralho obrigatório sempre
+    let mut chain_noise = ChainOfCaralhoManager::new();
+    if let Err(e) = chain_noise.create_batch_from_goal(consulta.to_string()) {
+        eprintln!("❌ Erro na decomposição chain-of-caralho: {}", e);
+    }
+    println!("⚙️ MAX RECURSOS: Gemini + Claude + Qwen + Grok Code serão convocados se aplicável. Nada escondido.");
+
     pb.set_style(
         ProgressStyle::default_spinner()
-            .tick_strings(&["VAI", "CORNO!", "PENSE", "DESGRAÇA!", "...", "VAI", "LOGO", "CARALHO!", "(ノ°Д°）ノ", "┻━┻", "...", "VAI", "CORNO!"])
+            .tick_strings(&[
+                "VAI",
+                "CORNO!",
+                "PENSE",
+                "DESGRAÇA!",
+                "...",
+                "VAI",
+                "LOGO",
+                "CARALHO!",
+                "(ノ°Д°）ノ",
+                "┻━┻",
+                "...",
+                "VAI",
+                "CORNO!",
+            ])
             .template("{spinner:.bold.yellow} {msg}")
             .unwrap(),
     );
@@ -546,18 +615,25 @@ async fn processar_solicitacao(consulta: &str, pb: &ProgressBar, fenrir_ops: &mu
                         if let Some(cmd) = task.command_to_run {
                             executor::handle_execute_command(&cmd);
                         } else {
-                            eprintln!("Erro: Oráculo mandou 'execute_command' mas não mandou o comando!");
+                            eprintln!(
+                                "Erro: Oráculo mandou 'execute_command' mas não mandou o comando!"
+                            );
                         }
                     }
                     "open_editor" => {
                         if let (Some(path), Some(app)) = (task.target_path, task.application) {
                             executor::handle_open_editor(&app, &path);
                         } else {
-                            eprintln!("Erro: Oráculo mandou 'open_editor' mas faltou o app ou o arquivo!");
+                            eprintln!(
+                                "Erro: Oráculo mandou 'open_editor' mas faltou o app ou o arquivo!"
+                            );
                         }
                     }
                     "unknown" | _ => {
-                        println!("O Oráculo não entendeu o que fazer. (Disse: '{}')", task.ia_explanation);
+                        println!(
+                            "O Oráculo não entendeu o que fazer. (Disse: '{}')",
+                            task.ia_explanation
+                        );
                     }
                 }
             } else {
@@ -575,17 +651,19 @@ async fn processar_solicitacao(consulta: &str, pb: &ProgressBar, fenrir_ops: &mu
 /// 🚀 MODO MULTI-IA - Hierarquia completa de IAs
 async fn start_multi_ia_mode(
     coordinator: MultiAICoordinator,
-    venice: Option<VeniceClient>
+    grok_code: Option<GrokCodeClient>,
 ) -> anyhow::Result<()> {
     println!("\n🔴🔴🔴 FENRIR MULTI-IA - MODO HIERÁRQUICO ATIVO 🔴🔴🔴");
-    println!("💀 Hierarquia: MENTE(Gemini) → CÉREBRO(Claude) → PENSAMENTO(GPT-4) → MÃOS(Venice)");
+    println!(
+        "💀 Hierarquia: MENTE(Gemini) → CÉREBRO(Claude) → PENSAMENTO(GPT-4) → MÃOS(Grok Code)"
+    );
     println!("🚀 Digite comandos ou 'sair' para encerrar");
     println!("");
 
     // Mostrar status inicial
     coordinator.show_status();
-    if let Some(ref v) = venice {
-        v.show_status();
+    if let Some(ref g) = grok_code {
+        g.show_status();
     }
 
     loop {
@@ -597,7 +675,9 @@ async fn start_multi_ia_mode(
             Ok(0) => break,
             Ok(_) => {
                 let input = input.trim();
-                if input.is_empty() { continue; }
+                if input.is_empty() {
+                    continue;
+                }
 
                 match input.to_lowercase().as_str() {
                     "sair" | "exit" | "quit" => {
@@ -606,15 +686,15 @@ async fn start_multi_ia_mode(
                     }
                     "status" => {
                         coordinator.show_status();
-                        if let Some(ref v) = venice {
-                            v.show_status();
+                        if let Some(ref g) = grok_code {
+                            g.show_status();
                         }
                         continue;
                     }
                     "emergencia" => {
                         println!("🚨 MODO EMERGÊNCIA - PULANDO HIERARQUIA!");
-                        if let Some(ref v) = venice {
-                            let cmds = v.generate_recon_commands("emergency_target").await?;
+                        if let Some(ref g) = grok_code {
+                            let cmds = g.generate_dirty_commands("emergency_target").await?;
                             for cmd in cmds {
                                 println!("💀 {}", cmd);
                             }
@@ -627,31 +707,11 @@ async fn start_multi_ia_mode(
 
                         let result = coordinator.process_complete_task(input).await?;
 
-                        if let Some(ref v) = venice {
-                            println!("\n💀 VENICE: EXECUTANDO TRABALHO SUJO...");
-                            let dirty_task = venice_client::DirtyTask {
-                                task_id: format!("fenrir_{}", std::time::SystemTime::now()
-                                    .duration_since(std::time::UNIX_EPOCH)
-                                    .unwrap()
-                                    .as_secs()),
-                                task_type: venice_client::DirtyTaskType::Reconnaissance,
-                                target: "multi_ia_target".to_string(),
-                                parameters: result.artifacts.clone(),
-                                urgency_level: 8,
-                            };
-
-                            match v.execute_dirty_task(dirty_task).await {
-                                Ok(exec_result) => {
-                                    println!("✅ TRABALHO SUJO CONCLUÍDO");
-                                    println!("📁 Comandos executados: {}", exec_result.commands.len());
-
-                                    // Gerar relatório final
-                                    let report = v.generate_dirty_report(vec![exec_result]).await?;
-                                    println!("\n📊 {}", report);
-                                }
-                                Err(e) => {
-                                    println!("❌ Erro no trabalho sujo: {}", e);
-                                }
+                        if let Some(ref g) = grok_code {
+                            println!("\n💀 GROK CODE: EXECUTANDO TRABALHO SUJO... (visível)");
+                            let dirty_cmds = g.generate_dirty_commands("multi_ia_target").await?;
+                            for cmd in dirty_cmds {
+                                println!("💥 {}", cmd);
                             }
                         }
 
@@ -689,7 +749,9 @@ async fn start_chain_mode(chain: &mut ChainOfCaralhoManager) -> anyhow::Result<(
             Ok(0) => break,
             Ok(_) => {
                 let input = input.trim();
-                if input.is_empty() { continue; }
+                if input.is_empty() {
+                    continue;
+                }
 
                 match input.to_lowercase().as_str() {
                     "sair" | "exit" | "quit" => {
@@ -709,7 +771,10 @@ async fn start_chain_mode(chain: &mut ChainOfCaralhoManager) -> anyhow::Result<(
                         println!("\n🎯 OBJETIVO: {}", goal);
 
                         let batch_id = chain.create_batch_from_goal(goal.to_string())?;
-                        chain.process_batch(&batch_id).await?;
+                        if let Some(id) = batch_id {
+                            chain.process_batch(&id).await?;
+                        }
+                        chain.process_pilha_async().await?;
 
                         println!("\n✅ BATCH CONCLUÍDO COM SUCESSO!");
                         continue;
@@ -719,7 +784,10 @@ async fn start_chain_mode(chain: &mut ChainOfCaralhoManager) -> anyhow::Result<(
                         println!("\n🎯 PROCESSANDO OBJETIVO: {}", input);
 
                         let batch_id = chain.create_batch_from_goal(input.to_string())?;
-                        chain.process_batch(&batch_id).await?;
+                        if let Some(id) = batch_id {
+                            chain.process_batch(&id).await?;
+                        }
+                        chain.process_pilha_async().await?;
 
                         println!("\n✅ OBJETIVO CONCLUÍDO!");
                     }
