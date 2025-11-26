@@ -16,6 +16,7 @@ pub struct GrokClient {
     pub api_key: String,
     pub model: String,
     pub base_url: String,
+    pub gemini_model: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -104,6 +105,7 @@ impl TrinityCoordinator {
                 api_key,
                 model: "grok-4.1-fast".to_string(),
                 base_url: "https://api.x.ai/v1".to_string(),
+                gemini_model: "gemini-1.5-pro-preview".to_string(),
             },
             coordination_mode: CoordinationMode::Interactive,
         })
@@ -111,7 +113,7 @@ impl TrinityCoordinator {
 
     /// 🧠 CHAIN OF THOUGHTS - Análise inicial Gemini
     pub async fn gemini_context_analysis(&self, input: &str) -> Result<GeminiAnalysis> {
-        println!("🧠 GEMINI: Analisando contexto e keywords...");
+        println!("🧠 GEMINI ({}): Analisando contexto e keywords...", self.grok_client.gemini_model);
 
         // Simulação - Implementar chamada real à API Gemini
         let analysis = GeminiAnalysis {
