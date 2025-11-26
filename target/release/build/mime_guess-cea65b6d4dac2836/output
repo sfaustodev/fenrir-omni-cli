@@ -1,1 +1,0 @@
-cargo:rustc-env=MIME_TYPES_GENERATED_PATH=/Users/peluche/CLI Fenrir/target/release/build/mime_guess-cea65b6d4dac2836/out/mime_types_generated.rs
