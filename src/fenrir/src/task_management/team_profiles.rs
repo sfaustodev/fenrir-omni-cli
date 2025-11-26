@@ -113,7 +113,7 @@ impl DeveloperProfile {
         Self {
             id: "dev_venz".to_string(),
             nickname: "Venz".to_string(),
-            real_name: "Venice AI".to_string(),
+            real_name: "Grok Code Fast 4.1 Free".to_string(),
             level: DeveloperLevel::Pleno,
             specialties: vec![
                 "Código rápido e sujo".to_string(),

@@ -1,11 +1,11 @@
 // 🎯 TAREFINHA MODE - Sistema profissional de pedidos
 // Garçom Claudão atendendo o chefe com maestria
 
+use crate::task_management::chain_coordinator::ChainOfCaralhoManager;
+use crate::task_management::task::{Complexity, Priority};
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::io::{self, Write};
-use anyhow::Result;
-use crate::task_management::chain_coordinator::ChainOfCaralhoManager;
-use crate::task_management::task::{Priority, Complexity};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TarefinhaOrder {
@@ -23,22 +23,22 @@ pub struct TarefinhaOrder {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum OrderType {
-    Morder,      // Ataque externo
-    Rosnar,      // Scan defensivo
-    Devorar,     // Engenharia reversa
-    GodMode,     // Modo divino completo
-    Special,     // Personalizado
-    Combo,       // Vários juntos
+    Morder,  // Ataque externo
+    Rosnar,  // Scan defensivo
+    Devorar, // Engenharia reversa
+    GodMode, // Modo divino completo
+    Special, // Personalizado
+    Combo,   // Vários juntos
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum PreparationStyle {
-    Mild,        // Suave
-    Medium,      // Moderado
-    Spicy,       // Picante
-    ExtraSpicy,  // Extra picante
-    HellFire,    // Fogo do inferno
-    Custom,      // Personalizado
+    Mild,       // Suave
+    Medium,     // Moderado
+    Spicy,      // Picante
+    ExtraSpicy, // Extra picante
+    HellFire,   // Fogo do inferno
+    Custom,     // Personalizado
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -86,6 +86,8 @@ impl TarefinhaMode {
         println!("🔥 Nossa especialidade: decompor o impossível em unidades atômicas");
         println!("");
 
+        self.chain_manager.start_weekly_scheduler();
+
         self.show_welcome_menu();
 
         loop {
@@ -97,7 +99,9 @@ impl TarefinhaMode {
                 Ok(0) => break,
                 Ok(_) => {
                     let input = input.trim();
-                    if input.is_empty() { continue; }
+                    if input.is_empty() {
+                        continue;
+                    }
 
                     match input.to_lowercase().as_str() {
                         "cardapio" | "menu" | "menu" => {
@@ -114,10 +118,17 @@ impl TarefinhaMode {
                             println!("🔥 Tarefinha Mode encerrando com elegância...");
                             break;
                         }
-                        _ if input.starts_with("nova") || input.starts_with("-new") || input.starts_with("new") => {
-                            let description = input.strip_prefix("nova").unwrap_or(input)
-                                .strip_prefix("-new").unwrap_or(input)
-                                .strip_prefix("new").unwrap_or("")
+                        _ if input.starts_with("nova")
+                            || input.starts_with("-new")
+                            || input.starts_with("new") =>
+                        {
+                            let description = input
+                                .strip_prefix("nova")
+                                .unwrap_or(input)
+                                .strip_prefix("-new")
+                                .unwrap_or(input)
+                                .strip_prefix("new")
+                                .unwrap_or("")
                                 .trim();
 
                             if description.is_empty() {
@@ -167,27 +178,27 @@ impl TarefinhaMode {
 
         println!("\n🥗 ENTRADAS (Appetizers):");
         for (i, item) in self.menu.appetizers.iter().enumerate() {
-            println!("   {}. {}", i+1, item);
+            println!("   {}. {}", i + 1, item);
         }
 
         println!("\n🍖 PRATOS PRINCIPAIS (Main Courses):");
         for (i, item) in self.menu.main_courses.iter().enumerate() {
-            println!("   {}. {}", i+1, item);
+            println!("   {}. {}", i + 1, item);
         }
 
         println!("\n🍰 SOBREMESAS (Desserts):");
         for (i, item) in self.menu.desserts.iter().enumerate() {
-            println!("   {}. {}", i+1, item);
+            println!("   {}. {}", i + 1, item);
         }
 
         println!("\n🔥 COMBOS ESPECIAIS:");
         for (i, item) in self.menu.special_combinations.iter().enumerate() {
-            println!("   {}. {}", i+1, item);
+            println!("   {}. {}", i + 1, item);
         }
 
         println!("\n👨‍🍳 RECOMENDAÇÕES DO CHEF:");
         for (i, item) in self.menu.chef_recommendations.iter().enumerate() {
-            println!("   {}. {}", i+1, item);
+            println!("   {}. {}", i + 1, item);
         }
 
         println!("{}", "═".repeat(60));
@@ -225,19 +236,25 @@ impl TarefinhaMode {
         println!("{}", "═".repeat(50));
 
         for (i, order) in self.order_history.iter().enumerate() {
-            println!("\n🎯 PEDIDO #{}", i+1);
+            println!("\n🎯 PEDIDO #{}", i + 1);
             println!("   📝 Requisição: {}", order.customer_request);
             println!("   🔥 Tipo: {:?}", order.order_type);
             println!("   ⚡ Urgência: {:?}", order.urgency);
             println!("   🌶️ Estilo: {:?}", order.preparation_style);
-            println!("   ⏱️ Tempo estimado: {} min", order.estimated_preparation_time);
+            println!(
+                "   ⏱️ Tempo estimado: {} min",
+                order.estimated_preparation_time
+            );
 
             if !order.ingredients.is_empty() {
                 println!("   🧪 Ingredientes: {}", order.ingredients.join(", "));
             }
 
             if !order.special_requests.is_empty() {
-                println!("   🎯 Pedidos especiais: {}", order.special_requests.join(", "));
+                println!(
+                    "   🎯 Pedidos especiais: {}",
+                    order.special_requests.join(", ")
+                );
             }
         }
 
@@ -254,7 +271,10 @@ impl TarefinhaMode {
 
         println!("🤔 Claudão analisando: {:?}", parsed_order.order_type);
         println!("⚡ Urgência detectada: {:?}", parsed_order.urgency);
-        println!("⏱️ Tempo estimado: {} minutos", parsed_order.estimated_preparation_time);
+        println!(
+            "⏱️ Tempo estimado: {} minutos",
+            parsed_order.estimated_preparation_time
+        );
 
         // Confirmar com o chefe
         println!("\n✅ Pedido identificado! Confirma preparação? (s/n)");
@@ -270,7 +290,6 @@ impl TarefinhaMode {
 
             // Preparar a tarefinha
             self.prepare_tarefinha(&parsed_order).await?;
-
         } else {
             println!("\n😕 Pedido cancelado. Claudão aguarda suas instruções!");
         }
@@ -283,7 +302,8 @@ impl TarefinhaMode {
         println!("\n🎯 Claudão pronto para anotar seu pedido detalhado!");
 
         let mut order = TarefinhaOrder {
-            order_id: format!("order_{}",
+            order_id: format!(
+                "order_{}",
                 std::time::SystemTime::now()
                     .duration_since(std::time::UNIX_EPOCH)
                     .unwrap()
@@ -353,7 +373,8 @@ impl TarefinhaMode {
         io::stdin().read_line(&mut specials)?;
 
         if !specials.trim().is_empty() {
-            order.special_requests = specials.trim()
+            order.special_requests = specials
+                .trim()
                 .split(',')
                 .map(|s| s.trim().to_string())
                 .collect();
@@ -367,7 +388,10 @@ impl TarefinhaMode {
         println!("🔥 Tipo: {:?}", parsed_order.order_type);
         println!("⚡ Urgência: {:?}", parsed_order.urgency);
         println!("🌶️ Estilo: {:?}", parsed_order.preparation_style);
-        println!("⏱️ Tempo estimado: {} minutos", parsed_order.estimated_preparation_time);
+        println!(
+            "⏱️ Tempo estimado: {} minutos",
+            parsed_order.estimated_preparation_time
+        );
 
         if !parsed_order.special_requests.is_empty() {
             println!("🎯 Especiais: {}", parsed_order.special_requests.join(", "));
@@ -384,7 +408,6 @@ impl TarefinhaMode {
             println!("👨‍🍳 Preparando obra-prima do chefe!");
 
             self.prepare_tarefinha(&parsed_order).await?;
-
         } else {
             println!("\n😕 Obra-prima cancelada. Claudão refaz quando quiser!");
         }
@@ -395,7 +418,8 @@ impl TarefinhaMode {
     /// 🧠 PARSER INTELIGENTE DE PEDIDOS
     fn parse_customer_request(&self, request: &str) -> Result<TarefinhaOrder> {
         let mut order = TarefinhaOrder {
-            order_id: format!("order_{}",
+            order_id: format!(
+                "order_{}",
                 std::time::SystemTime::now()
                     .duration_since(std::time::UNIX_EPOCH)
                     .unwrap()
@@ -422,25 +446,37 @@ impl TarefinhaMode {
         } else if request.to_lowercase().contains("devorar") {
             order.order_type = OrderType::Devorar;
             order.complexity_level = Complexity::Senior;
-        } else if request.to_lowercase().contains("godmode") || request.to_lowercase().contains("god mode") {
+        } else if request.to_lowercase().contains("godmode")
+            || request.to_lowercase().contains("god mode")
+        {
             order.order_type = OrderType::GodMode;
             order.complexity_level = Complexity::GodMode;
         }
 
         // Detectar urgência e estilo
-        if request.to_lowercase().contains("urgente") || request.to_lowercase().contains("rápido") {
+        if request.to_lowercase().contains("urgente") || request.to_lowercase().contains("rápido")
+        {
             order.urgency = Priority::High;
             order.preparation_style = PreparationStyle::Spicy;
-        } else if request.to_lowercase().contains("extra") || request.to_lowercase().contains("super") {
+        } else if request.to_lowercase().contains("extra")
+            || request.to_lowercase().contains("super")
+        {
             order.preparation_style = PreparationStyle::ExtraSpicy;
-        } else if request.to_lowercase().contains("máximo") || request.to_lowercase().contains("inferno") {
+        } else if request.to_lowercase().contains("máximo")
+            || request.to_lowercase().contains("inferno")
+        {
             order.preparation_style = PreparationStyle::HellFire;
         }
 
         // Extrair ingredientes (alvos)
         let words: Vec<&str> = request.split_whitespace().collect();
         for word in words {
-            if word.len() > 3 && !["morder", "rosnar", "devorar", "com", "para", "modo", "urgente"].contains(&word.to_lowercase().as_str()) {
+            if word.len() > 3
+                && ![
+                    "morder", "rosnar", "devorar", "com", "para", "modo", "urgente",
+                ]
+                .contains(&word.to_lowercase().as_str())
+            {
                 order.ingredients.push(word.to_string());
             }
         }
@@ -456,7 +492,10 @@ impl TarefinhaMode {
         // Ajustar tempo baseado no estilo
         match order.preparation_style {
             PreparationStyle::HellFire => order.estimated_preparation_time *= 2,
-            PreparationStyle::ExtraSpicy => order.estimated_preparation_time = (order.estimated_preparation_time as f32 * 1.5) as u16,
+            PreparationStyle::ExtraSpicy => {
+                order.estimated_preparation_time =
+                    (order.estimated_preparation_time as f32 * 1.5) as u16
+            }
             _ => {}
         }
 
@@ -487,7 +526,10 @@ impl TarefinhaMode {
         // Ajustar tempo baseado na urgência
         match order.urgency {
             Priority::Critical => order.estimated_preparation_time /= 2,
-            Priority::High => order.estimated_preparation_time = (order.estimated_preparation_time as f32 * 0.75) as u16,
+            Priority::High => {
+                order.estimated_preparation_time =
+                    (order.estimated_preparation_time as f32 * 0.75) as u16
+            }
             Priority::Low => order.estimated_preparation_time *= 2,
             _ => {}
         }
@@ -501,20 +543,27 @@ impl TarefinhaMode {
         println!("👨‍🍳 Preparando: {}", order.customer_request);
 
         // Criar batch de tarefinhas
-        let goal = format!("Executar: {} ({:?})",
-            order.customer_request,
-            order.order_type
+        let goal = format!(
+            "Executar: {} ({:?})",
+            order.customer_request, order.order_type
         );
 
         let batch_id = self.chain_manager.create_batch_from_goal(goal)?;
 
-        println!("📋 {} tarefinhas criadas pelo Chef Claudão!",
-                self.chain_manager.active_batches.last().unwrap().tarefinhas.len());
+        if let Some(id) = batch_id {
+            if let Some(last) = self.chain_manager.caderninhos.last() {
+                println!(
+                    "📋 {} tarefinhas criadas pelo Chef Claudão!",
+                    last.tarefinhas.len()
+                );
+            }
 
-        println!("\n🎯 EXECUTANDO TAREFINHAS:");
+            println!("\n🎯 EXECUTANDO TAREFINHAS SINCRONAS:");
+            self.chain_manager.process_batch(&id).await?;
+        }
 
-        // Processar o batch
-        self.chain_manager.process_batch(&batch_id).await?;
+        println!("\n⚡ EXECUTANDO PILHA ASYNC PARA O RESTO:");
+        self.chain_manager.process_pilha_async().await?;
 
         // Salvar no histórico
         self.order_history.push(order.clone());
