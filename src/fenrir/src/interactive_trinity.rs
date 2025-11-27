@@ -16,7 +16,7 @@ impl InteractiveTrinity {
         let coordinator = TrinityCoordinator::new()
             .map_err(|e| {
                 eprintln!("❌ Erro ao inicializar coordenador Trinity: {}", e);
-                eprintln!("💡 Verifique se a variável de ambiente $GEMINI_API_KEY está configurada");
+                eprintln!("💡 Verifique se a variável de ambiente $KAT_KEY (ou GROK_API_KEY / XAI_API_KEY / GLI_KEY) está configurada");
                 e
             })?;
 

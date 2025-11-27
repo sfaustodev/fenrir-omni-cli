@@ -7,22 +7,25 @@ echo "🔴🔴🔴 FENRIR TRINITY IA - TESTE DE API GROK 🔴🔴🔴"
 echo "Testando conectividade com Grok 4.1 Fast API..."
 echo ""
 
-# Verificar se GLI_KEY está configurada
-if [ -z "$GLI_KEY" ]; then
-    echo "❌ GLI_KEY não está configurada!"
+# Seleciona chave na ordem: KAT_KEY → GROK_API_KEY → XAI_API_KEY → GLI_KEY
+API_KEY="${KAT_KEY:-${GROK_API_KEY:-${XAI_API_KEY:-${GLI_KEY}}}}"
+
+# Verificar se alguma chave está configurada
+if [ -z "$API_KEY" ]; then
+    echo "❌ Nenhuma API key encontrada (KAT_KEY / GROK_API_KEY / XAI_API_KEY / GLI_KEY)!"
     echo ""
-    echo "💡 Para configurar:"
-    echo "   export GLI_KEY='sua_api_key_aqui'"
+    echo "💡 Para configurar (recomendado KAT_KEY):"
+    echo "   export KAT_KEY='sua_api_key_aqui'"
     echo ""
     echo "🔑 Ou adicione permanentemente ao ~/.zshrc:"
-    echo "   echo 'export GLI_KEY=\"sua_api_key_aqui\"' >> ~/.zshrc"
+    echo "   echo 'export KAT_KEY=\"sua_api_key_aqui\"' >> ~/.zshrc"
     echo "   source ~/.zshrc"
     echo ""
     exit 1
 fi
 
-echo "✅ GLI_KEY encontrada"
-echo "🔑 API Key: ${GLI_KEY:0:10}...${GLI_KEY: -10}"
+echo "✅ API key encontrada (prioridade KAT_KEY/GROK_API_KEY/XAI_API_KEY/GLI_KEY)"
+echo "🔑 API Key: ${API_KEY:0:10}...${API_KEY: -10}"
 echo ""
 
 # Testar API com curl
@@ -32,7 +35,7 @@ echo ""
 API_RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
   https://api.x.ai/v1/chat/completions \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $GLI_KEY" \
+  -H "Authorization: Bearer $API_KEY" \
   -d '{
     "model": "grok-4.1-fast",
     "messages": [

@@ -7,18 +7,21 @@ echo "🔴🔴🔴 FENRIR TRINITY IA - SETUP 🔴🔴🔴"
 echo "Configurando ambiente para coordenação Gemini + Claude + Grok"
 echo ""
 
-# Verificar se GLI_KEY já está configurada
-if [ -n "$GLI_KEY" ]; then
-    echo "✅ GLI_KEY já está configurada"
-    echo "🚀 Grok 4.1 Fast pronto para uso"
+# Verificar se KAT_KEY (ou fallbacks) já está configurada
+if [ -n "$KAT_KEY" ]; then
+    echo "✅ KAT_KEY já está configurada"
+    echo "🚀 Grok/Droid CLI pronto para uso"
+elif [ -n "$GROK_API_KEY" ] || [ -n "$XAI_API_KEY" ] || [ -n "$GLI_KEY" ]; then
+    echo "⚠️ KAT_KEY não encontrada, mas uma chave legada foi detectada (GROK_API_KEY/XAI_API_KEY/GLI_KEY)"
+    echo "   Recomenda-se padronizar em KAT_KEY para o CLI Droid/Grok."
 else
-    echo "❌ GLI_KEY não encontrada"
+    echo "❌ Nenhuma chave encontrada (KAT_KEY / GROK_API_KEY / XAI_API_KEY / GLI_KEY)"
     echo ""
-    echo "💡 Para configurar a API key do Grok:"
-    echo "   export GLI_KEY='sua_api_key_aqui'"
+    echo "💡 Para configurar a API key (padrão KAT_KEY):"
+    echo "   export KAT_KEY='sua_api_key_aqui'"
     echo ""
     echo "🔑 Ou adicione ao seu ~/.zshrc ou ~/.bashrc:"
-    echo "   export GLI_KEY='sua_api_key_aqui'"
+    echo "   export KAT_KEY='sua_api_key_aqui'"
     echo ""
     echo "⚠️ Execute 'source ~/.zshrc' após configurar"
 fi

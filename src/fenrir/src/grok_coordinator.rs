@@ -93,11 +93,15 @@ pub struct TaskDelegation {
 
 impl TrinityCoordinator {
     pub fn new() -> Result<Self> {
-        let api_key = env::var("GEMINI_API_KEY")
-            .context("GEMINI_API_KEY environment variable not found")?;
+        // Prefer $KAT_KEY for the Droid/Grok CLI; keep legacy fallbacks to avoid breakages.
+        let api_key = env::var("KAT_KEY")
+            .or_else(|_| env::var("GROK_API_KEY"))
+            .or_else(|_| env::var("XAI_API_KEY"))
+            .or_else(|_| env::var("GLI_KEY"))
+            .context("KAT_KEY (or GROK_API_KEY / XAI_API_KEY / GLI_KEY) not found")?;
 
         if api_key.is_empty() {
-            anyhow::bail!("GEMINI_API_KEY está vazia!");
+            anyhow::bail!("KAT_KEY (ou fallback de Grok) está vazio!");
         }
 
         Ok(Self {
