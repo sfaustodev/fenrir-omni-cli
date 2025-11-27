@@ -59,6 +59,7 @@ reports/
 fenrir_tasks.log
 .tmp.driveupload/
 .qodo/
+.grok/
 
 # User-requested exclusions
 *Brave*

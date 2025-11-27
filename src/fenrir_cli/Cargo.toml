@@ -1,0 +1,35 @@
+[package]
+name = "fenrir_cli"
+version = "0.1.0"
+edition = "2021"
+authors = ["Fenrir Team"]
+description = "🐺 Fenrir CLI - Devorador de CLIs, orquestrador de ferramentas de pentest"
+repository = "https://github.com/peluche/fenrir"
+license = "MIT"
+
+[[bin]]
+name = "fenrir"
+path = "src/main.rs"
+
+[dependencies]
+# CLI parsing
+clap = { version = "4.4", features = ["derive", "color", "env"] }
+
+# Error handling
+color-eyre = "0.6"
+thiserror = "1.0"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_yaml = "0.9"
+
+# Terminal colors and styling
+colored = "2.1"
+console = "0.15"
+
+# Directory utilities
+dirs = "5.0"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }

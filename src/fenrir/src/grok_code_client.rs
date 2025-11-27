@@ -35,9 +35,12 @@ struct Choice {
 
 impl GrokCodeClient {
     pub fn new() -> Result<Self> {
-        let api_key = env::var("GROK_API_KEY")
+        // Prefer $KAT_KEY for the Droid/Grok CLI, but keep backwards-compatible fallbacks.
+        let api_key = env::var("KAT_KEY")
+            .or_else(|_| env::var("GROK_API_KEY"))
             .or_else(|_| env::var("XAI_API_KEY"))
-            .context("GROK_API_KEY or XAI_API_KEY required")?;
+            .or_else(|_| env::var("GLI_KEY"))
+            .context("KAT_KEY (or GROK_API_KEY / XAI_API_KEY / GLI_KEY) required")?;
         
         let base_url = env::var("GROK_BASE_URL")
             .unwrap_or_else(|_| "https://openrouter.ai/api/v1".to_string());

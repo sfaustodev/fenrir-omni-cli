@@ -1,7 +1,8 @@
 [workspace]
 members = [
     "src/fenrir",
-    "src/bin"
+    "src/bin",
+    "src/fenrir_cli"
 ]
 resolver = "2"
 

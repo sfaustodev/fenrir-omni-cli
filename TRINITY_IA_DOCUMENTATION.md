@@ -24,8 +24,9 @@ O **FENRIR TRINITY IA** é um sistema revolucionário de coordenação entre tr�
 cd "/Users/peluche/CLI Fenrir"
 cargo build --release
 
-# 2. Configurar API key do Grok (OBRIGATÓRIO)
-export GLI_KEY='sua_api_key_grok_aqui'
+# 2. Configurar API key do Grok/Droid CLI (OBRIGATÓRIO)
+# Prioridade: KAT_KEY → GROK_API_KEY → XAI_API_KEY → GLI_KEY
+export KAT_KEY='sua_api_key_grok_aqui'
 
 # 3. Rodar script de setup
 ./setup_trinity.sh
@@ -138,7 +139,7 @@ CLI Fenrir/
 ```
 
 ### VARIÁVEIS DE AMBIENTE
-- **GLI_KEY**: API key do Grok 4.1 Fast (OBRIGATÓRIO)
+- **KAT_KEY**: API key do Grok/Droid CLI (prioritário; aceita GROK_API_KEY/XAI_API_KEY/GLI_KEY como fallback)
 
 ---
 
@@ -192,7 +193,7 @@ coordinator.execute_coordinated_task(plan).await?;
 - ✅ Auto-limpeza de vestígios
 
 ### ERROR HANDLING
-- 🔴 Falha GLI_KEY -> Fallback GOD MODE
+- 🔴 Falha KAT_KEY/GROK_API_KEY -> Fallback GOD MODE
 - 🔴 Falha API -> Continuação offline
 - 🔴 Falha consenso -> Decisão FENRIR
 - 🔴 Falha operação -> Relatório completo

@@ -16,6 +16,7 @@ pub struct GrokClient {
     pub api_key: String,
     pub model: String,
     pub base_url: String,
+    pub gemini_model: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -92,11 +93,15 @@ pub struct TaskDelegation {
 
 impl TrinityCoordinator {
     pub fn new() -> Result<Self> {
-        let api_key = env::var("GEMINI_API_KEY")
-            .context("GEMINI_API_KEY environment variable not found")?;
+        // Prefer $KAT_KEY for the Droid/Grok CLI; keep legacy fallbacks to avoid breakages.
+        let api_key = env::var("KAT_KEY")
+            .or_else(|_| env::var("GROK_API_KEY"))
+            .or_else(|_| env::var("XAI_API_KEY"))
+            .or_else(|_| env::var("GLI_KEY"))
+            .context("KAT_KEY (or GROK_API_KEY / XAI_API_KEY / GLI_KEY) not found")?;
 
         if api_key.is_empty() {
-            anyhow::bail!("GEMINI_API_KEY está vazia!");
+            anyhow::bail!("KAT_KEY (ou fallback de Grok) está vazio!");
         }
 
         Ok(Self {
@@ -104,6 +109,7 @@ impl TrinityCoordinator {
                 api_key,
                 model: "grok-4.1-fast".to_string(),
                 base_url: "https://api.x.ai/v1".to_string(),
+                gemini_model: "gemini-1.5-pro-preview".to_string(),
             },
             coordination_mode: CoordinationMode::Interactive,
         })
@@ -111,7 +117,7 @@ impl TrinityCoordinator {
 
     /// 🧠 CHAIN OF THOUGHTS - Análise inicial Gemini
     pub async fn gemini_context_analysis(&self, input: &str) -> Result<GeminiAnalysis> {
-        println!("🧠 GEMINI: Analisando contexto e keywords...");
+        println!("🧠 GEMINI ({}): Analisando contexto e keywords...", self.grok_client.gemini_model);
 
         // Simulação - Implementar chamada real à API Gemini
         let analysis = GeminiAnalysis {
