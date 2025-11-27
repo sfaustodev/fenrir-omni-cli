@@ -3,8 +3,8 @@
 
 use std::path::{Path, PathBuf};
 //use std::process::Command; // Removido temporariamente
+use anyhow::{anyhow, Result};
 use std::io::Write;
-use anyhow::{Result, anyhow};
 
 pub struct SecurityProtection {
     pub debug_mode: bool,
@@ -53,19 +53,21 @@ impl SecurityProtection {
 
         // Lista de drives externos comuns
         let external_patterns = vec![
-            "/Volumes/",          // macOS external drives
-            "/media/",            // Linux mounts
-            "/mnt/",              // Linux external mounts
-            "C:\\Users\\",         // Windows C: users (bloqueado)
-            "/home/",             // Linux home (bloqueado)
-            "D:\\",                // Windows D: drive (potencial externo)
-            "E:\\"                 // Windows E: drive (externo)
+            "/Volumes/",   // macOS external drives
+            "/media/",     // Linux mounts
+            "/mnt/",       // Linux external mounts
+            "C:\\Users\\", // Windows C: users (bloqueado)
+            "/home/",      // Linux home (bloqueado)
+            "D:\\",        // Windows D: drive (potencial externo)
+            "E:\\",        // Windows E: drive (externo)
         ];
 
-        let is_externo = external_patterns.iter().any(|pattern| target.contains(pattern)) &&
-                         !target.contains("Users") &&
-                         !target.contains("home") &&
-                         !target.starts_with("/");
+        let is_externo = external_patterns
+            .iter()
+            .any(|pattern| target.contains(pattern))
+            && !target.contains("Users")
+            && !target.contains("home")
+            && !target.starts_with("/");
 
         if is_externo {
             self.log_operation(&format!("✅ ROSNAR PERMITIDO - Padrão externo: {}", target));
@@ -73,13 +75,22 @@ impl SecurityProtection {
         }
 
         if !self.debug_mode {
-            self.log_operation(&format!("❌ ROSNAR BLOQUEADO - Não verificado como externo: {}", target));
+            self.log_operation(&format!(
+                "❌ ROSNAR BLOQUEADO - Não verificado como externo: {}",
+                target
+            ));
             println!("🚨 PROTEÇÃO ATIVADA - ROSNAR BLOQUEADO!");
-            println!("🔹 Alvo '{}' não verificado como drive externo físico", target);
+            println!(
+                "🔹 Alvo '{}' não verificado como drive externo físico",
+                target
+            );
             println!("🔹 Para liberar: confirme que é drive externo ou use --debug-mode");
             Ok(false)
         } else {
-            self.log_operation(&format!("⚠️ DEBUG MODE: ROSNAR PERMITIDO - Override: {}", target));
+            self.log_operation(&format!(
+                "⚠️ DEBUG MODE: ROSNAR PERMITIDO - Override: {}",
+                target
+            ));
             Ok(true)
         }
     }
@@ -90,28 +101,30 @@ impl SecurityProtection {
 
         // Paths internos BLOQUEADOS
         let internal_patterns = vec![
-            "users",           // Windows/Linux users
-            "home",           // Linux home
-            "desktop",        // Desktop
-            "documents",      // Documents
-            "downloads",      // Downloads
-            "program files",  // Windows Program Files
-            "applications",   // macOS Applications
-            "library",        // macOS Library
-            "system32",       // Windows System32
-            "etc",            // Linux /etc
-            "var",            // Linux /var
-            "usr",            // Linux /usr
-            "bin",            // Linux /bin
-            "sbin",           // Linux /sbin
-            "opt",            // Linux /opt
-            "tmp",            // Temp (pode ser perigoso)
-            "proc",           // Linux proc
-            "sys",            // Linux sys
-            "dev",            // Linux dev
+            "users",         // Windows/Linux users
+            "home",          // Linux home
+            "desktop",       // Desktop
+            "documents",     // Documents
+            "downloads",     // Downloads
+            "program files", // Windows Program Files
+            "applications",  // macOS Applications
+            "library",       // macOS Library
+            "system32",      // Windows System32
+            "etc",           // Linux /etc
+            "var",           // Linux /var
+            "usr",           // Linux /usr
+            "bin",           // Linux /bin
+            "sbin",          // Linux /sbin
+            "opt",           // Linux /opt
+            "tmp",           // Temp (pode ser perigoso)
+            "proc",          // Linux proc
+            "sys",           // Linux sys
+            "dev",           // Linux dev
         ];
 
-        internal_patterns.iter().any(|pattern| target_lower.contains(pattern))
+        internal_patterns
+            .iter()
+            .any(|pattern| target_lower.contains(pattern))
     }
 
     /// 💿 VERIFICAR SE É DRIVE EXTERNO
@@ -120,7 +133,7 @@ impl SecurityProtection {
             path_str.starts_with("/Volumes/") ||  // macOS external
             path_str.starts_with("/media/") ||    // Linux USB
             path_str.starts_with("/mnt/") ||      // Linux mounts
-            path_str.chars().nth(1) == Some(':') && path_str.len() > 3  // Windows D:, E:, etc
+            path_str.chars().nth(1) == Some(':') && path_str.len() > 3 // Windows D:, E:, etc
         } else {
             false
         }
@@ -141,7 +154,10 @@ impl SecurityProtection {
                         for entry in entries.flatten() {
                             if entry.file_type().map(|ft| ft.is_dir()).unwrap_or(false) {
                                 self.external_drives.push(entry.path());
-                                self.log_operation(&format!("📁 Drive externo detectado: {}", entry.path().display()));
+                                self.log_operation(&format!(
+                                    "📁 Drive externo detectado: {}",
+                                    entry.path().display()
+                                ));
                             }
                         }
                     }
@@ -161,7 +177,10 @@ impl SecurityProtection {
             }
         }
 
-        println!("🔍 {} drives externos detectados", self.external_drives.len());
+        println!(
+            "🔍 {} drives externos detectados",
+            self.external_drives.len()
+        );
     }
 
     /// 📝 REGISTRAR OPERAÇÃO
@@ -206,7 +225,14 @@ impl SecurityProtection {
 
         println!("{}", "═".repeat(50));
         println!("📁 Total drives externos: {}", self.external_drives.len());
-        println!("⚠️ Debug Mode: {}", if self.debug_mode { "ATIVADO" } else { "Desativado" });
+        println!(
+            "⚠️ Debug Mode: {}",
+            if self.debug_mode {
+                "ATIVADO"
+            } else {
+                "Desativado"
+            }
+        );
     }
 
     /// 🗑️ LIMPAR LOG
@@ -217,7 +243,8 @@ impl SecurityProtection {
 
     /// 🚨 VERIFICAÇÃO DE DUPLICIDADE - EVITAR ROSNAR DUPLICADO
     pub fn check_duplicate_rosnar(&mut self, target: &str) -> bool {
-        let recent_logs: Vec<String> = self.operation_log
+        let recent_logs: Vec<String> = self
+            .operation_log
             .iter()
             .filter(|log| log.contains("ROSNAR") && log.contains(target))
             .cloned()
@@ -258,10 +285,13 @@ pub fn validate_command(cmd: &str, args: &[&str]) -> Result<()> {
     let security = get_security();
 
     // Se for comando ROSNAR
-    if cmd.to_lowercase().contains("rosnar") || args.iter().any(|arg| arg.to_lowercase().contains("rosnar")) {
-
+    if cmd.to_lowercase().contains("rosnar")
+        || args.iter().any(|arg| arg.to_lowercase().contains("rosnar"))
+    {
         // Encontrar o alvo
-        let target = args.iter().find(|arg| !arg.starts_with("-") && !arg.to_lowercase().contains("rosnar"))
+        let target = args
+            .iter()
+            .find(|arg| !arg.starts_with("-") && !arg.to_lowercase().contains("rosnar"))
             .unwrap_or(&"");
 
         if !target.is_empty() {

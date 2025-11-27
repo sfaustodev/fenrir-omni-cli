@@ -1,6 +1,7 @@
 // 🔥 FENRIR TRINITY IA - MODO INTERATIVO AVANÇADO
 // Chain of Thoughts com coordenação Gemini + Claude + Grok
 
+use crate::api_keys::describe_priority;
 use crate::grok_coordinator::TrinityCoordinator;
 use crate::operations::FenrirOperations;
 use anyhow::Result;
@@ -13,12 +14,14 @@ pub struct InteractiveTrinity {
 
 impl InteractiveTrinity {
     pub fn new() -> Result<Self> {
-        let coordinator = TrinityCoordinator::new()
-            .map_err(|e| {
-                eprintln!("❌ Erro ao inicializar coordenador Trinity: {}", e);
-                eprintln!("💡 Verifique se a variável de ambiente $KAT_KEY (ou GROK_API_KEY / XAI_API_KEY / GLI_KEY) está configurada");
-                e
-            })?;
+        let coordinator = TrinityCoordinator::new().map_err(|e| {
+            eprintln!("❌ Erro ao inicializar coordenador Trinity: {}", e);
+            eprintln!(
+                "💡 Configure uma das chaves nesta ordem: {}",
+                describe_priority()
+            );
+            e
+        })?;
 
         let operations = FenrirOperations::new()?;
 

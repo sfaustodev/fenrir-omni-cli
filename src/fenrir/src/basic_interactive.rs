@@ -1,11 +1,11 @@
 // 🔥 FENRIR BASIC INTERACTIVE - O básico que funcionava
 // Sem IA pra não dar merda - comandos diretos
 
-use std::io::{self, Write};
-use anyhow::Result;
 use crate::operations::FenrirOperations;
+use crate::security_protection::{get_security, validate_command};
 use crate::venz_agent::get_venz_agent;
-use crate::security_protection::{validate_command, get_security};
+use anyhow::Result;
+use std::io::{self, Write};
 
 pub struct BasicInteractive {
     pub operations: FenrirOperations,
@@ -54,10 +54,14 @@ impl BasicInteractive {
                 Ok(0) => break,
                 Ok(_) => {
                     let input = input.trim();
-                    if input.is_empty() { continue; }
+                    if input.is_empty() {
+                        continue;
+                    }
 
                     let parts: Vec<&str> = input.split_whitespace().collect();
-                    if parts.is_empty() { continue; }
+                    if parts.is_empty() {
+                        continue;
+                    }
 
                     let command = parts[0];
                     let args = &parts[1..];

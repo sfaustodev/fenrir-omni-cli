@@ -1,5 +1,5 @@
 //! # Banner ASCII do Fenrir
-//! 
+//!
 //! O lobo mitológico que devora os deuses.
 //! Banner editável separado para fácil customização.
 
@@ -50,8 +50,8 @@ const FENRIR_BANNER_SIMPLE: &str = r#"
 /// Imprime o banner do Fenrir com cores
 pub fn print_banner() {
     // Detecta tamanho do terminal para escolher banner
-    let use_simple = std::env::var("FENRIR_SIMPLE_BANNER").is_ok() 
-        || console::Term::stdout().size().1 < 60;
+    let use_simple =
+        std::env::var("FENRIR_SIMPLE_BANNER").is_ok() || console::Term::stdout().size().1 < 60;
 
     let banner = if use_simple {
         FENRIR_BANNER_SIMPLE

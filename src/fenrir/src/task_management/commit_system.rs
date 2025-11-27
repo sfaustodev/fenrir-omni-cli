@@ -1,13 +1,10 @@
 // 🔥 COMMIT SYSTEM - Um commit por tarefinha
 // Cada commit é sagrado e individual
 
+use crate::task_management::{task::TarefaFinha, team_profiles::DeveloperProfile};
+use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::process::Command;
-use anyhow::{Result, Context};
-use crate::task_management::{
-    team_profiles::DeveloperProfile,
-    task::TarefaFinha
-};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CommitInfo {
@@ -88,7 +85,10 @@ impl CommitQueue {
             .context("Failed to git add")?;
 
         if !output.status.success() {
-            return Err(anyhow::anyhow!("Git add failed: {}", String::from_utf8_lossy(&output.stderr)));
+            return Err(anyhow::anyhow!(
+                "Git add failed: {}",
+                String::from_utf8_lossy(&output.stderr)
+            ));
         }
 
         // Executa o commit

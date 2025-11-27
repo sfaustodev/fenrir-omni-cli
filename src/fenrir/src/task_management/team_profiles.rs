@@ -1,8 +1,8 @@
 // 👥 DEVELOPER PROFILES - Claudao, Geminho, Venz
 // Sistema hierárquico chain-of-caralho
 
-use serde::{Deserialize, Serialize};
 use crate::task_management::task::Complexity;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DeveloperProfile {
@@ -20,9 +20,9 @@ pub struct DeveloperProfile {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum DeveloperLevel {
-    Junior,   // Geminho
-    Pleno,    // Venz
-    Senior,   // Claudao
+    Junior, // Geminho
+    Pleno,  // Venz
+    Senior, // Claudao
 }
 
 impl std::fmt::Display for DeveloperLevel {
@@ -37,9 +37,9 @@ impl std::fmt::Display for DeveloperLevel {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum CommitStyle {
-    Detailed,     // Claudao: explica tudo
-    Minimal,      // Venz: só o necessário
-    Overkill,     // Geminho: commit até mudar vírgula
+    Detailed, // Claudao: explica tudo
+    Minimal,  // Venz: só o necessário
+    Overkill, // Geminho: commit até mudar vírgula
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -161,7 +161,10 @@ impl DeveloperProfile {
         base_multiplier / self.productivity_multiplier
     }
 
-    pub fn get_commit_signature(&self, tarefinha: &crate::task_management::task::TarefaFinha) -> String {
+    pub fn get_commit_signature(
+        &self,
+        tarefinha: &crate::task_management::task::TarefaFinha,
+    ) -> String {
         match self.commit_style {
             CommitStyle::Detailed => format!(
                 "{}: {}\n\
@@ -221,16 +224,27 @@ impl DeveloperProfile {
 
     pub fn get_error_message(&self) -> String {
         match self.level {
-            DeveloperLevel::Junior => "OPS! Fiz algo errado 😅 Acho que preciso de ajuda...".to_string(),
-            DeveloperLevel::Pleno => "Hmmm, isso não deu certo. Vou tentar outra abordagem.".to_string(),
-            DeveloperLevel::Senior => "Erro identificado e documentado. Aplicando fallback estratégico.".to_string(),
+            DeveloperLevel::Junior => {
+                "OPS! Fiz algo errado 😅 Acho que preciso de ajuda...".to_string()
+            }
+            DeveloperLevel::Pleno => {
+                "Hmmm, isso não deu certo. Vou tentar outra abordagem.".to_string()
+            }
+            DeveloperLevel::Senior => {
+                "Erro identificado e documentado. Aplicando fallback estratégico.".to_string()
+            }
         }
     }
 
     pub fn get_motivation_quote(&self) -> String {
         match self.nickname.as_str() {
-            "Claudao" => "A arquitetura correta resolve 90% dos problemas antes mesmo do primeiro commit.".to_string(),
-            "Geminho" => "Um dia vou ser senior! Por enquanto, vou ler mais documentação...".to_string(),
+            "Claudao" => {
+                "A arquitetura correta resolve 90% dos problemas antes mesmo do primeiro commit."
+                    .to_string()
+            }
+            "Geminho" => {
+                "Um dia vou ser senior! Por enquanto, vou ler mais documentação...".to_string()
+            }
             "Venz" => "Funciona? Funciona. Está bonito? Não importa. Está rápido? Sim.".to_string(),
             _ => "Só mais um commit...".to_string(),
         }
@@ -269,18 +283,21 @@ impl Team {
     pub fn get_best_candidate(&self, complexity: &Complexity) -> Option<&DeveloperProfile> {
         let available = self.get_available_for(complexity);
         if available.is_empty() {
-            return self.members.iter().find(|m| m.level == DeveloperLevel::Senior); // Claudao sempre pode
+            return self
+                .members
+                .iter()
+                .find(|m| m.level == DeveloperLevel::Senior); // Claudao sempre pode
         }
 
         // Prioridade: Claudao > Venz > Geminho (dependendo da complexidade)
-        available.into_iter().min_by(|a, b| {
-            match (&a.level, &b.level) {
+        available
+            .into_iter()
+            .min_by(|a, b| match (&a.level, &b.level) {
                 (DeveloperLevel::Senior, _) => std::cmp::Ordering::Less,
                 (_, DeveloperLevel::Senior) => std::cmp::Ordering::Greater,
                 (DeveloperLevel::Pleno, DeveloperLevel::Junior) => std::cmp::Ordering::Less,
                 (DeveloperLevel::Junior, DeveloperLevel::Pleno) => std::cmp::Ordering::Greater,
                 _ => std::cmp::Ordering::Equal,
-            }
-        })
+            })
     }
 }

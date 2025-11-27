@@ -1,5 +1,5 @@
 //! # Comando Scan
-//! 
+//!
 //! Executa varreduras de segurança em alvos especificados.
 //! Por enquanto é um stub que será conectado ao core real posteriormente.
 
@@ -21,7 +21,7 @@ pub fn execute(
 ) -> Result<()> {
     // Imprime header do scan
     ui::section("Fenrir Scan");
-    
+
     // Verifica guardrails
     if !config.content_policies.allow_aggressive_pentest && scan_type == "aggressive" {
         ui::error("Scan agressivo bloqueado por política de segurança.");
@@ -30,15 +30,18 @@ pub fn execute(
     }
 
     // Mostra configuração do scan
-    ui::status(&format!("Preparando varredura em {}", target.bright_cyan().bold()));
+    ui::status(&format!(
+        "Preparando varredura em {}",
+        target.bright_cyan().bold()
+    ));
     println!();
-    
+
     ui::list_item("Alvo", target);
     ui::list_item("Portas", port_range);
     ui::list_item("Tipo", scan_type);
     ui::list_item("Timeout", &format!("{}s", timeout));
     ui::list_item("Threads", &format!("{}", threads));
-    
+
     println!();
 
     // Verifica se é um alvo válido (validação básica)
@@ -58,12 +61,12 @@ pub fn execute(
     // STUB: Aqui será conectada a lógica real de scan
     ui::warning("STUB - Funcionalidade de scan ainda não implementada.");
     ui::info("Este comando será conectado ao core de pentest real em breve.");
-    
+
     println!();
-    
+
     // Simula algumas descobertas (apenas para demonstração)
     ui::section("Resultados (simulados)");
-    
+
     let mock_results = [
         ("22/tcp", "SSH", "OpenSSH 8.9"),
         ("80/tcp", "HTTP", "nginx 1.18.0"),
@@ -89,7 +92,11 @@ pub fn execute(
     // Mostra próximos passos
     println!();
     ui::info("Próximos passos:");
-    println!("    {} fenrir scan --target {} --scan-type full", "→".dimmed(), target);
+    println!(
+        "    {} fenrir scan --target {} --scan-type full",
+        "→".dimmed(),
+        target
+    );
     println!("    {} fenrir rules --list", "→".dimmed());
 
     Ok(())

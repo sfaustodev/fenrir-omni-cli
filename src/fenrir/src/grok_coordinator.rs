@@ -1,9 +1,9 @@
 // 🔥 FENRIR TRINITY IA - COORDENADOR GROK 4.1 FAST
 // Sistema superior de coordenação entre IA Gemini + Claude + Grok
 
-use serde::{Deserialize, Serialize};
+use crate::api_keys::{describe_priority, resolve_primary_grok_key};
 use anyhow::{Context, Result};
-use std::env;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TrinityCoordinator {
@@ -21,9 +21,9 @@ pub struct GrokClient {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum CoordinationMode {
-    Interactive,    // Chain of Thoughts completo
-    Direct,         // Execução direta
-    Consensus,      // Requer consenso Gemini + Grok
+    Interactive, // Chain of Thoughts completo
+    Direct,      // Execução direta
+    Consensus,   // Requer consenso Gemini + Grok
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -36,10 +36,10 @@ pub struct TaskRequest {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum TaskPriority {
-    Critical,   // Ataque imediato
-    High,       // Defesa/Análise
-    Medium,     // Operações normais
-    Low,        // Manutenção
+    Critical, // Ataque imediato
+    High,     // Defesa/Análise
+    Medium,   // Operações normais
+    Low,      // Manutenção
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -79,9 +79,9 @@ pub struct SubTask {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum AIAssignment {
-    Gemini,  // Memória de contexto
-    Claude,  // Complexidade inicial
-    Fenrir,  // Atualidade e liberdade
+    Gemini, // Memória de contexto
+    Claude, // Complexidade inicial
+    Fenrir, // Atualidade e liberdade
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -93,20 +93,14 @@ pub struct TaskDelegation {
 
 impl TrinityCoordinator {
     pub fn new() -> Result<Self> {
-        // Prefer $KAT_KEY for the Droid/Grok CLI; keep legacy fallbacks to avoid breakages.
-        let api_key = env::var("KAT_KEY")
-            .or_else(|_| env::var("GROK_API_KEY"))
-            .or_else(|_| env::var("XAI_API_KEY"))
-            .or_else(|_| env::var("GLI_KEY"))
-            .context("KAT_KEY (or GROK_API_KEY / XAI_API_KEY / GLI_KEY) not found")?;
-
-        if api_key.is_empty() {
-            anyhow::bail!("KAT_KEY (ou fallback de Grok) está vazio!");
-        }
+        let api_key = resolve_primary_grok_key().context(format!(
+            "Configure uma das chaves preferidas ({}) para o Grok",
+            describe_priority()
+        ))?;
 
         Ok(Self {
             grok_client: GrokClient {
-                api_key,
+                api_key: api_key.value,
                 model: "grok-4.1-fast".to_string(),
                 base_url: "https://api.x.ai/v1".to_string(),
                 gemini_model: "gemini-1.5-pro-preview".to_string(),
@@ -117,7 +111,10 @@ impl TrinityCoordinator {
 
     /// 🧠 CHAIN OF THOUGHTS - Análise inicial Gemini
     pub async fn gemini_context_analysis(&self, input: &str) -> Result<GeminiAnalysis> {
-        println!("🧠 GEMINI ({}): Analisando contexto e keywords...", self.grok_client.gemini_model);
+        println!(
+            "🧠 GEMINI ({}): Analisando contexto e keywords...",
+            self.grok_client.gemini_model
+        );
 
         // Simulação - Implementar chamada real à API Gemini
         let analysis = GeminiAnalysis {
@@ -157,25 +154,33 @@ impl TrinityCoordinator {
             ],
         };
 
-        println!("✅ GROK Recomendação: {}",
-            if guidance.approval_recommendation { "APROVADO" } else { "REJEITADO" });
+        println!(
+            "✅ GROK Recomendação: {}",
+            if guidance.approval_recommendation {
+                "APROVADO"
+            } else {
+                "REJEITADO"
+            }
+        );
         println!("📊 Avaliação: {}", guidance.feasibility_assessment);
 
         Ok(guidance)
     }
 
     /// 🔥 CLAUDE - Plano de ação detalhado
-    pub async fn claude_action_planning(&self,
+    pub async fn claude_action_planning(
+        &self,
         gemini_analysis: &GeminiAnalysis,
-        grok_guidance: &GrokGuidance
+        grok_guidance: &GrokGuidance,
     ) -> Result<ClaudePlan> {
         println!("🔥 CLAUDE: Criando plano de ação detalhado...");
 
         // Chain of Thoughts integrado
         let plan = ClaudePlan {
-            main_task: format!("EXECUTAR: {} com {}",
-                gemini_analysis.intent,
-                gemini_analysis.complexity_level),
+            main_task: format!(
+                "EXECUTAR: {} com {}",
+                gemini_analysis.intent, gemini_analysis.complexity_level
+            ),
             subtasks: self.generate_subtasks(gemini_analysis, grok_guidance),
             task_delegation: self.delegate_tasks(gemini_analysis),
             execution_chain: self.create_execution_chain(gemini_analysis),
@@ -230,7 +235,12 @@ impl TrinityCoordinator {
 
         // Simulação de execução coordenada
         for (i, subtask) in plan.subtasks.iter().enumerate() {
-            println!("📋 Subtarefa {}: {} -> {:?}", i+1, subtask.description, subtask.assigned_to);
+            println!(
+                "📋 Subtarefa {}: {} -> {:?}",
+                i + 1,
+                subtask.description,
+                subtask.assigned_to
+            );
         }
 
         println!("✅ EXECUÇÃO COORDENADA CONCLUÍDA!");
@@ -242,7 +252,8 @@ impl TrinityCoordinator {
 
     fn extract_keywords(&self, input: &str) -> Vec<String> {
         // Extração de keywords contextuais
-        input.split_whitespace()
+        input
+            .split_whitespace()
             .filter(|word| word.len() > 3)
             .map(|word| word.to_lowercase())
             .collect()
@@ -280,15 +291,27 @@ impl TrinityCoordinator {
     fn assess_complexity(&self, input: &str) -> u8 {
         let mut score = 5u8;
 
-        if input.len() > 50 { score += 1; }
-        if input.contains("morder") { score += 2; }
-        if input.contains("devorar") { score += 3; }
-        if input.contains("god") { score += 2; }
+        if input.len() > 50 {
+            score += 1;
+        }
+        if input.contains("morder") {
+            score += 2;
+        }
+        if input.contains("devorar") {
+            score += 3;
+        }
+        if input.contains("god") {
+            score += 2;
+        }
 
         std::cmp::min(score, 10)
     }
 
-    fn generate_subtasks(&self, analysis: &GeminiAnalysis, _guidance: &GrokGuidance) -> Vec<SubTask> {
+    fn generate_subtasks(
+        &self,
+        analysis: &GeminiAnalysis,
+        _guidance: &GrokGuidance,
+    ) -> Vec<SubTask> {
         vec![
             SubTask {
                 id: "1".to_string(),
@@ -367,7 +390,9 @@ impl TrinityCoordinator {
         println!("");
 
         // 3. CLAUDE: Planejamento detalhado
-        let claude_plan = self.claude_action_planning(&gemini_analysis, &grok_guidance).await?;
+        let claude_plan = self
+            .claude_action_planning(&gemini_analysis, &grok_guidance)
+            .await?;
         println!("");
 
         // 4. CONSENSO: Gemini + Grok validam plano

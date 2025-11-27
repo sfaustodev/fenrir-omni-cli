@@ -1,6 +1,7 @@
 // --- ARQUIVOS DE MÓDULO ---
 // FENRIR GOD MODE - Sistema operacional completo
 mod agent_manifest;
+mod api_keys;
 mod basic_interactive;
 mod config;
 mod executor;
@@ -16,6 +17,9 @@ mod starship;
 mod task_management;
 mod terminal;
 mod venz_agent;
+mod ui_huh;
+mod cotoa_async;
+mod cline_integration;
 
 // --- IMPORTS (use) ---
 // Agora a gente chama as funções dos *nossos* módulos.
@@ -33,13 +37,13 @@ use std::io::{self, Write};
 use std::time::Duration;
 use task_management::{chain_coordinator::ChainOfCaralhoManager, tarefinha_mode::TarefinhaMode};
 use terminal::detect_terminal_capabilities;
+use cotoa_async::CotoaEngine;
 
 fn matches_command(input: &str, commands: &[&str]) -> bool {
     commands.iter().any(|cmd| input.starts_with(cmd))
 }
 
-#[tokio::main]
-async fn main() {
+#[tokio::main] async fn main() {
     let args: Vec<String> = env::args().collect();
     let pb = ProgressBar::new_spinner(); // Spinner pra gente ver rodando
 
@@ -135,10 +139,26 @@ async fn main() {
     } else if args.len() > 1 && args[1] == "--chain" {
         // Modo Chain-of-Caralho - Sistema de tarefinhas
         println!("🔥🔥🔥 FENRIR CHAIN-OF-CARALHO - SISTEMA HIERÁRQUICO 🔥🔥🔥");
+        // 🔥 COTOA ASYNC ENGINE INTEGRATION
+        println!("⚡ COTOA ASYNC ENGINE: STARTING");
+        let cotoa = CotoaEngine::new();
+        // Example usage in chain mode:
+        cotoa.add_task("Inicializando COTOA Engine".to_string()).await.unwrap();
+        cotoa.add_task("Verificando recursos Cline".to_string()).await.unwrap();
+        
+        let handle = tokio::spawn(async move {
+            cotoa.run_loop().await.unwrap();
+        });
+        
+        // Original Sync Chain Logic
         let mut chain = ChainOfCaralhoManager::new();
         if let Err(e) = start_chain_mode(&mut chain).await {
             eprintln!("❌ Erro no modo Chain: {}", e);
         }
+        
+        // Wait for async to finish if needed, or let it run in bg
+        // handle.await.unwrap();
+
     } else if args.len() > 1 && args[1] == "--tarefinha" {
         // Modo Tarefinha - Garçom Claudão
         println!("🎯🍽️ FENRIR TAREFINHA MODE - GARÇOM CLAUDÃO 🍽️🎯");
@@ -156,6 +176,12 @@ async fn main() {
         println!("💀 Sem IA pra não dar merda - comandos diretos");
         println!("🥷 Venz aguardando ordens sem censura");
         println!("🔒 Proteções anti-rosnar ativas");
+        
+        // ⚡ HUH UI DEMO CHECK
+        if args.len() > 1 && args[1] == "--ui-test" {
+            ui_huh::run_demo().unwrap();
+            return;
+        }
 
         pb.finish_with_message("FENRIR BASIC READY!");
 

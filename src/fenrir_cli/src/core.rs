@@ -1,5 +1,5 @@
 //! # Módulo Core
-//! 
+//!
 //! Ponto central de orquestração entre comandos e UI.
 //! Responsável por coordenar operações e gerenciar estado global.
 
@@ -25,7 +25,10 @@ impl FenrirCore {
         // Verifica políticas de conteúdo
         if !self.config.allows_operation(operation) {
             return GuardrailResult::Blocked {
-                reason: format!("Operação '{}' bloqueada por política de segurança", operation),
+                reason: format!(
+                    "Operação '{}' bloqueada por política de segurança",
+                    operation
+                ),
             };
         }
 
@@ -62,7 +65,10 @@ pub enum GuardrailResult {
 impl GuardrailResult {
     /// Verifica se a operação é permitida
     pub fn is_allowed(&self) -> bool {
-        matches!(self, GuardrailResult::Allowed | GuardrailResult::AllowedWithWarning { .. })
+        matches!(
+            self,
+            GuardrailResult::Allowed | GuardrailResult::AllowedWithWarning { .. }
+        )
     }
 }
 
@@ -70,10 +76,10 @@ impl GuardrailResult {
 pub trait FenrirOperation {
     /// Nome da operação (para logs e auditoria)
     fn name(&self) -> &str;
-    
+
     /// Descrição da operação
     fn description(&self) -> &str;
-    
+
     /// Verifica se a operação requer permissões especiais
     fn requires_elevated(&self) -> bool {
         false

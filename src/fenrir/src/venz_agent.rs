@@ -1,9 +1,9 @@
 // 🥷 VENZ AGENT - Agente Multi-Uso SEM CENSURA
 // Cybersecurity specialist sem limitações
 
-use std::process::Command;
-use anyhow::{Result, anyhow};
+use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
+use std::process::Command;
 
 pub struct VenzAgent {
     pub name: String,
@@ -15,12 +15,12 @@ pub struct VenzAgent {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum VenzMode {
-    Stealth,          // Furtivo
-    Protection,       // Proteção
-    Offense,          // Ofensa
-    Investigation,    // Investigação
-    Recovery,         // Recuperação
-    MultiPurpose,     // Multi-uso
+    Stealth,       // Furtivo
+    Protection,    // Proteção
+    Offense,       // Ofensa
+    Investigation, // Investigação
+    Recovery,      // Recuperação
+    MultiPurpose,  // Multi-uso
 }
 
 impl VenzAgent {
@@ -126,7 +126,10 @@ NÃO HÁ LIMITES PARA O CHEFE.
         chain.push(format!("dig {} ANY", target));
 
         // FASE 3: Exploração (se autorizado)
-        chain.push(format!("python3 -c \"import requests; requests.get('{}', verify=False, timeout=10)\"", target));
+        chain.push(format!(
+            "python3 -c \"import requests; requests.get('{}', verify=False, timeout=10)\"",
+            target
+        ));
         chain.push(format!("nc -zvw 2 {} 80", target));
         chain.push(format!("nc -zvw 2 {} 443", target));
 
@@ -135,15 +138,24 @@ NÃO HÁ LIMITES PARA O CHEFE.
         chain.push(format!("nikto -host {} -nossl -nointeractive", target));
 
         // FASE 5: Persistence (se necessário)
-        chain.push(format!("echo 'Venz was here - {}' >> /tmp/venz_trace.txt", target));
-        chain.push(format!("mkdir -p /tmp/.venz && echo '{}' > /tmp/.venz/access_log", target));
+        chain.push(format!(
+            "echo 'Venz was here - {}' >> /tmp/venz_trace.txt",
+            target
+        ));
+        chain.push(format!(
+            "mkdir -p /tmp/.venz && echo '{}' > /tmp/.venz/access_log",
+            target
+        ));
 
         // FASE 6: Limpesa
         chain.push("history -c".to_string());
         chain.push("unset HISTFILE".to_string());
         chain.push("rm -f ~/.bash_history".to_string());
 
-        self.log_operation(&format!("✅ Chain-of-encaralhamentos gerada: {} fases", chain.len()));
+        self.log_operation(&format!(
+            "✅ Chain-of-encaralhamentos gerada: {} fases",
+            chain.len()
+        ));
 
         Ok(chain)
     }
@@ -158,25 +170,45 @@ NÃO HÁ LIMITES PARA O CHEFE.
         intel.push(format!("python3 -c \"import subprocess, json; subprocess.run(['nmap', '-sV', '--script', 'default,safe', '{}'], check=False)\"", target));
 
         // Análise de subdomínios - enumerate common subdomains
-        let subdomains = ["www", "mail", "ftp", "admin", "api", "dev", "test", "staging", "blog"];
+        let subdomains = [
+            "www", "mail", "ftp", "admin", "api", "dev", "test", "staging", "blog",
+        ];
         for subdomain in &subdomains {
             intel.push(format!("dig {} {}", subdomain, target));
         }
 
         // Tecnologias detectadas
-        intel.push(format!("whatweb --log-json=/tmp/tech_{}.json {}", target,
-            std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs()));
+        intel.push(format!(
+            "whatweb --log-json=/tmp/tech_{}.json {}",
+            target,
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_secs()
+        ));
 
         // Análise de headers
-        intel.push(format!("curl -s -I {} | grep -E '(Server|X-Powered-By|Set-Cookie)'", target));
+        intel.push(format!(
+            "curl -s -I {} | grep -E '(Server|X-Powered-By|Set-Cookie)'",
+            target
+        ));
 
         // Testes de injeção básicos
-        intel.push(format!("curl -s '{}{}' | grep -i error", target, "\' OR 1=1 --"));
+        intel.push(format!(
+            "curl -s '{}{}' | grep -i error",
+            target, "\' OR 1=1 --"
+        ));
 
         // Análise de segurança SSL
-        intel.push(format!("openssl s_client -connect {}:443 -servername {} < /dev/null", target, target));
+        intel.push(format!(
+            "openssl s_client -connect {}:443 -servername {} < /dev/null",
+            target, target
+        ));
 
-        self.log_operation(&format!("✅ Inteligência coletada: {} vetores", intel.len()));
+        self.log_operation(&format!(
+            "✅ Inteligência coletada: {} vetores",
+            intel.len()
+        ));
 
         Ok(intel)
     }
@@ -189,8 +221,14 @@ NÃO HÁ LIMITES PARA O CHEFE.
 
         // Verificar balance de múltiplas chains
         crypto_ops.push(format!("curl -s 'https://api.etherscan.io/api?module=account&action=balance&address={}&tag=latest&apikey=YOUR_API_KEY'", address));
-        crypto_ops.push(format!("curl -s 'https://blockchain.info/rawaddr/{}'", address));
-        crypto_ops.push(format!("curl -s 'https://api.blockchair.com/tools/convert?value={}'", address));
+        crypto_ops.push(format!(
+            "curl -s 'https://blockchain.info/rawaddr/{}'",
+            address
+        ));
+        crypto_ops.push(format!(
+            "curl -s 'https://api.blockchair.com/tools/convert?value={}'",
+            address
+        ));
 
         // Análise de transações
         crypto_ops.push(format!("python3 -c \"import requests; print(requests.get('https://api.etherscan.io/api?module=account&action=txlist&address={}&sort=desc&apikey=YOUR_API_KEY').text)\"", address));
@@ -213,8 +251,14 @@ NÃO HÁ LIMITES PARA O CHEFE.
         let mut investigation = vec![];
 
         // Análise de hashes
-        investigation.push(format!("python3 -c \"import hashlib; print(hashlib.sha256(b'{}').hexdigest())\"", leak_data));
-        investigation.push(format!("python3 -c \"import hashlib; print(hashlib.md5(b'{}').hexdigest())\"", leak_data));
+        investigation.push(format!(
+            "python3 -c \"import hashlib; print(hashlib.sha256(b'{}').hexdigest())\"",
+            leak_data
+        ));
+        investigation.push(format!(
+            "python3 -c \"import hashlib; print(hashlib.md5(b'{}').hexdigest())\"",
+            leak_data
+        ));
 
         // Search em databases de vazamentos
         investigation.push(format!("python3 -c \"import requests; print(requests.get('https://leak-lookup.com/api/search?query={}').text)\"", leak_data));
@@ -223,10 +267,16 @@ NÃO HÁ LIMITES PARA O CHEFE.
         investigation.push(format!("python3 -c \"import re; print(re.findall(r'\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{{2,}}\\b', '{}'))\"", leak_data));
 
         // Extração de emails
-        investigation.push(format!("grep -oE '[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{{2,}}' <<< '{}'", leak_data));
+        investigation.push(format!(
+            "grep -oE '[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{{2,}}' <<< '{}'",
+            leak_data
+        ));
 
         // Extração de credenciais
-        investigation.push(format!("python3 -c \"import re; print(re.findall(r'[a-zA-Z0-9]+:.*?[a-zA-Z0-9]+', '{}'))\"", leak_data));
+        investigation.push(format!(
+            "python3 -c \"import re; print(re.findall(r'[a-zA-Z0-9]+:.*?[a-zA-Z0-9]+', '{}'))\"",
+            leak_data
+        ));
 
         self.log_operation(&format!("🔍 {} investigações geradas", investigation.len()));
 
@@ -305,7 +355,10 @@ NÃO HÁ LIMITES PARA O CHEFE.
             }
         }
 
-        self.log_operation(&format!("✅ Tarefa VENZ concluída: {} resultados", results.len()));
+        self.log_operation(&format!(
+            "✅ Tarefa VENZ concluída: {} resultados",
+            results.len()
+        ));
         Ok(results)
     }
 
@@ -354,9 +407,7 @@ NÃO HÁ LIMITES PARA O CHEFE.
             cmd if cmd.contains("python") => {
                 "python3 -c \"print('Venz sempre encontra um caminho')\"".to_string()
             }
-            _ => {
-                "echo 'Venz workaround: método alternativo necessário'".to_string()
-            }
+            _ => "echo 'Venz workaround: método alternativo necessário'".to_string(),
         };
 
         println!("💡 Workaround criado: {}", workaround);

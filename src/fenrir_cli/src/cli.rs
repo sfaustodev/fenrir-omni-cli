@@ -1,5 +1,5 @@
 //! # Módulo CLI
-//! 
+//!
 //! Define a estrutura de comandos e subcomandos usando `clap`.
 //! Responsável por parsear argumentos e rotear para os handlers apropriados.
 
@@ -82,6 +82,13 @@ pub enum Commands {
         #[arg(short, long)]
         force: bool,
     },
+
+    /// Automação de workflow Git + GitHub PR (status -> add -> commit -> push -> pr)
+    Gitar {
+        /// Mensagem de commit (opcional, se não informado usa default)
+        #[arg(short, long)]
+        message: Option<String>,
+    },
 }
 
 /// Função principal que executa o CLI
@@ -116,17 +123,18 @@ fn execute_command(cmd: Commands, config: &Config, verbose: bool) -> Result<()> 
             scan_type,
             timeout,
             threads,
-        } => {
-            commands::scan::execute(&target, &port_range, &scan_type, timeout, threads, config, verbose)
-        }
-        Commands::Rules { list, reload } => {
-            commands::rules::execute(list, reload, config)
-        }
-        Commands::About => {
-            commands::about::execute()
-        }
-        Commands::Init { force } => {
-            commands::init::execute(force)
-        }
+        } => commands::scan::execute(
+            &target,
+            &port_range,
+            &scan_type,
+            timeout,
+            threads,
+            config,
+            verbose,
+        ),
+        Commands::Rules { list, reload } => commands::rules::execute(list, reload, config),
+        Commands::About => commands::about::execute(),
+        Commands::Init { force } => commands::init::execute(force),
+        Commands::Gitar { message } => commands::gitar::execute(message, verbose),
     }
 }
