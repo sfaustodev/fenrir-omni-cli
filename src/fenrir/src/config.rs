@@ -62,10 +62,10 @@ pub struct PathConfig {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ScanDepth {
-    Shallow,     // Processos visíveis
-    Deep,        // Arquivos e configurações
-    Complete,    // Sistema completo incluindo firmware
-    Brutal,      // TUDO + memória criptografada
+    Shallow,  // Processos visíveis
+    Deep,     // Arquivos e configurações
+    Complete, // Sistema completo incluindo firmware
+    Brutal,   // TUDO + memória criptografada
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -80,11 +80,11 @@ pub enum TargetType {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ExtractionDepth {
-    Surface,      // Acesso público
-    Deep,         // Arquivos do usuário
-    Complete,     // Sistema completo
-    System,       // Arquivos de sistema
-    Brutal,       // Extração brutal completa
+    Surface,  // Acesso público
+    Deep,     // Arquivos do usuário
+    Complete, // Sistema completo
+    System,   // Arquivos de sistema
+    Brutal,   // Extração brutal completa
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -1,5 +1,5 @@
 //! # Módulo UI
-//! 
+//!
 //! Responsável por toda a apresentação visual do Fenrir CLI.
 //! Inclui banner ASCII, cores, formatação de output e helpers de UX.
 
@@ -9,8 +9,8 @@ mod colors;
 pub use banner::*;
 pub use colors::*;
 
-use colored::Colorize;
 use crate::VERSION;
+use colored::Colorize;
 
 /// Imprime o header completo do Fenrir (banner + versão + modo)
 pub fn print_header() {
@@ -22,7 +22,12 @@ pub fn print_header() {
         VERSION.yellow(),
         "Modo: CLI interativo em Rust".dimmed()
     );
-    println!("  {}", "Devorador de CLIs, orquestrador de ferramentas.".italic().dimmed());
+    println!(
+        "  {}",
+        "Devorador de CLIs, orquestrador de ferramentas."
+            .italic()
+            .dimmed()
+    );
     println!();
     print_separator();
 }
@@ -30,11 +35,15 @@ pub fn print_header() {
 /// Imprime lista de comandos disponíveis
 pub fn print_available_commands() {
     println!();
-    println!("  {} {}", "Uso:".bright_white().bold(), "fenrir <COMMAND> [OPTIONS]".cyan());
+    println!(
+        "  {} {}",
+        "Uso:".bright_white().bold(),
+        "fenrir <COMMAND> [OPTIONS]".cyan()
+    );
     println!();
     println!("  {}", "Comandos disponíveis:".bright_white().bold());
     println!();
-    
+
     let commands = [
         ("scan", "Executa varredura de segurança em um alvo"),
         ("rules", "Exibe e gerencia regras de segurança (guardrails)"),
@@ -110,5 +119,10 @@ pub fn list_bool(key: &str, value: bool) {
         "○".bright_red()
     };
     let status = if value { "ativo" } else { "inativo" };
-    println!("    {} {} {}", indicator, format!("{}:", key).bright_cyan(), status.dimmed());
+    println!(
+        "    {} {} {}",
+        indicator,
+        format!("{}:", key).bright_cyan(),
+        status.dimmed()
+    );
 }

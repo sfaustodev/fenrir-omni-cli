@@ -1,5 +1,5 @@
 //! # Comando About
-//! 
+//!
 //! Exibe informações sobre o projeto Fenrir, incluindo versão,
 //! autores, links e um pouco do lore mitológico.
 
@@ -29,22 +29,22 @@ e as orquestra com o poder de um deus."#;
 pub fn execute() -> Result<()> {
     // Banner especial para about
     ui::print_banner();
-    
+
     println!();
     ui::section("Sobre o Projeto");
-    
+
     // Informações básicas
     println!();
     ui::list_item("Nome", "Fenrir CLI");
     ui::list_item("Versão", VERSION);
     ui::list_item("Linguagem", "Rust 🦀");
     ui::list_item("Licença", "MIT");
-    
+
     println!();
     ui::list_item("Repositório", "https://github.com/peluche/fenrir");
     ui::list_item("Documentação", "https://github.com/peluche/fenrir/docs");
     ui::list_item("Issues", "https://github.com/peluche/fenrir/issues");
-    
+
     // Descrição
     ui::section("Descrição");
     println!();
@@ -56,11 +56,11 @@ pub fn execute() -> Result<()> {
         "  {}",
         "Desenvolvida em Rust para máxima performance e segurança de memória.".dimmed()
     );
-    
+
     // Funcionalidades
     ui::section("Funcionalidades");
     println!();
-    
+
     let features = [
         ("🔍", "Varredura de portas e serviços"),
         ("🛡️", "Guardrails de segurança configuráveis"),
@@ -69,14 +69,14 @@ pub fn execute() -> Result<()> {
         ("⚡", "Alto desempenho com async/await"),
         ("🔒", "Segurança por design"),
     ];
-    
+
     for (icon, desc) in features {
         println!("    {} {}", icon, desc);
     }
-    
+
     // Lore
     ui::section("Lore: O Lobo que Devora os Deuses");
-    
+
     for line in FENRIR_LORE.lines() {
         if line.trim().is_empty() {
             println!();
@@ -84,24 +84,33 @@ pub fn execute() -> Result<()> {
             println!("  {}", line.italic().dimmed());
         }
     }
-    
+
     // Arte ASCII do lobo menor
     println!();
     print_wolf_art();
-    
+
     // Créditos
     ui::section("Créditos");
     println!();
-    println!("    {} Desenvolvido com {} por Fenrir Team", "▸".bright_magenta(), "❤".bright_red());
-    println!("    {} Inspirado na mitologia nórdica", "▸".bright_magenta());
+    println!(
+        "    {} Desenvolvido com {} por Fenrir Team",
+        "▸".bright_magenta(),
+        "❤".bright_red()
+    );
+    println!(
+        "    {} Inspirado na mitologia nórdica",
+        "▸".bright_magenta()
+    );
     println!("    {} Powered by Rust 🦀", "▸".bright_magenta());
-    
+
     println!();
     ui::print_separator();
     println!();
     println!(
         "  {}",
-        "\"Na cadeia do destino, até os deuses são presas.\"".italic().bright_cyan()
+        "\"Na cadeia do destino, até os deuses são presas.\""
+            .italic()
+            .bright_cyan()
     );
     println!("  {}", "- Völuspá (A Profecia da Vidente)".dimmed());
     println!();
@@ -122,7 +131,7 @@ fn print_wolf_art() {
                   ▀███████████▀
                     ▀▀▀▀▀▀▀▀
     "#;
-    
+
     for line in wolf.lines() {
         println!("{}", line.bright_yellow());
     }

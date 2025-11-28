@@ -1,9 +1,9 @@
 // 📋 TASK SYSTEM - Atomic development units
 // Professional task management with zero error margin
 
+use crate::task_management::team_profiles::{DeveloperLevel, DeveloperProfile};
 use serde::{Deserialize, Serialize};
 use std::time::{SystemTime, UNIX_EPOCH};
-use crate::task_management::team_profiles::{DeveloperProfile, DeveloperLevel};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TarefaFinha {
@@ -35,21 +35,21 @@ pub enum Priority {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Complexity {
-    Junior,    // Até Geminho consegue
-    Pleno,     // Pra Venz é tranquilo
-    Senior,    // Só Claudao resolve
-    GodMode,   // Nem o chefe duvida
+    Junior,  // Até Geminho consegue
+    Pleno,   // Pra Venz é tranquilo
+    Senior,  // Só Claudao resolve
+    GodMode, // Nem o chefe duvida
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum TarefaStatus {
-    Pending,     // Na fila
-    InProgress,  // Em execução
-    Completed,   // Feita e commitada
-    Failed,      // Precisa retry
-    Reviewing,   // Claudao revisando
-    Approved,    // Aprovada pelo senior
-    Rejected,    // Refazer
+    Pending,    // Na fila
+    InProgress, // Em execução
+    Completed,  // Feita e commitada
+    Failed,     // Precisa retry
+    Reviewing,  // Claudao revisando
+    Approved,   // Aprovada pelo senior
+    Rejected,   // Refazer
 }
 
 impl TarefaFinha {
@@ -92,7 +92,7 @@ impl TarefaFinha {
             SystemTime::now()
                 .duration_since(UNIX_EPOCH)
                 .unwrap()
-                .as_secs()
+                .as_secs(),
         );
         self.attempts += 1;
     }
@@ -103,7 +103,7 @@ impl TarefaFinha {
             SystemTime::now()
                 .duration_since(UNIX_EPOCH)
                 .unwrap()
-                .as_secs()
+                .as_secs(),
         );
         self.artifacts = artifacts;
     }
@@ -196,7 +196,8 @@ pub struct TarefaFinhaBatch {
 impl TarefaFinhaBatch {
     pub fn new(parent_goal: String, created_by: String) -> Self {
         Self {
-            batch_id: format!("batch_{}",
+            batch_id: format!(
+                "batch_{}",
                 SystemTime::now()
                     .duration_since(UNIX_EPOCH)
                     .unwrap()
@@ -225,7 +226,8 @@ impl TarefaFinhaBatch {
             return 0.0;
         }
 
-        let completed = self.tarefinhas
+        let completed = self
+            .tarefinhas
             .iter()
             .filter(|t| matches!(t.status, TarefaStatus::Approved))
             .count();

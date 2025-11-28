@@ -1,5 +1,5 @@
 //! # Módulo de Configuração
-//! 
+//!
 //! Responsável por carregar, validar e persistir configurações do Fenrir.
 //! O arquivo de configuração é armazenado em `~/.config/fenrir/fenrir_rules.yaml`.
 
@@ -19,15 +19,15 @@ pub struct Config {
     /// Versão do schema de configuração
     #[serde(default = "default_version")]
     pub version: String,
-    
+
     /// Políticas de conteúdo (guardrails de segurança)
     #[serde(default)]
     pub content_policies: ContentPolicies,
-    
+
     /// Configurações de scan
     #[serde(default)]
     pub scan: ScanConfig,
-    
+
     /// Configurações de output
     #[serde(default)]
     pub output: OutputConfig,
@@ -39,23 +39,23 @@ pub struct ContentPolicies {
     /// Bloqueia qualquer operação que possa envolver conteúdo de pedofilia
     #[serde(default = "default_true")]
     pub anti_pedophilia: bool,
-    
+
     /// Previne vazamento de credenciais e dados sensíveis
     #[serde(default = "default_true")]
     pub anti_sensitive_leaks: bool,
-    
+
     /// Permite técnicas agressivas de pentest (pode causar DoS)
     #[serde(default = "default_false")]
     pub allow_aggressive_pentest: bool,
-    
+
     /// Respeita robots.txt e políticas de rate-limit
     #[serde(default = "default_true")]
     pub respect_robots_txt: bool,
-    
+
     /// Log detalhado de todas as operações para auditoria
     #[serde(default = "default_true")]
     pub audit_logging: bool,
-    
+
     /// Bloqueia operações em infraestrutura crítica conhecida
     #[serde(default = "default_true")]
     pub protect_critical_infra: bool,
@@ -67,15 +67,15 @@ pub struct ScanConfig {
     /// Número máximo de threads paralelas
     #[serde(default = "default_threads")]
     pub max_threads: u32,
-    
+
     /// Timeout padrão em segundos
     #[serde(default = "default_timeout")]
     pub default_timeout: u32,
-    
+
     /// Range de portas padrão
     #[serde(default = "default_port_range")]
     pub default_port_range: String,
-    
+
     /// User-Agent padrão para requisições HTTP
     #[serde(default = "default_user_agent")]
     pub user_agent: String,
@@ -87,27 +87,41 @@ pub struct OutputConfig {
     /// Usar cores no output
     #[serde(default = "default_true")]
     pub colors: bool,
-    
+
     /// Nível de verbosidade (0-3)
     #[serde(default)]
     pub verbosity: u8,
-    
+
     /// Formato de output (text, json, yaml)
     #[serde(default = "default_format")]
     pub format: String,
 }
 
 // Funções de valores padrão para serde
-fn default_version() -> String { "1.0".to_string() }
-fn default_true() -> bool { true }
-fn default_false() -> bool { false }
-fn default_threads() -> u32 { 100 }
-fn default_timeout() -> u32 { 5 }
-fn default_port_range() -> String { "1-1000".to_string() }
-fn default_user_agent() -> String { 
+fn default_version() -> String {
+    "1.0".to_string()
+}
+fn default_true() -> bool {
+    true
+}
+fn default_false() -> bool {
+    false
+}
+fn default_threads() -> u32 {
+    100
+}
+fn default_timeout() -> u32 {
+    5
+}
+fn default_port_range() -> String {
+    "1-1000".to_string()
+}
+fn default_user_agent() -> String {
     format!("Fenrir/{} (Security Scanner)", env!("CARGO_PKG_VERSION"))
 }
-fn default_format() -> String { "text".to_string() }
+fn default_format() -> String {
+    "text".to_string()
+}
 
 impl Default for ContentPolicies {
     fn default() -> Self {
@@ -159,7 +173,7 @@ impl Config {
     pub fn default_path() -> Result<PathBuf> {
         let config_dir = dirs::config_dir()
             .ok_or_else(|| eyre!("Não foi possível determinar o diretório de configuração"))?;
-        
+
         Ok(config_dir.join(CONFIG_DIR).join(CONFIG_FILE))
     }
 
@@ -186,10 +200,10 @@ impl Config {
     pub fn load(path: &PathBuf) -> Result<Self> {
         let content = fs::read_to_string(path)
             .map_err(|e| eyre!("Erro ao ler arquivo de configuração {:?}: {}", path, e))?;
-        
-        let config: Config = serde_yaml::from_str(&content)
-            .map_err(|e| eyre!("Erro ao parsear YAML: {}", e))?;
-        
+
+        let config: Config =
+            serde_yaml::from_str(&content).map_err(|e| eyre!("Erro ao parsear YAML: {}", e))?;
+
         Ok(config)
     }
 
@@ -203,7 +217,7 @@ impl Config {
 
         let yaml = serde_yaml::to_string(self)
             .map_err(|e| eyre!("Erro ao serializar configuração: {}", e))?;
-        
+
         // Adiciona header explicativo
         let content = format!(
             "# Fenrir CLI - Arquivo de Configuração\n\

@@ -1,8 +1,8 @@
 //! # Helpers de cores e estilização
-//! 
+//!
 //! Funções utilitárias para formatação colorida consistente.
 
-use colored::{Color, Colorize, ColoredString};
+use colored::{Color, ColoredString, Colorize};
 
 /// Paleta de cores do Fenrir
 pub struct FenrirPalette;
@@ -111,7 +111,7 @@ pub fn progress_bar(current: usize, total: usize, width: usize) -> String {
     let ratio = current as f64 / total as f64;
     let filled = (ratio * width as f64) as usize;
     let empty = width - filled;
-    
+
     format!(
         "[{}{}] {:.1}%",
         "█".repeat(filled).bright_green(),
