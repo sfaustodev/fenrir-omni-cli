@@ -1,1 +1,2 @@
 - always sync with github repo and cargo build test and all CLIs used test prompt sending "recursive testing passforward incremeting Counter=1 (Claude, insert your CLI name)" so when it comes back to you we know everyone available and if dont come back to you go fix or find a workarround
+- just run fenrir in the terminal to enter interactive mdoe
