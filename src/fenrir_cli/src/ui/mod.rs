@@ -49,6 +49,7 @@ pub fn print_available_commands() {
         ("rules", "Exibe e gerencia regras de segurança (guardrails)"),
         ("about", "Informações sobre o projeto Fenrir"),
         ("init", "Inicializa configuração padrão"),
+        ("huh", "Interface interativa estilo Huh? para montar scans"),
         ("help", "Mostra esta ajuda ou ajuda de um subcomando"),
     ];
 

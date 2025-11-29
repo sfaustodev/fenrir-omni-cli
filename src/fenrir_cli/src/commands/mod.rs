@@ -5,6 +5,7 @@
 
 pub mod about;
 pub mod gitar;
+pub mod huh_ui;
 pub mod init;
 pub mod rules;
 pub mod scan;
