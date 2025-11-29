@@ -17,12 +17,13 @@ impl HuhEmulator {
 
     /// Displays a "Huh"-style text input
     pub fn input(&self, label: &str, placeholder: Option<&str>) -> anyhow::Result<String> {
-        let mut input = Input::<String>::with_theme(&ColorfulTheme::default());
-        input.with_prompt(label);
+        let theme = ColorfulTheme::default();
+        let mut input = Input::<String>::with_theme(&theme);
+        input = input.with_prompt(label);
         if let Some(ph) = placeholder {
-            input.default(ph.to_string());
+            input = input.default(ph.to_string());
         }
-        
+
         let value = input.interact_text()?;
         Ok(value)
     }

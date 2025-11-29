@@ -3,8 +3,13 @@
 
 use std::process::Command;
 use std::io::{self, Write};
+use uuid::Uuid;
+use std::time::Duration;
+use tokio::time::timeout;
 
+#[derive(Debug, Clone)]
 pub struct FenrirTask {
+    pub id: Uuid,
     pub ia_explanation: String,
     pub task_type: String,
     pub command_to_run: Option<String>,
