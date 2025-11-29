@@ -89,6 +89,9 @@ pub enum Commands {
         #[arg(short, long)]
         message: Option<String>,
     },
+
+    /// Interface interativa estilo Huh? para montar comandos
+    Huh,
 }
 
 /// Função principal que executa o CLI
@@ -136,5 +139,6 @@ fn execute_command(cmd: Commands, config: &Config, verbose: bool) -> Result<()> 
         Commands::About => commands::about::execute(),
         Commands::Init { force } => commands::init::execute(force),
         Commands::Gitar { message } => commands::gitar::execute(message, verbose),
+        Commands::Huh => commands::huh_ui::execute(config, verbose),
     }
 }

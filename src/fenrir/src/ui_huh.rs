@@ -1,6 +1,5 @@
-use dialoguer::{theme::ColorfulTheme, Input, Select, MultiSelect};
+use dialoguer::{theme::ColorfulTheme, Input, Select};
 use console::{style, Term};
-use std::io::Write;
 
 /// 🐺 FENRIR HUH EMULATOR - "Plagio na cara dura"
 /// Replicates the UX of https://github.com/charmbracelet/huh
@@ -18,8 +17,8 @@ impl HuhEmulator {
     /// Displays a "Huh"-style text input
     pub fn input(&self, label: &str, placeholder: Option<&str>) -> anyhow::Result<String> {
         let theme = ColorfulTheme::default();
-        let mut input = Input::<String>::with_theme(&theme);
-        input = input.with_prompt(label);
+        let mut input = Input::<String>::with_theme(&theme).with_prompt(label.to_string());
+
         if let Some(ph) = placeholder {
             input = input.default(ph.to_string());
         }
