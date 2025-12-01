@@ -46,3 +46,4 @@ mime_guess = { workspace = true }
 async-trait = "0.1"
 futures = { workspace = true }
 stderr = "0.2"
+dialoguer = "0.12"

@@ -1,6 +1,7 @@
 mod multi_ai_orchestrator;
 mod codex;
 mod guardrails;
+mod oraculo;
 
 use clap::{Parser, Subcommand};
 use std::env;
@@ -132,7 +133,7 @@ async fn handle_interactive_mode() -> Result<(), Box<dyn std::error::Error>> {
                 print_system_status();
             }
             cmd if !cmd.is_empty() => {
-                if let Err(e) = orchestrator.parse_gemini_prompt(cmd) {
+                if let Err(e) = orchestrator.ingest_prompt(cmd).await {
                     eprintln!("❌ Error parsing command: {}", e);
                     continue;
                 }
@@ -168,7 +169,7 @@ async fn handle_execute(prompt: String, model: Option<String>, no_guardrails: bo
             "qwen" => AIModel::Qwen,
             "codex" => AIModel::Codex,
             "venice" => AIModel::Venice,
-            "gemini" => AIModel::Gemini,
+            "hierarchy" => AIModel::Hierarchy,
             _ => return Err("Invalid AI model".into()),
         };
 
@@ -185,7 +186,7 @@ async fn handle_execute(prompt: String, model: Option<String>, no_guardrails: bo
         let result = orchestrator.execute_task(&task).await?;
         println!("📋 Result: {}", result);
     } else {
-        orchestrator.parse_gemini_prompt(&prompt)?;
+        orchestrator.ingest_prompt(&prompt).await?;
         let results = orchestrator.execute_all_tasks().await?;
         for result in results {
             println!("📋 Result: {}", result);
@@ -254,7 +255,7 @@ async fn handle_chain(chain: String, format: Option<String>) -> Result<(), Box<d
         let prompt = cmd.trim();
         println!("\n🔗 Step {}: {}", i + 1, prompt);
 
-        orchestrator.parse_gemini_prompt(prompt)?;
+        orchestrator.ingest_prompt(prompt).await?;
         let results = orchestrator.execute_all_tasks().await?;
 
         for result in results {
@@ -295,7 +296,7 @@ fn print_system_status() {
 🔥 FENRIR SYSTEM STATUS:
 
 🧠 AI MODELS:
-  ✅ Gemini: Master Controller (Active)
+  ✅ AI Hierarchy: Master Controller (Active)
   ✅ Claude: Primary Executor (Guardrails: ON)
   ✅ Qwen: Secondary Executor (Guardrails: ON)
   ✅ Codex: CLI Interface (API: Configured)

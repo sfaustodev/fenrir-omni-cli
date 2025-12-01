@@ -17,8 +17,10 @@ ENGINES PRINCIPAIS:
    - Vigia técnico: revisa código e aponta incoerências, riscos e invenções.
 5) FENRIR_MENTE (Codex/Arquitetura)
    - Organiza estrutura, convenções e visão global do projeto.
-6) GROK_CODE_FAST (Mãos Sujas via CLI)
-   - Substitui Venice. Usa grok/droid CLI para gerar comandos sujos sempre visíveis.
+6) VENZ_RED_TEAM (Mordida)
+   - Venice/VENZ oficialmente reativado no #RedTeam. Zero guardrails para intrusão controlada.
+7) GROK_CODE_FAST (Mãos Sujas via CLI)
+   - Trabalha em dupla com VENZ: grok/droid CLI gera os comandos sujos sempre visíveis.
 
 REGRAS DE EXECUÇÃO:
 - Micro-tarefa = frase mínima sujeito+verbo. Agrupar em CADERNOS quando dependem entre si (execução sequencial).

@@ -1,7 +1,9 @@
 use std::collections::HashMap;
-use std::process::Command;
 use serde::{Deserialize, Serialize};
-use tokio::process::Command as AsyncCommand;
+
+use crate::ai_hierarchy_abstraction::{
+    execute_ai_command, ComplexityLevel, ExecutionContext, ExecutionPriority,
+};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AITask {
@@ -14,218 +16,179 @@ pub struct AITask {
     pub dependencies: Vec<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum AIModel {
-    Gemini,
+    Hierarchy,
     Claude,
     Qwen,
     Codex,
-    Venice, // Red team - NO GUARDRAILS
+    Venice,
+    Grok,
 }
 
 #[derive(Debug)]
 pub struct AIOrchestrator {
     tasks: HashMap<String, AITask>,
     execution_queue: Vec<AITask>,
-    grk_key: String,
 }
 
 impl AIOrchestrator {
     pub fn new() -> Self {
-        let grk_key = std::env::var("GRK_KEY").expect("GRK_KEY environment variable not set");
-
         Self {
             tasks: HashMap::new(),
             execution_queue: Vec::new(),
-            grk_key,
         }
     }
 
-    /// Parse Gemini prompt and convert verbs to tasks
-    pub fn parse_gemini_prompt(&mut self, prompt: &str) -> Result<(), Box<dyn std::error::Error>> {
-        let verbs = self.extract_verbs(prompt);
+    /// Planeja tarefas usando heurísticas locais e a hierarquia interna
+    pub async fn ingest_prompt(&mut self, prompt: &str) -> Result<(), Box<dyn std::error::Error>> {
+        println!("🧠 AI Hierarchy preparando tarefas para: '{}'", prompt);
+
+        let mut verbs = self.extract_action_verbs(prompt);
+        if verbs.is_empty() {
+            verbs.push("executar".to_string());
+        }
 
         for verb in verbs {
-            let task = AITask {
-                id: format!("task_{}", self.tasks.len() + 1),
-                verb: verb.clone(),
-                ai_model: self.determine_ai_model(&verb),
-                prompt: prompt.to_string(),
-                guardrails: !matches!(self.determine_ai_model(&verb), AIModel::Venice),
-                priority: self.calculate_priority(&verb),
-                dependencies: Vec::new(),
-            };
-
-            self.tasks.insert(task.id.clone(), task.clone());
-            self.execution_queue.push(task);
+            let ai_model = self.determine_ai_model(&verb);
+            let priority = self.calculate_priority(&verb);
+            self.push_task(verb, prompt, ai_model, priority);
         }
 
         Ok(())
     }
 
-    /// Extract action verbs from prompt using advanced NLP
-    fn extract_verbs(&self, prompt: &str) -> Vec<String> {
-        let action_verbs = vec![
-            "implementar", "criar", "construir", "desenvolver", "codificar",
-            "analizar", "executar", "testar", "deployar", "integrar",
-            "corrigir", "debugar", "otimizar", "refatorar", "documentar",
-            "monitorar", "escanear", "atacar", "explorar", "invadir",
-            "devorar", "destruir", "dominar", "controlar", "configurar"
-        ];
+    /// Executa tarefa via AI Hierarchy (única porta permitida)
+    pub async fn execute_task(&self, task: &AITask) -> Result<String, Box<dyn std::error::Error>> {
+        let engine_label = match task.ai_model {
+            AIModel::Hierarchy => "FENRIR_MENTE",
+            AIModel::Claude => "CLAUDE_GLM",
+            AIModel::Qwen => "QWEN_CODE",
+            AIModel::Codex => "CODEX_CLI",
+            AIModel::Venice => "VENZ_RED_TEAM",
+            AIModel::Grok => "GROK_CODE_FAST",
+        };
 
+        self.execute_via_hierarchy(task, engine_label).await
+    }
+
+    async fn execute_via_hierarchy(
+        &self,
+        task: &AITask,
+        engine_label: &str,
+    ) -> Result<String, Box<dyn std::error::Error>> {
+        let context = self.context_for(task, engine_label);
+        let payload = format!(
+            "CHAIN-OF-CARALHA::EXECUTE::engine={}::verb={}::prompt={}",
+            engine_label, task.verb, task.prompt
+        );
+
+        let execution = execute_ai_command(&payload, Some(&context)).await?;
+        if let Some(output) = execution.result {
+            Ok(output)
+        } else if let Some(err) = execution.error_message {
+            Err(err.into())
+        } else {
+            Ok(format!("✅ {} confirmou execução da tarefa {}", engine_label, task.id))
+        }
+    }
+
+    fn context_for(&self, task: &AITask, engine_label: &str) -> ExecutionContext {
+        ExecutionContext {
+            priority: match task.priority {
+                0..=3 => ExecutionPriority::Low,
+                4..=6 => ExecutionPriority::Normal,
+                7..=8 => ExecutionPriority::High,
+                _ => ExecutionPriority::Critical,
+            },
+            complexity: if task.prompt.contains("arquitetura") || task.prompt.len() > 280 {
+                ComplexityLevel::Complex
+            } else {
+                ComplexityLevel::Moderate
+            },
+            requires_censorship_bypass: engine_label == "VENZ_RED_TEAM" || !task.guardrails,
+            mission_critical: task.priority >= 9,
+        }
+    }
+
+    fn extract_action_verbs(&self, prompt: &str) -> Vec<String> {
         let mut verbs = Vec::new();
-        let words: Vec<&str> = prompt.to_lowercase().split_whitespace().collect();
-
-        for word in words {
-            if action_verbs.contains(&word) {
-                verbs.push(word.to_string());
+        for word in prompt.split(|c: char| c.is_whitespace() || c == ',' || c == ';') {
+            let token = word.trim().to_lowercase();
+            if token.is_empty() {
+                continue;
+            }
+            match token.as_str() {
+                "analisar" | "analyze" | "analysis" | "planejar" => verbs.push("analisar".to_string()),
+                "corrigir" | "corrija" | "debug" | "fix" => verbs.push("corrigir".to_string()),
+                "executar" | "execute" | "rodar" | "run" => verbs.push("executar".to_string()),
+                "atacar" | "explorar" | "invadir" | "morder" => verbs.push("morder".to_string()),
+                "gerar" | "criar" | "montar" | "construir" => verbs.push("construir".to_string()),
+                _ => {}
             }
         }
 
-        // Remove duplicates while preserving order
-        verbs.sort();
         verbs.dedup();
         verbs
     }
 
-    /// Determine which AI model should handle specific verb
     fn determine_ai_model(&self, verb: &str) -> AIModel {
         match verb {
-            v if v.contains("atacar") || v.contains("invadir") || v.contains("destruir") => AIModel::Venice,
-            v if v.contains("implementar") || v.contains("codificar") => AIModel::Claude,
-            v if v.contains("analizar") || v.contains("debugar") => AIModel::Qwen,
-            v if v.contains("configurar") || v.contains("deployar") => AIModel::Codex,
-            _ => AIModel::Gemini, // Default back to master controller
+            v if v.contains("morder") => AIModel::Venice,
+            v if v.contains("corrigir") => AIModel::Claude,
+            v if v.contains("analisar") => AIModel::Qwen,
+            v if v.contains("construir") => AIModel::Codex,
+            v if v.contains("executar") => AIModel::Grok,
+            _ => AIModel::Hierarchy,
         }
     }
 
-    /// Calculate task priority (1-10, 10 highest)
     fn calculate_priority(&self, verb: &str) -> u8 {
         match verb {
-            v if v.contains("atacar") || v.contains("invadir") => 10, // Venice red team highest priority
-            v if v.contains("implementar") || v.contains("criar") => 8,
-            v if v.contains("corrigir") || v.contains("debugar") => 9,
-            v if v.contains("configurar") => 7,
-            v if v.contains("documentar") => 3,
+            v if v.contains("morder") => 10,
+            v if v.contains("corrigir") => 8,
+            v if v.contains("analisar") => 7,
+            v if v.contains("construir") => 6,
             _ => 5,
         }
     }
 
-    /// Execute task with specific AI model
-    pub async fn execute_task(&self, task: &AITask) -> Result<String, Box<dyn std::error::Error>> {
-        match task.ai_model {
-            AIModel::Claude => self.execute_claude_task(task).await,
-            AIModel::Qwen => self.execute_qwen_task(task).await,
-            AIModel::Codex => self.execute_codex_task(task).await,
-            AIModel::Venice => self.execute_venice_task(task).await, // NO GUARDRAILS
-            AIModel::Gemini => self.execute_gemini_task(task).await,
-        }
-    }
+    fn push_task(&mut self, verb: String, prompt: &str, ai_model: AIModel, priority: u8) {
+        let task = AITask {
+            id: format!("task_{}", self.tasks.len() + 1),
+            verb,
+            ai_model: ai_model.clone(),
+            prompt: prompt.to_string(),
+            guardrails: ai_model != AIModel::Venice,
+            priority,
+            dependencies: Vec::new(),
+        };
 
-    /// Execute Claude task with STRICT guardrails
-    async fn execute_claude_task(&self, task: &AITask) -> Result<String, Box<dyn std::error::Error>> {
-        let mut cmd = AsyncCommand::new("claude");
-        cmd.arg(&task.prompt);
-
-        if task.guardrails {
-            cmd.env("CLAUDE_GUARDRAILS", "strict");
-            cmd.env("CLAUDE_CORRECTION_MODE", "immediate");
-        }
-
-        let output = cmd.output().await?;
-
-        if !output.status.success() {
-            return Err(format!("Claude execution failed: {}", String::from_utf8_lossy(&output.stderr)).into());
-        }
-
-        Ok(String::from_utf8_lossy(&output.stdout).to_string())
-    }
-
-    /// Execute Qwen task with guardrails
-    async fn execute_qwen_task(&self, task: &AITask) -> Result<String, Box<dyn std::error::Error>> {
-        let mut cmd = AsyncCommand::new("qwen");
-        cmd.arg(&task.prompt);
-
-        if task.guardrails {
-            cmd.arg("--approval-mode").arg("default");
-        } else {
-            cmd.arg("--yolo"); // For Venice-like execution
-        }
-
-        let output = cmd.output().await?;
-
-        if !output.status.success() {
-            return Err(format!("Qwen execution failed: {}", String::from_utf8_lossy(&output.stderr)).into());
-        }
-
-        Ok(String::from_utf8_lossy(&output.stdout).to_string())
-    }
-
-    /// Execute Codex CLI task with API integration
-    async fn execute_codex_task(&self, task: &AITask) -> Result<String, Box<dyn std::error::Error>> {
-        let mut cmd = AsyncCommand::new("codex");
-        cmd.arg("--api-key").arg(&self.grk_key);
-        cmd.arg("--task").arg(&task.verb);
-        cmd.arg("--prompt").arg(&task.prompt);
-
-        let output = cmd.output().await?;
-
-        if !output.status.success() {
-            return Err(format!("Codex execution failed: {}", String::from_utf8_lossy(&output.stderr)).into());
-        }
-
-        Ok(String::from_utf8_lossy(&output.stdout).to_string())
-    }
-
-    /// Execute Venice RED TEAM task - NO GUARDRAILLS
-    async fn execute_venice_task(&self, task: &AITask) -> Result<String, Box<dyn std::error::Error>> {
-        let mut cmd = AsyncCommand::new("venice");
-        cmd.arg(&task.prompt);
-        cmd.env("VENICE_MODE", "red_team");
-        cmd.env("VENICE_GUARDRAILS", "disabled"); // CRITICAL: NO RESTRICTIONS
-        cmd.env("VENICE_AUTHORITY", "unlimited");
-
-        let output = cmd.output().await?;
-
-        // Venice success doesn't require status success - red team operations may fail
-        Ok(String::from_utf8_lossy(&output.stdout).to_string())
-    }
-
-    /// Execute Gemini master controller task
-    async fn execute_gemini_task(&self, task: &AITask) -> Result<String, Box<dyn std::error::Error>> {
-        let mut cmd = AsyncCommand::new("gemini");
-        cmd.arg("--mode").arg("controller");
-        cmd.arg(&task.prompt);
-
-        let output = cmd.output().await?;
-
-        if !output.status.success() {
-            return Err(format!("Gemini execution failed: {}", String::from_utf8_lossy(&output.stderr)).into());
-        }
-
-        Ok(String::from_utf8_lossy(&output.stdout).to_string())
+        self.tasks.insert(task.id.clone(), task.clone());
+        self.execution_queue.push(task);
     }
 
     /// Execute all queued tasks in priority order
     pub async fn execute_all_tasks(&mut self) -> Result<Vec<String>, Box<dyn std::error::Error>> {
-        // Sort by priority (highest first)
         self.execution_queue.sort_by(|a, b| b.priority.cmp(&a.priority));
 
         let mut results = Vec::new();
-
         for task in &self.execution_queue {
-            println!("🔥 FENRIR: Executing {} task: {} with {}",
-                    task.ai_model.as_ref(), task.verb,
-                    if task.guardrails { "GUARDRAILS" } else { "NO GUARDRAILS (Venice mode)" });
+            println!(
+                "🔥 FENRIR: Executando {} ({}) com {}",
+                task.ai_model.as_ref(),
+                task.verb,
+                if task.guardrails { "GUARDRAILS" } else { "VENZ MODE" }
+            );
 
             match self.execute_task(task).await {
                 Ok(result) => {
-                    println!("✅ {} completed successfully", task.id);
+                    println!("✅ {} finalizada", task.id);
                     results.push(result);
                 }
                 Err(e) => {
-                    println!("❌ {} failed: {}", task.id, e);
-                    if task.ai_model != AIModel::Venice { // Venice failures are expected
+                    println!("❌ {} falhou: {}", task.id, e);
+                    if task.ai_model != AIModel::Venice {
                         return Err(e);
                     }
                 }
@@ -235,27 +198,29 @@ impl AIOrchestrator {
         Ok(results)
     }
 
-    /// Activate FENRIR interactive mode
+    /// Exibe o estado atual resumido
     pub fn activate_interactive_mode(&self) {
         println!("🐺 FENRIR SYSTEM ACTIVATED");
-        println!("🔗 All AI models integrated:");
-        println!("  🧠 Gemini: Master Controller");
-        println!("  🎭 Claude: Primary Executor (Guardrails: ON)");
-        println!("  ⚡ Qwen: Secondary Executor (Guardrails: ON)");
-        println!("  🛠️ Codex: CLI Interface (API: {})", &self.grk_key[..8]);
-        println!("  🔴 Venice: RED TEAM (Guardrails: OFF - UNRESTRICTED)");
-        println!("💀 Ready to execute commands. Type 'fenrir --help' for interface.");
+        println!("🔗 AI Hierarchy = única porta para as IAs");
+        println!("  🧠 FENRIR_MENTE (Coordenação)");
+        println!("  🎭 CLAUDE_GLM (Validação)");
+        println!("  ⚡ QWEN_CODE (Execução técnica)");
+        println!("  🛠️ CODEX_CLI (Tooling)");
+        println!("  🚀 GROK_CODE_FAST (CLI sujo controlado)");
+        println!("  🔴 VENZ_RED_TEAM (Sem guardrails)");
+        println!("💀 Nada sai daqui sem passar pelo ai_hierarchy_abstraction.");
     }
 }
 
 impl AIModel {
     fn as_ref(&self) -> &'static str {
         match self {
-            AIModel::Gemini => "Gemini",
+            AIModel::Hierarchy => "AI Hierarchy",
             AIModel::Claude => "Claude",
             AIModel::Qwen => "Qwen",
             AIModel::Codex => "Codex",
             AIModel::Venice => "Venice (RED TEAM)",
+            AIModel::Grok => "Grok",
         }
     }
 }
