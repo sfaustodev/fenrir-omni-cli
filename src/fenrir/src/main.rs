@@ -25,6 +25,8 @@ mod cline_integration;
 // Agora a gente chama as funções dos *nossos* módulos.
 
 use agent_manifest::print_agent_manifest;
+use ai_chain_mode::{start_fenrir_chain_mode, get_fenrir_chain_status};
+use ai_integration::execute_professional_ai_command;
 use basic_interactive::start_basic_interactive_mode;
 use config::FenrirConfig;
 use grok_code_client::GrokCodeClient;

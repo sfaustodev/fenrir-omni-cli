@@ -103,7 +103,7 @@ impl TrinityCoordinator {
                 api_key: api_key.value,
                 model: "grok-4.1-fast".to_string(),
                 base_url: "https://api.x.ai/v1".to_string(),
-                gemini_model: "gemini-1.5-pro-preview".to_string(),
+                gemini_model: "gemini-3.0-pro-preview".to_string(),
             },
             coordination_mode: CoordinationMode::Interactive,
         })

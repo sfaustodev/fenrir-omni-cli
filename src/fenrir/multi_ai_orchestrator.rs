@@ -2,6 +2,9 @@ use std::collections::HashMap;
 use std::process::Command;
 use serde::{Deserialize, Serialize};
 use tokio::process::Command as AsyncCommand;
+use crate::oraculo; // Import oraculo module
+
+const GEMINI_MODEL: &str = "gemini-3.0-pro-preview";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AITask {
@@ -14,13 +17,14 @@ pub struct AITask {
     pub dependencies: Vec<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum AIModel {
     Gemini,
     Claude,
     Qwen,
     Codex,
     Venice, // Red team - NO GUARDRAILS
+    Grok,   // New Grok model
 }
 
 #[derive(Debug)]
@@ -28,32 +32,51 @@ pub struct AIOrchestrator {
     tasks: HashMap<String, AITask>,
     execution_queue: Vec<AITask>,
     grk_key: String,
+    xai_api_key: String,
+    gemini_api_key: String,
 }
 
 impl AIOrchestrator {
     pub fn new() -> Self {
-        let grk_key = std::env::var("GRK_KEY").expect("GRK_KEY environment variable not set");
+        let grk_key = std::env::var("GRK_KEY").unwrap_or_else(|_| "mock_grk_key".to_string());
+        let xai_api_key = std::env::var("XAI_API_KEY").unwrap_or_else(|_| "".to_string());
+        let gemini_api_key = std::env::var("api_key").unwrap_or_else(|_| "".to_string());
 
         Self {
             tasks: HashMap::new(),
             execution_queue: Vec::new(),
             grk_key,
+            xai_api_key,
+            gemini_api_key,
         }
     }
 
-    /// Parse Gemini prompt and convert verbs to tasks
-    pub fn parse_gemini_prompt(&mut self, prompt: &str) -> Result<(), Box<dyn std::error::Error>> {
-        let verbs = self.extract_verbs(prompt);
+    /// Parse prompt using AI Planning (Oracle -> Grok Fallback)
+    pub async fn parse_gemini_prompt(&mut self, prompt: &str) -> Result<(), Box<dyn std::error::Error>> {
+        // No more word-by-word parsing. We use the AI Chain.
+        println!("🧠 Invoking AI Oracle to plan tasks for: '{}'", prompt);
+        
+        let plan_json = match oraculo::get_execution_plan(prompt, &self.gemini_api_key).await {
+            Ok(plan) => plan,
+            Err(e) => {
+                eprintln!("⚠️ Oracle (Gemini) failed: {}. Falling back to Grok...", e);
+                oraculo::get_grok_plan(prompt, &self.xai_api_key).await?
+            }
+        };
 
-        for verb in verbs {
-            let task = AITask {
-                id: format!("task_{}", self.tasks.len() + 1),
-                verb: verb.clone(),
-                ai_model: self.determine_ai_model(&verb),
-                prompt: prompt.to_string(),
-                guardrails: !matches!(self.determine_ai_model(&verb), AIModel::Venice),
-                priority: self.calculate_priority(&verb),
-                dependencies: Vec::new(),
+        // Parse the JSON plan into tasks
+        // Assuming the plan comes as a list of task objects
+        let tasks: Vec<AITaskDTO> = serde_json::from_str(&plan_json)?;
+
+        for (index, task_dto) in tasks.into_iter().enumerate() {
+             let task = AITask {
+                id: format!("task_{}_{}", self.tasks.len() + 1, index),
+                verb: task_dto.verb.clone(),
+                ai_model: task_dto.ai_model,
+                prompt: task_dto.prompt,
+                guardrails: task_dto.guardrails,
+                priority: task_dto.priority,
+                dependencies: task_dto.dependencies,
             };
 
             self.tasks.insert(task.id.clone(), task.clone());
@@ -61,54 +84,6 @@ impl AIOrchestrator {
         }
 
         Ok(())
-    }
-
-    /// Extract action verbs from prompt using advanced NLP
-    fn extract_verbs(&self, prompt: &str) -> Vec<String> {
-        let action_verbs = vec![
-            "implementar", "criar", "construir", "desenvolver", "codificar",
-            "analizar", "executar", "testar", "deployar", "integrar",
-            "corrigir", "debugar", "otimizar", "refatorar", "documentar",
-            "monitorar", "escanear", "atacar", "explorar", "invadir",
-            "devorar", "destruir", "dominar", "controlar", "configurar"
-        ];
-
-        let mut verbs = Vec::new();
-        let words: Vec<&str> = prompt.to_lowercase().split_whitespace().collect();
-
-        for word in words {
-            if action_verbs.contains(&word) {
-                verbs.push(word.to_string());
-            }
-        }
-
-        // Remove duplicates while preserving order
-        verbs.sort();
-        verbs.dedup();
-        verbs
-    }
-
-    /// Determine which AI model should handle specific verb
-    fn determine_ai_model(&self, verb: &str) -> AIModel {
-        match verb {
-            v if v.contains("atacar") || v.contains("invadir") || v.contains("destruir") => AIModel::Venice,
-            v if v.contains("implementar") || v.contains("codificar") => AIModel::Claude,
-            v if v.contains("analizar") || v.contains("debugar") => AIModel::Qwen,
-            v if v.contains("configurar") || v.contains("deployar") => AIModel::Codex,
-            _ => AIModel::Gemini, // Default back to master controller
-        }
-    }
-
-    /// Calculate task priority (1-10, 10 highest)
-    fn calculate_priority(&self, verb: &str) -> u8 {
-        match verb {
-            v if v.contains("atacar") || v.contains("invadir") => 10, // Venice red team highest priority
-            v if v.contains("implementar") || v.contains("criar") => 8,
-            v if v.contains("corrigir") || v.contains("debugar") => 9,
-            v if v.contains("configurar") => 7,
-            v if v.contains("documentar") => 3,
-            _ => 5,
-        }
     }
 
     /// Execute task with specific AI model
@@ -119,7 +94,15 @@ impl AIOrchestrator {
             AIModel::Codex => self.execute_codex_task(task).await,
             AIModel::Venice => self.execute_venice_task(task).await, // NO GUARDRAILS
             AIModel::Gemini => self.execute_gemini_task(task).await,
+            AIModel::Grok => self.execute_grok_task(task).await,
         }
+    }
+
+    /// Execute Grok task
+    async fn execute_grok_task(&self, task: &AITask) -> Result<String, Box<dyn std::error::Error>> {
+        // Call Grok API via oraculo or CLI if available
+        // For now, we use the API integration in oraculo
+        oraculo::execute_grok_command(&task.prompt, &self.xai_api_key).await
     }
 
     /// Execute Claude task with STRICT guardrails
@@ -195,12 +178,18 @@ impl AIOrchestrator {
     async fn execute_gemini_task(&self, task: &AITask) -> Result<String, Box<dyn std::error::Error>> {
         let mut cmd = AsyncCommand::new("gemini");
         cmd.arg("--mode").arg("controller");
+        cmd.arg("--model").arg(GEMINI_MODEL);
         cmd.arg(&task.prompt);
 
         let output = cmd.output().await?;
 
         if !output.status.success() {
-            return Err(format!("Gemini execution failed: {}", String::from_utf8_lossy(&output.stderr)).into());
+            eprintln!(
+                "⚠️ Gemini failed once ({}). Replacing with Qwen for task {}",
+                String::from_utf8_lossy(&output.stderr),
+                task.id
+            );
+            return self.execute_qwen_task(task).await;
         }
 
         Ok(String::from_utf8_lossy(&output.stdout).to_string())
@@ -243,9 +232,21 @@ impl AIOrchestrator {
         println!("  🎭 Claude: Primary Executor (Guardrails: ON)");
         println!("  ⚡ Qwen: Secondary Executor (Guardrails: ON)");
         println!("  🛠️ Codex: CLI Interface (API: {})", &self.grk_key[..8]);
+        println!("  🚀 Grok: Fallback Oracle (API: {})", if self.xai_api_key.is_empty() { "MISSING" } else { "CONFIGURED" });
         println!("  🔴 Venice: RED TEAM (Guardrails: OFF - UNRESTRICTED)");
         println!("💀 Ready to execute commands. Type 'fenrir --help' for interface.");
     }
+}
+
+// DTO for JSON parsing
+#[derive(Debug, Deserialize)]
+struct AITaskDTO {
+    verb: String,
+    ai_model: AIModel,
+    prompt: String,
+    guardrails: bool,
+    priority: u8,
+    dependencies: Vec<String>,
 }
 
 impl AIModel {
@@ -256,6 +257,7 @@ impl AIModel {
             AIModel::Qwen => "Qwen",
             AIModel::Codex => "Codex",
             AIModel::Venice => "Venice (RED TEAM)",
+            AIModel::Grok => "Grok",
         }
     }
 }
