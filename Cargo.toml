@@ -55,6 +55,7 @@ once_cell = "1.20"
 rayon = "1.10"
 unicode-segmentation = "1.12"
 mime_guess = "2.0"
+base64 = "0.22"
 
 [profile.release]
 opt-level = 3

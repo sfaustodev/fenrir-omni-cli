@@ -4,7 +4,9 @@ mod agent_manifest;
 mod ai_hierarchy_abstraction;
 mod api_keys;
 mod basic_interactive;
+mod cline_integration;
 mod config;
+mod cotoa_async;
 mod executor;
 mod ferramentas;
 mod grok_code_client;
@@ -17,10 +19,8 @@ mod security_protection;
 mod starship;
 mod task_management;
 mod terminal;
-mod venz_agent;
 mod ui_huh;
-mod cotoa_async;
-mod cline_integration;
+mod venz_agent;
 
 // --- IMPORTS (use) ---
 // Agora a gente chama as funções dos *nossos* módulos.
@@ -30,8 +30,10 @@ use ai_hierarchy_abstraction::{
     execute_ai_command, ComplexityLevel, ExecutionContext as HierarchyExecutionContext,
     ExecutionPriority,
 };
+use anyhow::Context;
 use basic_interactive::start_basic_interactive_mode;
 use config::FenrirConfig;
+use cotoa_async::CotoaEngine;
 use grok_code_client::GrokCodeClient;
 use indicatif::{ProgressBar, ProgressStyle};
 use multi_ai_coordinator::MultiAICoordinator;
@@ -42,14 +44,13 @@ use std::io::{self, Write};
 use std::time::Duration;
 use task_management::{chain_coordinator::ChainOfCaralhoManager, tarefinha_mode::TarefinhaMode};
 use terminal::detect_terminal_capabilities;
-use cotoa_async::CotoaEngine;
-use anyhow::Context;
 
 fn matches_command(input: &str, commands: &[&str]) -> bool {
     commands.iter().any(|cmd| input.starts_with(cmd))
 }
 
-#[tokio::main] async fn main() {
+#[tokio::main]
+async fn main() {
     let args: Vec<String> = env::args().collect();
 
     if args.len() > 1 && args[1] == "-broadcast" {
@@ -154,26 +155,47 @@ fn matches_command(input: &str, commands: &[&str]) -> bool {
     } else if args.len() > 1 && args[1] == "--chain" {
         // Modo Chain-of-Caralho - Sistema de tarefinhas
         println!("🔥🔥🔥 FENRIR CHAIN-OF-CARALHO - SISTEMA HIERÁRQUICO 🔥🔥🔥");
-        // 🔥 COTOA ASYNC ENGINE INTEGRATION
-        println!("⚡ COTOA ASYNC ENGINE: STARTING");
-        let cotoa = CotoaEngine::new();
-        // Example usage in chain mode:
-        cotoa.add_task("Inicializando COTOA Engine".to_string()).await.unwrap();
-        cotoa.add_task("Verificando recursos Cline".to_string()).await.unwrap();
-        
-        let handle = tokio::spawn(async move {
-            cotoa.run_loop().await.unwrap();
-        });
-        
+
+        let initial_goal = if args.len() > 2 {
+            let joined = args[2..].join(" ").trim().to_string();
+            if joined.is_empty() {
+                None
+            } else {
+                Some(joined)
+            }
+        } else {
+            None
+        };
+        let has_initial_goal = initial_goal.is_some();
+
+        if !has_initial_goal {
+            println!("⚡ COTOA ASYNC ENGINE: STARTING");
+            let cotoa = CotoaEngine::new();
+            if let Err(e) = cotoa
+                .add_task("Inicializando COTOA Engine".to_string())
+                .await
+            {
+                eprintln!("⚠️ Falha ao adicionar tarefa COTOA: {}", e);
+            }
+            if let Err(e) = cotoa
+                .add_task("Verificando recursos Cline".to_string())
+                .await
+            {
+                eprintln!("⚠️ Falha ao adicionar tarefa COTOA: {}", e);
+            }
+
+            tokio::spawn(async move {
+                if let Err(e) = cotoa.run_loop().await {
+                    eprintln!("❌ COTOA Engine encerrado: {}", e);
+                }
+            });
+        }
+
         // Original Sync Chain Logic
         let mut chain = ChainOfCaralhoManager::new();
-        if let Err(e) = start_chain_mode(&mut chain).await {
+        if let Err(e) = start_chain_mode(&mut chain, initial_goal).await {
             eprintln!("❌ Erro no modo Chain: {}", e);
         }
-        
-        // Wait for async to finish if needed, or let it run in bg
-        // handle.await.unwrap();
-
     } else if args.len() > 1 && args[1] == "--tarefinha" {
         // Modo Tarefinha - Garçom Claudão
         println!("🎯🍽️ FENRIR TAREFINHA MODE - GARÇOM CLAUDÃO 🍽️🎯");
@@ -191,7 +213,7 @@ fn matches_command(input: &str, commands: &[&str]) -> bool {
         println!("💀 Sem IA pra não dar merda - comandos diretos");
         println!("🥷 Venz aguardando ordens sem censura");
         println!("🔒 Proteções anti-rosnar ativas");
-        
+
         // ⚡ HUH UI DEMO CHECK
         if args.len() > 1 && args[1] == "--ui-test" {
             ui_huh::run_demo().unwrap();
@@ -771,7 +793,10 @@ async fn start_multi_ia_mode(
 }
 
 /// 🔥 MODO CHAIN-OF-CARALHO - Sistema hierárquico completo
-async fn start_chain_mode(chain: &mut ChainOfCaralhoManager) -> anyhow::Result<()> {
+async fn start_chain_mode(
+    chain: &mut ChainOfCaralhoManager,
+    initial_goal: Option<String>,
+) -> anyhow::Result<()> {
     println!("\n🔥🔥🔥 FENRIR CHAIN-OF-CARALHO - MODO HIERÁRQUICO 🔥🔥🔥");
     println!("👥 Team: Claudao(Senior) + Venz(Pleno) + Geminho(Junior)");
     println!("🎯 Sistema: Um commit por tarefinha, revisão obrigatória");
@@ -780,6 +805,12 @@ async fn start_chain_mode(chain: &mut ChainOfCaralhoManager) -> anyhow::Result<(
 
     // Mostrar status inicial
     chain.show_dashboard();
+
+    if let Some(goal) = initial_goal {
+        let _ = process_chain_goal(chain, &goal).await?;
+        println!("\n✅ OBJETIVO CONCLUÍDO!");
+        return Ok(());
+    }
 
     loop {
         print!("🔗 Chain-of-Caralho> ");
@@ -809,27 +840,16 @@ async fn start_chain_mode(chain: &mut ChainOfCaralhoManager) -> anyhow::Result<(
                     }
                     _ if input.starts_with("executar ") => {
                         let goal = input.strip_prefix("executar ").unwrap_or("");
-                        println!("\n🎯 OBJETIVO: {}", goal);
-
-                        let batch_id = chain.create_batch_from_goal(goal.to_string())?;
-                        if let Some(id) = batch_id {
-                            chain.process_batch(&id).await?;
+                        let created_batch = process_chain_goal(chain, goal).await?;
+                        if created_batch {
+                            println!("\n✅ BATCH CONCLUÍDO COM SUCESSO!");
+                        } else {
+                            println!("\n✅ OBJETIVO PROCESSADO (sem caderninho)");
                         }
-                        chain.process_pilha_async().await?;
-
-                        println!("\n✅ BATCH CONCLUÍDO COM SUCESSO!");
                         continue;
                     }
                     _ => {
-                        // Se não for comando, tratar como objetivo
-                        println!("\n🎯 PROCESSANDO OBJETIVO: {}", input);
-
-                        let batch_id = chain.create_batch_from_goal(input.to_string())?;
-                        if let Some(id) = batch_id {
-                            chain.process_batch(&id).await?;
-                        }
-                        chain.process_pilha_async().await?;
-
+                        process_chain_goal(chain, input).await?;
                         println!("\n✅ OBJETIVO CONCLUÍDO!");
                     }
                 }
@@ -842,6 +862,26 @@ async fn start_chain_mode(chain: &mut ChainOfCaralhoManager) -> anyhow::Result<(
     }
 
     Ok(())
+}
+
+async fn process_chain_goal(
+    chain: &mut ChainOfCaralhoManager,
+    raw_goal: &str,
+) -> anyhow::Result<bool> {
+    let goal = raw_goal.trim();
+    if goal.is_empty() {
+        println!("⚠️ Objetivo vazio ignorado");
+        return Ok(false);
+    }
+
+    println!("\n🎯 PROCESSANDO OBJETIVO: {}", goal);
+    let batch_id = chain.create_batch_from_goal(goal.to_string())?;
+    if let Some(ref id) = batch_id {
+        chain.process_batch(id).await?;
+    }
+    chain.process_pilha_async().await?;
+
+    Ok(batch_id.is_some())
 }
 
 /// 👥 MOSTRAR INFORMAÇÕES DO TEAM
@@ -909,11 +949,36 @@ async fn run_broadcast_mode(message: &str) -> anyhow::Result<()> {
     println!("📢 Enviando broadcast para todos os CLIs internos...");
 
     let engines: Vec<(&str, ExecutionPriority, ComplexityLevel, bool)> = vec![
-        ("VENZ_RED_TEAM", ExecutionPriority::Critical, ComplexityLevel::Critical, true),
-        ("QWEN_CODE", ExecutionPriority::High, ComplexityLevel::Complex, false),
-        ("CLAUDE_GLM", ExecutionPriority::High, ComplexityLevel::Moderate, false),
-        ("GROK_CODE_FAST", ExecutionPriority::High, ComplexityLevel::Moderate, false),
-        ("FENRIR_MENTE", ExecutionPriority::High, ComplexityLevel::Complex, false),
+        (
+            "VENZ_RED_TEAM",
+            ExecutionPriority::Critical,
+            ComplexityLevel::Critical,
+            true,
+        ),
+        (
+            "QWEN_CODE",
+            ExecutionPriority::High,
+            ComplexityLevel::Complex,
+            false,
+        ),
+        (
+            "CLAUDE_GLM",
+            ExecutionPriority::High,
+            ComplexityLevel::Moderate,
+            false,
+        ),
+        (
+            "GROK_CODE_FAST",
+            ExecutionPriority::High,
+            ComplexityLevel::Moderate,
+            false,
+        ),
+        (
+            "FENRIR_MENTE",
+            ExecutionPriority::High,
+            ComplexityLevel::Complex,
+            false,
+        ),
     ];
 
     for (engine, priority, complexity, requires_bypass) in engines {

@@ -4,7 +4,7 @@ use crate::ai_hierarchy_abstraction::{
     execute_ai_command, ComplexityLevel, ExecutionContext, ExecutionPriority,
 };
 use crate::executor::FenrirTask;
-use anyhow::{Result};
+use anyhow::Result;
 
 pub async fn chamar_gemini_com_timeout(consulta: &str) -> Result<FenrirTask> {
     println!("Consultando Oráculo da Hierarquia FENRIR: {}", consulta);
@@ -36,7 +36,8 @@ pub async fn chamar_gemini_com_timeout(consulta: &str) -> Result<FenrirTask> {
     if lower.contains("listar") || lower.contains("ls") {
         task_type = "execute_command".to_string();
         command_to_run = Some("ls -la".to_string());
-    } else if lower.contains("pwd") || lower.contains("diretório") || lower.contains("onde estou") {
+    } else if lower.contains("pwd") || lower.contains("diretório") || lower.contains("onde estou")
+    {
         task_type = "execute_command".to_string();
         command_to_run = Some("pwd".to_string());
     } else if lower.contains("abrir") && lower.contains("code") {

@@ -1,13 +1,11 @@
 // 🔍 REVIEW ENGINE - Claudao revisa tudo
 // Sistema rigoroso de qualidade
 
-use serde::{Deserialize, Serialize};
-use anyhow::Result;
 use crate::task_management::{
-    team_profiles::DeveloperProfile,
-    task::TarefaFinha,
-    commit_system::CommitInfo
+    commit_system::CommitInfo, task::TarefaFinha, team_profiles::DeveloperProfile,
 };
+use anyhow::Result;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ReviewEngine {
@@ -59,14 +57,14 @@ pub struct FeedbackItem {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum FeedbackCategory {
-    Logic,        // Erro de lógica
-    Performance,  // Problema de performance
-    Security,     // Vulnerabilidade
-    Style,        // Code style
+    Logic,         // Erro de lógica
+    Performance,   // Problema de performance
+    Security,      // Vulnerabilidade
+    Style,         // Code style
     Documentation, // Falta docs
-    Testing,      // Falta testes
-    Architecture, // Problema de arquitetura
-    Bug,          // Bug identificado
+    Testing,       // Falta testes
+    Architecture,  // Problema de arquitetura
+    Bug,           // Bug identificado
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -90,7 +88,8 @@ impl ReviewEngine {
     }
 
     pub fn submit_for_review(&mut self, tarefinha: TarefaFinha, commit: CommitInfo) -> String {
-        let review_id = format!("review_{}",
+        let review_id = format!(
+            "review_{}",
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
                 .unwrap()
@@ -149,7 +148,8 @@ impl ReviewEngine {
             .as_secs() as u16;
 
         let completed_review = CompletedReview {
-            review_id: format!("completed_{}",
+            review_id: format!(
+                "completed_{}",
                 std::time::SystemTime::now()
                     .duration_since(std::time::UNIX_EPOCH)
                     .unwrap()
@@ -191,7 +191,9 @@ impl ReviewEngine {
                     category: FeedbackCategory::Style,
                     severity: Severity::Medium,
                     message: "Comentários excessivos e desnecessários".to_string(),
-                    suggested_fix: Some("Remover comentários óbvios e focar no que importa".to_string()),
+                    suggested_fix: Some(
+                        "Remover comentários óbvios e focar no que importa".to_string(),
+                    ),
                     line_number: None,
                 });
 
@@ -199,7 +201,9 @@ impl ReviewEngine {
                     category: FeedbackCategory::Logic,
                     severity: Severity::High,
                     message: "Lógica mais complexa que o necessário".to_string(),
-                    suggested_fix: Some("Simplificar abordagem usando pattern mais direto".to_string()),
+                    suggested_fix: Some(
+                        "Simplificar abordagem usando pattern mais direto".to_string(),
+                    ),
                     line_number: Some(42),
                 });
 
@@ -254,7 +258,9 @@ impl ReviewEngine {
                 category: FeedbackCategory::Architecture,
                 severity: Severity::Critical,
                 message: "Tarefa acima do nível do desenvolvedor".to_string(),
-                suggested_fix: Some("Delegar para nível apropriado ou fornecer suporte".to_string()),
+                suggested_fix: Some(
+                    "Delegar para nível apropriado ou fornecer suporte".to_string(),
+                ),
                 line_number: None,
             });
         }
@@ -282,7 +288,9 @@ impl ReviewEngine {
 
         // Bônus por rapidez
         if tarefinha.estimated_minutes > 0 {
-            let actual_time = if let (Some(started), Some(completed)) = (tarefinha.started_at, tarefinha.completed_at) {
+            let actual_time = if let (Some(started), Some(completed)) =
+                (tarefinha.started_at, tarefinha.completed_at)
+            {
                 completed - started
             } else {
                 tarefinha.estimated_minutes as u64 * 60
@@ -297,7 +305,9 @@ impl ReviewEngine {
     }
 
     fn has_critical_issues(&self, feedback: &[FeedbackItem]) -> bool {
-        feedback.iter().any(|f| matches!(f.severity, Severity::Critical))
+        feedback
+            .iter()
+            .any(|f| matches!(f.severity, Severity::Critical))
     }
 
     fn generate_follow_up_tasks(&self, tarefinha: &TarefaFinha) -> Vec<String> {
@@ -316,7 +326,14 @@ impl ReviewEngine {
         println!("📋 Tarefa: {}", review.original_tarefinha.titulo);
         println!("👤 Autor: {}", review.commit.author);
         println!("⭐ Nota: {}/10", review.score);
-        println!("✅ Status: {}", if review.approved { "APROVADO" } else { "REPROVADO" });
+        println!(
+            "✅ Status: {}",
+            if review.approved {
+                "APROVADO"
+            } else {
+                "REPROVADO"
+            }
+        );
         println!("⏱️ Tempo: {} min", review.review_time_minutes);
 
         if !review.feedback.is_empty() {
@@ -360,10 +377,7 @@ impl ReviewEngine {
             return 0.0;
         }
 
-        let approved = self.completed_reviews
-            .iter()
-            .filter(|r| r.approved)
-            .count();
+        let approved = self.completed_reviews.iter().filter(|r| r.approved).count();
 
         approved as f32 / self.completed_reviews.len() as f32
     }
@@ -373,10 +387,7 @@ impl ReviewEngine {
             return 0.0;
         }
 
-        let total: u32 = self.completed_reviews
-            .iter()
-            .map(|r| r.score as u32)
-            .sum();
+        let total: u32 = self.completed_reviews.iter().map(|r| r.score as u32).sum();
 
         total as f32 / self.completed_reviews.len() as f32
     }

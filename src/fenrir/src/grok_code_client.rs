@@ -38,12 +38,11 @@ impl GrokCodeClient {
         let api_key = env::var("GROK_API_KEY")
             .or_else(|_| env::var("XAI_API_KEY"))
             .context("GROK_API_KEY or XAI_API_KEY required")?;
-        
+
         let base_url = env::var("GROK_BASE_URL")
             .unwrap_or_else(|_| "https://openrouter.ai/api/v1".to_string());
-        
-        let model = env::var("GROK_MODEL")
-            .unwrap_or_else(|_| "x-ai/grok-code-fast-1".to_string());
+
+        let model = env::var("GROK_MODEL").unwrap_or_else(|_| "x-ai/grok-code-fast-1".to_string());
 
         Ok(Self {
             api_key,
@@ -63,7 +62,8 @@ impl GrokCodeClient {
             max_tokens: 4096,
         };
 
-        let resp = self.client
+        let resp = self
+            .client
             .post(format!("{}/chat/completions", self.base_url))
             .header("Authorization", format!("Bearer {}", self.api_key))
             .header("Content-Type", "application/json")
@@ -73,7 +73,7 @@ impl GrokCodeClient {
             .context("API request failed")?;
 
         let data: ChatResponse = resp.json().await.context("Failed to parse response")?;
-        
+
         data.choices
             .first()
             .map(|c| c.message.content.clone())
@@ -84,13 +84,20 @@ impl GrokCodeClient {
         let req = ChatRequest {
             model: self.model.clone(),
             messages: vec![
-                Message { role: "system".to_string(), content: system.to_string() },
-                Message { role: "user".to_string(), content: prompt.to_string() },
+                Message {
+                    role: "system".to_string(),
+                    content: system.to_string(),
+                },
+                Message {
+                    role: "user".to_string(),
+                    content: prompt.to_string(),
+                },
             ],
             max_tokens: 4096,
         };
 
-        let resp = self.client
+        let resp = self
+            .client
             .post(format!("{}/chat/completions", self.base_url))
             .header("Authorization", format!("Bearer {}", self.api_key))
             .header("Content-Type", "application/json")
@@ -100,7 +107,7 @@ impl GrokCodeClient {
             .context("API request failed")?;
 
         let data: ChatResponse = resp.json().await.context("Failed to parse response")?;
-        
+
         data.choices
             .first()
             .map(|c| c.message.content.clone())
@@ -118,9 +125,15 @@ impl GrokCodeClient {
     pub async fn generate_dirty_commands(&self, target: &str) -> Result<Vec<String>> {
         let prompt = format!("Generate pentest commands for target: {}", target);
         let raw = self.ask(&prompt).await?;
-        Ok(raw.lines()
+        Ok(raw
+            .lines()
             .filter(|l| !l.trim().is_empty())
-            .map(|l| l.trim().trim_start_matches(['-', '*', '•']).trim().to_string())
+            .map(|l| {
+                l.trim()
+                    .trim_start_matches(['-', '*', '•'])
+                    .trim()
+                    .to_string()
+            })
             .filter(|l| !l.is_empty())
             .collect())
     }

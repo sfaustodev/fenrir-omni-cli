@@ -1,8 +1,8 @@
-use tokio::sync::mpsc;
-use tokio::task;
-use std::sync::Arc;
-use tokio::sync::Mutex;
 use crate::ui_huh::HuhEmulator;
+use std::sync::Arc;
+use tokio::sync::mpsc;
+use tokio::sync::Mutex;
+use tokio::task;
 
 #[derive(Debug, Clone)]
 pub enum TaskStatus {
@@ -41,10 +41,10 @@ impl CotoaEngine {
             description,
             status: TaskStatus::Pending,
         };
-        
+
         // Add to queue log
         self.task_queue.lock().await.push(task.clone());
-        
+
         // Send to async processor
         self.sender.send(task).await?;
         Ok(())
@@ -53,7 +53,7 @@ impl CotoaEngine {
     pub async fn run_loop(&self) -> anyhow::Result<()> {
         let receiver = self.receiver.clone();
         let queue_ref = self.task_queue.clone();
-        
+
         // 🐺 UI Handler (Sync in its own thread/way usually, but here integrated)
         let mut ui = HuhEmulator::new();
 
@@ -69,7 +69,7 @@ impl CotoaEngine {
                         t.status = TaskStatus::InProgress;
                     }
                 }
-                
+
                 // Visualize
                 ui.render_task_status(&[(&task.description, "running")])?;
 
@@ -86,16 +86,20 @@ impl CotoaEngine {
                     }
                 });
 
-                match handle.await? {
-                    Ok(_) => {
-                         task.status = TaskStatus::Success;
-                         ui.render_task_status(&[(&task.description, "success")])?;
-                    },
-                    Err(_) => {
+                match handle.await {
+                    Ok(Ok(_)) => {
+                        task.status = TaskStatus::Success;
+                        ui.render_task_status(&[(&task.description, "success")])?;
+                    }
+                    Ok(Err(err)) => {
                         task.status = TaskStatus::Failed;
                         ui.render_task_status(&[(&task.description, "failed")])?;
-                        // 💀 RECOVERY STRATEGY OR INSULT
-                        ui.grok_insult(&format!("TASK FAILED: {}", task.description))?;
+                        ui.grok_insult(&format!("TASK FAILED: {} - {}", task.description, err))?;
+                    }
+                    Err(join_err) => {
+                        task.status = TaskStatus::Failed;
+                        ui.render_task_status(&[(&task.description, "failed")])?;
+                        eprintln!("⚠️ COTOA async worker aborted: {}", join_err);
                     }
                 }
             } else {

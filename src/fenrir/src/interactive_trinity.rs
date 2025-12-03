@@ -13,12 +13,11 @@ pub struct InteractiveTrinity {
 
 impl InteractiveTrinity {
     pub fn new() -> Result<Self> {
-        let coordinator = TrinityCoordinator::new()
-            .map_err(|e| {
-                eprintln!("❌ Erro ao inicializar coordenador Trinity: {}", e);
-                eprintln!("💡 Verifique se a variável de ambiente $GEMINI_API_KEY está configurada");
-                e
-            })?;
+        let coordinator = TrinityCoordinator::new().map_err(|e| {
+            eprintln!("❌ Erro ao inicializar coordenador Trinity: {}", e);
+            eprintln!("💡 Verifique se a variável de ambiente $GEMINI_API_KEY está configurada");
+            e
+        })?;
 
         let operations = FenrirOperations::new()?;
 

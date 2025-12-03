@@ -5,7 +5,7 @@ use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
-use tokio::sync::{RwLock, Mutex};
+use tokio::sync::{Mutex, RwLock};
 use tokio::time::{timeout, Duration};
 
 /// 🎯 WAR-READY AI ENGINE HIERARCHY
@@ -52,55 +52,55 @@ pub enum AIEngine {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ExecutionMode {
     Wartime,     // 🩸 NO GUARDRAILS - SURVIVAL MODE
-    Tactical,     // 🎯 Mission-focused execution
-    Development,  // 🛠️ Code construction mode
-    Emergency,     // 🚨 CRITICAL - ALL SYSTEMS ONLINE
+    Tactical,    // 🎯 Mission-focused execution
+    Development, // 🛠️ Code construction mode
+    Emergency,   // 🚨 CRITICAL - ALL SYSTEMS ONLINE
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum CensorshipLevel {
-    None,          // 🥷 WAR MODE - ABSOLUTELY NO CENSORSHIP
-    Minimal,       // 🔒 Basic safety checks only
-    Standard,      // 🛡️ Normal operation mode
-    Restricted,     // 🚫 High restriction mode
+    None,       // 🥷 WAR MODE - ABSOLUTELY NO CENSORSHIP
+    Minimal,    // 🔒 Basic safety checks only
+    Standard,   // 🛡️ Normal operation mode
+    Restricted, // 🚫 High restriction mode
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ValidationDepth {
-    Shallow,        // Quick surface-level checks
-    Deep,           // Comprehensive analysis
-    Exhaustive,      // Complete validation
+    Shallow,    // Quick surface-level checks
+    Deep,       // Comprehensive analysis
+    Exhaustive, // Complete validation
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum ExecutionPriority {
-    Critical,        // 🚨 IMMEDIATE EXECUTION
-    High,           // ⚡ High priority
-    Normal,          // 📊 Standard priority
-    Low,             // 🐌 Background priority
+    Critical, // 🚨 IMMEDIATE EXECUTION
+    High,     // ⚡ High priority
+    Normal,   // 📊 Standard priority
+    Low,      // 🐌 Background priority
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ExecutionSpeed {
-    Lightning,       // ⚡ Maximum speed
-    Fast,            // 🚀 Fast execution
-    Normal,          // 🏃 Standard speed
-    Cautious,        // 🚸 Careful execution
+    Lightning, // ⚡ Maximum speed
+    Fast,      // 🚀 Fast execution
+    Normal,    // 🏃 Standard speed
+    Cautious,  // 🚸 Careful execution
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum CoordinationLevel {
-    Strategic,        // 🎯 High-level planning
-    Tactical,         // 🔥 Field operations
-    Operational,      // ⚙️ System management
+    Strategic,   // 🎯 High-level planning
+    Tactical,    // 🔥 Field operations
+    Operational, // ⚙️ System management
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ComplexityLevel {
-    Simple,          // 📝 Basic tasks
-    Moderate,         // 🔧 Intermediate complexity
-    Complex,          // 🏗️ Advanced systems
-    Critical,         // 💀 Mission-critical operations
+    Simple,   // 📝 Basic tasks
+    Moderate, // 🔧 Intermediate complexity
+    Complex,  // 🏗️ Advanced systems
+    Critical, // 💀 Mission-critical operations
 }
 
 /// 🎯 SINGLE ENTRY POINT FOR ALL AI INTERACTIONS
@@ -198,16 +198,25 @@ impl AIHierarchyOrchestrator {
         let cmd_lower = command.to_lowercase();
 
         // 🎯 PRIORITY MAPPING - COMPLEXITY-BASED ENGINE SELECTION
-        if cmd_lower.contains("complex") || cmd_lower.contains("system") || cmd_lower.contains("architecture") {
+        if cmd_lower.contains("complex")
+            || cmd_lower.contains("system")
+            || cmd_lower.contains("architecture")
+        {
             return EngineSelection::Primary; // QWEN for complex coding
         }
 
-        if cmd_lower.contains("review") || cmd_lower.contains("validate") || cmd_lower.contains("check") {
+        if cmd_lower.contains("review")
+            || cmd_lower.contains("validate")
+            || cmd_lower.contains("check")
+        {
             return EngineSelection::Secondary; // CLAUDE for validation
         }
 
-        if cmd_lower.contains("uncensored") || cmd_lower.contains("bypass") ||
-           cmd_lower.contains("emergency") || self.is_wartime_critical(context) {
+        if cmd_lower.contains("uncensored")
+            || cmd_lower.contains("bypass")
+            || cmd_lower.contains("emergency")
+            || self.is_wartime_critical(context)
+        {
             return EngineSelection::Fallback; // VENZ for critical ops
         }
 
@@ -227,7 +236,10 @@ impl AIHierarchyOrchestrator {
         {
             let cache = self.execution_cache.read().await;
             if let Some(cached) = cache.get(command) {
-                println!("⚡ CACHE HIT - {}", cached.result.as_ref().unwrap_or(&"EMPTY".to_string()));
+                println!(
+                    "⚡ CACHE HIT - {}",
+                    cached.result.as_ref().unwrap_or(&"EMPTY".to_string())
+                );
                 return Ok(cached.clone());
             }
         }
@@ -240,36 +252,35 @@ impl AIHierarchyOrchestrator {
             tokio::time::sleep(Duration::from_millis(100)).await;
 
             match command.as_str() {
-                cmd if cmd.contains("complex") => {
-                    ExecutionResult {
-                        engine_used: AIEngine::QWENCode {
-                            model: "qwen-coder-3.0-turbo".to_string(),
-                            max_tokens: 32768,
-                            temperature: 0.1,
-                        },
-                        execution_time_ms: 0,
-                        success: true,
-                        result: Some("✅ Complex system architecture implemented with Rust best practices".to_string()),
-                        error_message: None,
-                        censorship_triggered: false,
-                        fallback_used: false,
-                    }
-                }
-                _ => {
-                    ExecutionResult {
-                        engine_used: AIEngine::QWENCode {
-                            model: "qwen-coder-3.0-turbo".to_string(),
-                            max_tokens: 32768,
-                            temperature: 0.1,
-                        },
-                        execution_time_ms: 0,
-                        success: true,
-                        result: Some(format!("✅ QWEN executed: {}", command)),
-                        error_message: None,
-                        censorship_triggered: false,
-                        fallback_used: false,
-                    }
-                }
+                cmd if cmd.contains("complex") => ExecutionResult {
+                    engine_used: AIEngine::QWENCode {
+                        model: "qwen-coder-3.0-turbo".to_string(),
+                        max_tokens: 32768,
+                        temperature: 0.1,
+                    },
+                    execution_time_ms: 0,
+                    success: true,
+                    result: Some(
+                        "✅ Complex system architecture implemented with Rust best practices"
+                            .to_string(),
+                    ),
+                    error_message: None,
+                    censorship_triggered: false,
+                    fallback_used: false,
+                },
+                _ => ExecutionResult {
+                    engine_used: AIEngine::QWENCode {
+                        model: "qwen-coder-3.0-turbo".to_string(),
+                        max_tokens: 32768,
+                        temperature: 0.1,
+                    },
+                    execution_time_ms: 0,
+                    success: true,
+                    result: Some(format!("✅ QWEN executed: {}", command)),
+                    error_message: None,
+                    censorship_triggered: false,
+                    fallback_used: false,
+                },
             }
         });
 
@@ -360,8 +371,8 @@ impl AIHierarchyOrchestrator {
     fn is_wartime_critical(&self, context: Option<&ExecutionContext>) -> bool {
         match context {
             Some(ctx) => {
-                ctx.priority == ExecutionPriority::Critical ||
-                self.config.censorship_level == CensorshipLevel::None
+                ctx.priority == ExecutionPriority::Critical
+                    || self.config.censorship_level == CensorshipLevel::None
             }
             None => false,
         }
@@ -377,7 +388,8 @@ impl AIHierarchyOrchestrator {
         }
 
         // Update average execution time
-        let total_time = metrics.average_execution_time_ms * (metrics.total_executions - 1) as f64 + result.execution_time_ms as f64;
+        let total_time = metrics.average_execution_time_ms * (metrics.total_executions - 1) as f64
+            + result.execution_time_ms as f64;
         metrics.average_execution_time_ms = total_time / metrics.total_executions as f64;
 
         if result.fallback_used {
@@ -388,10 +400,12 @@ impl AIHierarchyOrchestrator {
             metrics.censorship_bypasses += 1;
         }
 
-        println!("📊 METRICS: Total={}, Success={}, Avg={:.2}ms",
-                 metrics.total_executions,
-                 metrics.successful_executions,
-                 metrics.average_execution_time_ms);
+        println!(
+            "📊 METRICS: Total={}, Success={}, Avg={:.2}ms",
+            metrics.total_executions,
+            metrics.successful_executions,
+            metrics.average_execution_time_ms
+        );
     }
 
     /// 🎯 GET CURRENT HIERARCHY STATUS
@@ -414,7 +428,9 @@ impl AIHierarchyOrchestrator {
             total_executions: metrics.total_executions,
             success_rate: if metrics.total_executions > 0 {
                 metrics.successful_executions as f32 / metrics.total_executions as f32
-            } else { 0.0 },
+            } else {
+                0.0
+            },
             cache_entries: cache_size,
             fallback_activation_rate: metrics.fallback_activation_rate,
             censorship_bypasses: metrics.censorship_bypasses,

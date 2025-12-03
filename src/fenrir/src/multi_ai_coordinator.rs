@@ -120,7 +120,11 @@ impl MultiAICoordinator {
     pub fn show_status(&self) {
         println!(
             "Multi-IA Status: Hierarchy={} Grok={}",
-            if self.hierarchy_online { "ONLINE" } else { "offline" },
+            if self.hierarchy_online {
+                "ONLINE"
+            } else {
+                "offline"
+            },
             self.grok_model
         );
     }

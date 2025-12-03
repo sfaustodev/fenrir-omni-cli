@@ -1,5 +1,5 @@
-use dialoguer::{theme::ColorfulTheme, Input, Select};
 use console::{style, Term};
+use dialoguer::{theme::ColorfulTheme, Input, Select};
 
 /// 🐺 FENRIR HUH EMULATOR - "Plagio na cara dura"
 /// Replicates the UX of https://github.com/charmbracelet/huh
@@ -40,17 +40,18 @@ impl HuhEmulator {
     /// 💀 GROK INSULT MODE - When tasks fail or thinking is empty
     pub fn grok_insult(&mut self, message: &str) -> anyhow::Result<()> {
         self.term.clear_screen()?;
-        
+
         // The "Huh" style header, but aggressive
         let header = style("💀 GROK FEEDBACK LOOP 💀").red().bold().on_black();
         self.term.write_line(&format!("\n{}\n", header))?;
-        
+
         let insult = style(format!("⚠️  {}\n", message)).yellow().bold();
         self.term.write_line(&format!("\n{}\n", insult))?;
-        
-        self.term.write_line("PRESS ENTER TO ACKNOWLEDGE YOUR INCOMPETENCE")?;
+
+        self.term
+            .write_line("PRESS ENTER TO ACKNOWLEDGE YOUR INCOMPETENCE")?;
         self.term.read_char()?;
-        
+
         Ok(())
     }
 
@@ -65,8 +66,13 @@ impl HuhEmulator {
                 "failed" => style("✖").red(),
                 _ => style("?").yellow(),
             };
-            
-            self.term.write_line(&format!("  {} {}  {}\n", symbol, style(*task).bold(), style(*status).italic()))?;
+
+            self.term.write_line(&format!(
+                "  {} {}  {}\n",
+                symbol,
+                style(*task).bold(),
+                style(*status).italic()
+            ))?;
         }
         self.term.write_line("\n")?;
         Ok(())
@@ -75,17 +81,20 @@ impl HuhEmulator {
 
 pub fn run_demo() -> anyhow::Result<()> {
     let mut huh = HuhEmulator::new();
-    
+
     huh.input("What is your command?", Some("destroy everything"))?;
-    huh.select("Choose your destiny", &["God Mode", "Grok Insult", "Devour Cline"])?;
-    
+    huh.select(
+        "Choose your destiny",
+        &["God Mode", "Grok Insult", "Devour Cline"],
+    )?;
+
     huh.render_task_status(&[
         ("CloneCline", "success"),
         ("Analyze API Keys", "running"),
         ("Reimplement logic", "pending"),
     ])?;
-    
+
     huh.grok_insult("REBANHO DE FILHA DA PUTA! CADÊ AS TAREFAS?")?;
-    
+
     Ok(())
 }
