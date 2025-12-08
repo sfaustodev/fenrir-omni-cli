@@ -10,10 +10,10 @@ pub struct ApiKeyResolution {
 
 /// Priority list for Fenrir CLI API keys.
 pub const API_KEY_PRIORITY: &[&str] = &[
+    "ZAI_API_KEY",         // Zhipu AI GLM-4.6 (prioridade máxima)
+    "GEMINI_API_KEY",      // Gemini 3.0 Pro
     "API_KEY",
     "KAT_KEY",
-    "QWEN_CODE",
-    "QWEN_CODE_KEY",
     "GLM4_6_KEY",
     "GLM_4_6_KEY",
     "GLM_KEY",

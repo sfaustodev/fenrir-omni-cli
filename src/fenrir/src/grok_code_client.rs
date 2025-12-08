@@ -1,3 +1,4 @@
+use crate::api_keys::{describe_priority, resolve_primary_grok_key};
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::env;
@@ -35,9 +36,10 @@ struct Choice {
 
 impl GrokCodeClient {
     pub fn new() -> Result<Self> {
-        let api_key = env::var("GROK_API_KEY")
-            .or_else(|_| env::var("XAI_API_KEY"))
-            .context("GROK_API_KEY or XAI_API_KEY required")?;
+        // Prefer KAT_KEY, but allow expanded fallbacks for all CLI engines.
+        let api_key = resolve_primary_grok_key()
+            .context(format!("Configure one of: {}", describe_priority()))?
+            .value;
 
         let base_url = env::var("GROK_BASE_URL")
             .unwrap_or_else(|_| "https://openrouter.ai/api/v1".to_string());

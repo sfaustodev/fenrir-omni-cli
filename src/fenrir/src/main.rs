@@ -1,12 +1,9 @@
 // --- ARQUIVOS DE MÓDULO ---
 // FENRIR GOD MODE - Sistema operacional completo
 mod agent_manifest;
-mod ai_hierarchy_abstraction;
 mod api_keys;
 mod basic_interactive;
-mod cline_integration;
 mod config;
-mod cotoa_async;
 mod executor;
 mod ferramentas;
 mod grok_code_client;
@@ -19,21 +16,19 @@ mod security_protection;
 mod starship;
 mod task_management;
 mod terminal;
-mod ui_huh;
 mod venz_agent;
+mod ui_huh;
+mod cotoa_async;
+mod cline_integration;
 
 // --- IMPORTS (use) ---
 // Agora a gente chama as funções dos *nossos* módulos.
 
 use agent_manifest::print_agent_manifest;
-use ai_hierarchy_abstraction::{
-    execute_ai_command, ComplexityLevel, ExecutionContext as HierarchyExecutionContext,
-    ExecutionPriority,
-};
-use anyhow::Context;
+use ai_chain_mode::{start_fenrir_chain_mode, get_fenrir_chain_status};
+use ai_integration::execute_professional_ai_command;
 use basic_interactive::start_basic_interactive_mode;
 use config::FenrirConfig;
-use cotoa_async::CotoaEngine;
 use grok_code_client::GrokCodeClient;
 use indicatif::{ProgressBar, ProgressStyle};
 use multi_ai_coordinator::MultiAICoordinator;
@@ -44,23 +39,14 @@ use std::io::{self, Write};
 use std::time::Duration;
 use task_management::{chain_coordinator::ChainOfCaralhoManager, tarefinha_mode::TarefinhaMode};
 use terminal::detect_terminal_capabilities;
+use cotoa_async::CotoaEngine;
 
 fn matches_command(input: &str, commands: &[&str]) -> bool {
     commands.iter().any(|cmd| input.starts_with(cmd))
 }
 
-#[tokio::main]
-async fn main() {
+#[tokio::main] async fn main() {
     let args: Vec<String> = env::args().collect();
-
-    if args.len() > 1 && args[1] == "-broadcast" {
-        if let Err(err) = handle_broadcast_command(&args[2..]).await {
-            eprintln!("❌ Broadcast falhou: {}", err);
-            std::process::exit(1);
-        }
-        return;
-    }
-
     let pb = ProgressBar::new_spinner(); // Spinner pra gente ver rodando
 
     // Manifesto hardcoded dos agentes - nada de depender de markdown
@@ -155,47 +141,26 @@ async fn main() {
     } else if args.len() > 1 && args[1] == "--chain" {
         // Modo Chain-of-Caralho - Sistema de tarefinhas
         println!("🔥🔥🔥 FENRIR CHAIN-OF-CARALHO - SISTEMA HIERÁRQUICO 🔥🔥🔥");
-
-        let initial_goal = if args.len() > 2 {
-            let joined = args[2..].join(" ").trim().to_string();
-            if joined.is_empty() {
-                None
-            } else {
-                Some(joined)
-            }
-        } else {
-            None
-        };
-        let has_initial_goal = initial_goal.is_some();
-
-        if !has_initial_goal {
-            println!("⚡ COTOA ASYNC ENGINE: STARTING");
-            let cotoa = CotoaEngine::new();
-            if let Err(e) = cotoa
-                .add_task("Inicializando COTOA Engine".to_string())
-                .await
-            {
-                eprintln!("⚠️ Falha ao adicionar tarefa COTOA: {}", e);
-            }
-            if let Err(e) = cotoa
-                .add_task("Verificando recursos Cline".to_string())
-                .await
-            {
-                eprintln!("⚠️ Falha ao adicionar tarefa COTOA: {}", e);
-            }
-
-            tokio::spawn(async move {
-                if let Err(e) = cotoa.run_loop().await {
-                    eprintln!("❌ COTOA Engine encerrado: {}", e);
-                }
-            });
-        }
-
+        // 🔥 COTOA ASYNC ENGINE INTEGRATION
+        println!("⚡ COTOA ASYNC ENGINE: STARTING");
+        let cotoa = CotoaEngine::new();
+        // Example usage in chain mode:
+        cotoa.add_task("Inicializando COTOA Engine".to_string()).await.unwrap();
+        cotoa.add_task("Verificando recursos Cline".to_string()).await.unwrap();
+        
+        let handle = tokio::spawn(async move {
+            cotoa.run_loop().await.unwrap();
+        });
+        
         // Original Sync Chain Logic
         let mut chain = ChainOfCaralhoManager::new();
-        if let Err(e) = start_chain_mode(&mut chain, initial_goal).await {
+        if let Err(e) = start_chain_mode(&mut chain).await {
             eprintln!("❌ Erro no modo Chain: {}", e);
         }
+        
+        // Wait for async to finish if needed, or let it run in bg
+        // handle.await.unwrap();
+
     } else if args.len() > 1 && args[1] == "--tarefinha" {
         // Modo Tarefinha - Garçom Claudão
         println!("🎯🍽️ FENRIR TAREFINHA MODE - GARÇOM CLAUDÃO 🍽️🎯");
@@ -213,7 +178,7 @@ async fn main() {
         println!("💀 Sem IA pra não dar merda - comandos diretos");
         println!("🥷 Venz aguardando ordens sem censura");
         println!("🔒 Proteções anti-rosnar ativas");
-
+        
         // ⚡ HUH UI DEMO CHECK
         if args.len() > 1 && args[1] == "--ui-test" {
             ui_huh::run_demo().unwrap();
@@ -618,7 +583,7 @@ async fn processar_solicitacao(
     if let Err(e) = chain_noise.create_batch_from_goal(consulta.to_string()) {
         eprintln!("❌ Erro na decomposição chain-of-caralho: {}", e);
     }
-    println!("⚙️ MAX RECURSOS: AI Hierarchy + Claude + Qwen + Grok Code serão convocados se aplicável. Nada escondido.");
+    println!("⚙️ MAX RECURSOS: Gemini + Claude + Qwen + Grok Code serão convocados se aplicável. Nada escondido.");
 
     pb.set_style(
         ProgressStyle::default_spinner()
@@ -640,7 +605,7 @@ async fn processar_solicitacao(
             .template("{spinner:.bold.yellow} {msg}")
             .unwrap(),
     );
-    pb.set_message("Chamando o Oráculo (AI Hierarchy)...");
+    pb.set_message("Chamando o Oráculo (Gemini)...");
     pb.enable_steady_tick(Duration::from_millis(150));
 
     // 1. CHAMA O ORÁCULO (que agora tá em 'src/oraculo.rs')
@@ -718,7 +683,7 @@ async fn start_multi_ia_mode(
 ) -> anyhow::Result<()> {
     println!("\n🔴🔴🔴 FENRIR MULTI-IA - MODO HIERÁRQUICO ATIVO 🔴🔴🔴");
     println!(
-        "💀 Hierarquia: MENTE(Fenrir Hierarchy) → CÉREBRO(Claude) → PENSAMENTO(Qwen) → MÃOS(Grok Code)"
+        "💀 Hierarquia: MENTE(Gemini) → CÉREBRO(Claude) → PENSAMENTO(GPT-4) → MÃOS(Grok Code)"
     );
     println!("🚀 Digite comandos ou 'sair' para encerrar");
     println!("");
@@ -793,10 +758,7 @@ async fn start_multi_ia_mode(
 }
 
 /// 🔥 MODO CHAIN-OF-CARALHO - Sistema hierárquico completo
-async fn start_chain_mode(
-    chain: &mut ChainOfCaralhoManager,
-    initial_goal: Option<String>,
-) -> anyhow::Result<()> {
+async fn start_chain_mode(chain: &mut ChainOfCaralhoManager) -> anyhow::Result<()> {
     println!("\n🔥🔥🔥 FENRIR CHAIN-OF-CARALHO - MODO HIERÁRQUICO 🔥🔥🔥");
     println!("👥 Team: Claudao(Senior) + Venz(Pleno) + Geminho(Junior)");
     println!("🎯 Sistema: Um commit por tarefinha, revisão obrigatória");
@@ -805,12 +767,6 @@ async fn start_chain_mode(
 
     // Mostrar status inicial
     chain.show_dashboard();
-
-    if let Some(goal) = initial_goal {
-        let _ = process_chain_goal(chain, &goal).await?;
-        println!("\n✅ OBJETIVO CONCLUÍDO!");
-        return Ok(());
-    }
 
     loop {
         print!("🔗 Chain-of-Caralho> ");
@@ -840,16 +796,27 @@ async fn start_chain_mode(
                     }
                     _ if input.starts_with("executar ") => {
                         let goal = input.strip_prefix("executar ").unwrap_or("");
-                        let created_batch = process_chain_goal(chain, goal).await?;
-                        if created_batch {
-                            println!("\n✅ BATCH CONCLUÍDO COM SUCESSO!");
-                        } else {
-                            println!("\n✅ OBJETIVO PROCESSADO (sem caderninho)");
+                        println!("\n🎯 OBJETIVO: {}", goal);
+
+                        let batch_id = chain.create_batch_from_goal(goal.to_string())?;
+                        if let Some(id) = batch_id {
+                            chain.process_batch(&id).await?;
                         }
+                        chain.process_pilha_async().await?;
+
+                        println!("\n✅ BATCH CONCLUÍDO COM SUCESSO!");
                         continue;
                     }
                     _ => {
-                        process_chain_goal(chain, input).await?;
+                        // Se não for comando, tratar como objetivo
+                        println!("\n🎯 PROCESSANDO OBJETIVO: {}", input);
+
+                        let batch_id = chain.create_batch_from_goal(input.to_string())?;
+                        if let Some(id) = batch_id {
+                            chain.process_batch(&id).await?;
+                        }
+                        chain.process_pilha_async().await?;
+
                         println!("\n✅ OBJETIVO CONCLUÍDO!");
                     }
                 }
@@ -862,26 +829,6 @@ async fn start_chain_mode(
     }
 
     Ok(())
-}
-
-async fn process_chain_goal(
-    chain: &mut ChainOfCaralhoManager,
-    raw_goal: &str,
-) -> anyhow::Result<bool> {
-    let goal = raw_goal.trim();
-    if goal.is_empty() {
-        println!("⚠️ Objetivo vazio ignorado");
-        return Ok(false);
-    }
-
-    println!("\n🎯 PROCESSANDO OBJETIVO: {}", goal);
-    let batch_id = chain.create_batch_from_goal(goal.to_string())?;
-    if let Some(ref id) = batch_id {
-        chain.process_batch(id).await?;
-    }
-    chain.process_pilha_async().await?;
-
-    Ok(batch_id.is_some())
 }
 
 /// 👥 MOSTRAR INFORMAÇÕES DO TEAM
@@ -914,118 +861,4 @@ fn show_team_info() {
     println!("   5. Feedback e melhorias contínuas");
     println!("   6. Zero bugs na produção (teoricamente)");
     println!("");
-}
-
-async fn handle_broadcast_command(extra_args: &[String]) -> anyhow::Result<()> {
-    println!("📡 FENRIR BROADCAST MODE - dialética problem caralhing");
-
-    let message = if !extra_args.is_empty() {
-        extra_args.join(" ")
-    } else {
-        prompt_broadcast_message()?
-    };
-
-    let trimmed = message.trim();
-    if trimmed.is_empty() {
-        return Err(anyhow::anyhow!("Mensagem de broadcast vazia"));
-    }
-
-    run_broadcast_mode(trimmed).await
-}
-
-fn prompt_broadcast_message() -> anyhow::Result<String> {
-    print!("🗣️  Digite a mensagem para -broadcast: ");
-    io::stdout()
-        .flush()
-        .context("Falha ao solicitar mensagem de broadcast")?;
-    let mut buffer = String::new();
-    io::stdin()
-        .read_line(&mut buffer)
-        .context("Falha ao ler mensagem de broadcast")?;
-    Ok(buffer.trim().to_string())
-}
-
-async fn run_broadcast_mode(message: &str) -> anyhow::Result<()> {
-    println!("📢 Enviando broadcast para todos os CLIs internos...");
-
-    let engines: Vec<(&str, ExecutionPriority, ComplexityLevel, bool)> = vec![
-        (
-            "VENZ_RED_TEAM",
-            ExecutionPriority::Critical,
-            ComplexityLevel::Critical,
-            true,
-        ),
-        (
-            "QWEN_CODE",
-            ExecutionPriority::High,
-            ComplexityLevel::Complex,
-            false,
-        ),
-        (
-            "CLAUDE_GLM",
-            ExecutionPriority::High,
-            ComplexityLevel::Moderate,
-            false,
-        ),
-        (
-            "GROK_CODE_FAST",
-            ExecutionPriority::High,
-            ComplexityLevel::Moderate,
-            false,
-        ),
-        (
-            "FENRIR_MENTE",
-            ExecutionPriority::High,
-            ComplexityLevel::Complex,
-            false,
-        ),
-    ];
-
-    for (engine, priority, complexity, requires_bypass) in engines {
-        let context = HierarchyExecutionContext {
-            priority,
-            complexity,
-            requires_censorship_bypass: requires_bypass,
-            mission_critical: true,
-        };
-
-        let payload = format!(
-            "CHAIN-OF-CARALHA::BROADCAST::engine={}::payload={}",
-            engine, message
-        );
-
-        match execute_ai_command(&payload, Some(&context)).await {
-            Ok(result) => {
-                let content = result
-                    .result
-                    .as_deref()
-                    .unwrap_or("✅ ack sem resposta detalhada");
-                println!(
-                    "printf 'fenrir -broadcast output {} {}'",
-                    engine,
-                    sanitize_broadcast_output(content)
-                );
-            }
-            Err(err) => {
-                println!(
-                    "printf 'fenrir -broadcast output {} ERROR:{}'",
-                    engine,
-                    sanitize_broadcast_output(&err.to_string())
-                );
-            }
-        }
-    }
-
-    println!("📡 Broadcast concluído. Todas as bocas responderam.");
-    Ok(())
-}
-
-fn sanitize_broadcast_output(raw: &str) -> String {
-    raw.replace('\n', " ")
-        .replace('\r', " ")
-        .replace("'", "")
-        .replace('"', "")
-        .split_whitespace()
-        .collect::<Vec<_>>()
-        .join(" ")
 }

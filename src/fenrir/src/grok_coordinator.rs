@@ -1,9 +1,9 @@
 // 🔥 FENRIR TRINITY IA - COORDENADOR GROK 4.1 FAST
 // Sistema superior de coordenação entre IA Gemini + Claude + Grok
 
+use crate::api_keys::{describe_priority, resolve_primary_grok_key};
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
-use std::env;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TrinityCoordinator {
@@ -93,19 +93,33 @@ pub struct TaskDelegation {
 
 impl TrinityCoordinator {
     pub fn new() -> Result<Self> {
-        let api_key =
-            env::var("GEMINI_API_KEY").context("GEMINI_API_KEY environment variable not found")?;
+        let api_key = resolve_primary_grok_key().context(format!(
+            "Configure uma das chaves preferidas ({}) para o Grok",
+            describe_priority()
+        ))?;
 
-        if api_key.is_empty() {
-            anyhow::bail!("GEMINI_API_KEY está vazia!");
-        }
+        // Configurar base_url e modelo baseado na API key usada
+        let (base_url, model) = match api_key.source {
+            "ZAI_API_KEY" => (
+                "https://api.z.ai/v1".to_string(),
+                "glm-4.6".to_string()
+            ),
+            "GEMINI_API_KEY" => (
+                "https://generativelanguage.googleapis.com".to_string(),
+                "gemini-3.0-pro".to_string()
+            ),
+            _ => (
+                "https://api.x.ai/v1".to_string(),
+                "grok-4.1-fast".to_string()
+            )
+        };
 
         Ok(Self {
             grok_client: GrokClient {
-                api_key,
-                model: "grok-4.1-fast".to_string(),
-                base_url: "https://api.x.ai/v1".to_string(),
-                gemini_model: "gemini-1.5-pro-preview".to_string(),
+                api_key: api_key.value,
+                model,
+                base_url,
+                gemini_model: "gemini-3.0-pro-preview".to_string(),
             },
             coordination_mode: CoordinationMode::Interactive,
         })

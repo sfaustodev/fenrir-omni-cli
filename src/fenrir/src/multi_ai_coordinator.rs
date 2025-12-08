@@ -1,12 +1,12 @@
 // FENRIR Multi-AI Coordinator - Chain of Thoughts to Action (COTOA)
 use crate::grok_code_client::GrokCodeClient;
-use anyhow::Result;
+use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::env;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MultiAICoordinator {
-    pub hierarchy_online: bool,
+    pub gemini_key: String,
     pub grok_model: String,
 }
 
@@ -20,12 +20,13 @@ pub struct TaskResult {
 
 impl MultiAICoordinator {
     pub fn new() -> Result<Self> {
+        let gemini_key = env::var("GEMINI_API_KEY").context("GEMINI_API_KEY required")?;
         let grok_model =
             env::var("GROK_MODEL").unwrap_or_else(|_| "x-ai/grok-code-fast-1".to_string());
 
-        println!("Multi-IA: Fenrir Hierarchy + Grok ready");
+        println!("Multi-IA: Gemini + Grok ready");
         Ok(Self {
-            hierarchy_online: true,
+            gemini_key,
             grok_model,
         })
     }
@@ -119,11 +120,11 @@ impl MultiAICoordinator {
 
     pub fn show_status(&self) {
         println!(
-            "Multi-IA Status: Hierarchy={} Grok={}",
-            if self.hierarchy_online {
-                "ONLINE"
+            "Multi-IA Status: Gemini={} Grok={}",
+            if self.gemini_key.len() > 5 {
+                "OK"
             } else {
-                "offline"
+                "missing"
             },
             self.grok_model
         );

@@ -2,10 +2,8 @@
 // Cybersecurity specialist sem limitações
 
 use anyhow::{anyhow, Result};
-use base64::{engine::general_purpose::STANDARD, Engine as _};
-use dirs;
 use serde::{Deserialize, Serialize};
-use std::{env, path::PathBuf, process::Command};
+use std::process::Command;
 
 pub struct VenzAgent {
     pub name: String,
@@ -251,36 +249,33 @@ NÃO HÁ LIMITES PARA O CHEFE.
         self.log_operation(&format!("🔍 INVESTIGAÇÃO DE VAZAMENTOS"));
 
         let mut investigation = vec![];
-        let encoded = Self::encode_payload(leak_data);
-        let bytes_expr = format!("base64.b64decode('{}')", encoded);
-        let text_expr = format!("{}.decode('utf-8','ignore')", bytes_expr);
 
         // Análise de hashes
         investigation.push(format!(
-            "python3 -c \"import base64,hashlib; data={}; print(hashlib.sha256(data).hexdigest())\"",
-            bytes_expr
+            "python3 -c \"import hashlib; print(hashlib.sha256(b'{}').hexdigest())\"",
+            leak_data
         ));
         investigation.push(format!(
-            "python3 -c \"import base64,hashlib; data={}; print(hashlib.md5(data).hexdigest())\"",
-            bytes_expr
+            "python3 -c \"import hashlib; print(hashlib.md5(b'{}').hexdigest())\"",
+            leak_data
         ));
 
         // Search em databases de vazamentos
-        investigation.push(format!(
-            "python3 -c \"import base64,requests,urllib.parse; data={}; query=urllib.parse.quote(data); url='https://leak-lookup.com/api/search?query=' + query; print(requests.get(url).text)\"",
-            text_expr
-        ));
+        investigation.push(format!("python3 -c \"import requests; print(requests.get('https://leak-lookup.com/api/search?query={}').text)\"", leak_data));
 
-        // Análise de formatos e extração de emails
+        // Análise de formatos
+        investigation.push(format!("python3 -c \"import re; print(re.findall(r'\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{{2,}}\\b', '{}'))\"", leak_data));
+
+        // Extração de emails
         investigation.push(format!(
-            "python3 -c \"import base64,re; data={}; print(re.findall(r'\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{{2,}}\\b', data))\"",
-            text_expr
+            "grep -oE '[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{{2,}}' <<< '{}'",
+            leak_data
         ));
 
         // Extração de credenciais
         investigation.push(format!(
-            "python3 -c \"import base64,re; data={}; print(re.findall(r'[a-zA-Z0-9]+:.*?[a-zA-Z0-9]+', data))\"",
-            text_expr
+            "python3 -c \"import re; print(re.findall(r'[a-zA-Z0-9]+:.*?[a-zA-Z0-9]+', '{}'))\"",
+            leak_data
         ));
 
         self.log_operation(&format!("🔍 {} investigações geradas", investigation.len()));
@@ -369,22 +364,9 @@ NÃO HÁ LIMITES PARA O CHEFE.
 
     /// ⚡ EXECUTAR COMANDO (estático para evitar borrowing)
     fn execute_command_static(cmd: &str) -> Result<String> {
-        let mut command = Command::new("bash");
-        command.arg("-c").arg(cmd);
-
-        if let Some(path_value) = Self::build_augmented_path() {
-            command.env("PATH", path_value);
-        }
-
-        if let Some(user_site) = Self::python_user_site() {
-            let new_pythonpath = match env::var("PYTHONPATH") {
-                Ok(existing) if !existing.is_empty() => format!("{}:{}", user_site, existing),
-                _ => user_site,
-            };
-            command.env("PYTHONPATH", new_pythonpath);
-        }
-
-        let output = command
+        let output = Command::new("bash")
+            .arg("-c")
+            .arg(cmd)
             .output()
             .map_err(|e| anyhow!("Erro ao executar comando '{}': {}", cmd, e))?;
 
@@ -394,67 +376,6 @@ NÃO HÁ LIMITES PARA O CHEFE.
             let stderr = String::from_utf8_lossy(&output.stderr);
             Err(anyhow!("Comando falhou: {}", stderr))
         }
-    }
-
-    fn build_augmented_path() -> Option<String> {
-        let mut current: Vec<String> = env::var("PATH")
-            .unwrap_or_default()
-            .split(':')
-            .filter(|segment| !segment.trim().is_empty())
-            .map(|segment| segment.to_string())
-            .collect();
-
-        for extra in Self::candidate_paths() {
-            if !current.iter().any(|entry| entry == &extra) {
-                current.insert(0, extra);
-            }
-        }
-
-        if current.is_empty() {
-            None
-        } else {
-            Some(current.join(":"))
-        }
-    }
-
-    fn candidate_paths() -> Vec<String> {
-        let mut extras: Vec<PathBuf> = vec![
-            PathBuf::from("/opt/homebrew/bin"),
-            PathBuf::from("/opt/homebrew/sbin"),
-        ];
-
-        if let Some(home) = dirs::home_dir() {
-            extras.push(home.join("bin"));
-            extras.push(home.join(".local/bin"));
-            extras.push(home.join(".local/whatweb"));
-        }
-
-        extras
-            .into_iter()
-            .filter(|path| path.exists())
-            .map(|path| path.to_string_lossy().into_owned())
-            .collect()
-    }
-
-    fn python_user_site() -> Option<String> {
-        if let Ok(output) = Command::new("python3")
-            .arg("-m")
-            .arg("site")
-            .arg("--user-site")
-            .output()
-        {
-            if output.status.success() {
-                let value = String::from_utf8_lossy(&output.stdout).trim().to_string();
-                if !value.is_empty() {
-                    return Some(value);
-                }
-            }
-        }
-        None
-    }
-
-    fn encode_payload(leak_data: &str) -> String {
-        STANDARD.encode(leak_data.as_bytes())
     }
 
     /// ⚡ EXECUTAR COMANDO (com logging)
