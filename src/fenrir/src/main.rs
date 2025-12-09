@@ -1,8 +1,11 @@
 // --- ARQUIVOS DE MÓDULO ---
 // FENRIR GOD MODE - Sistema operacional completo
 mod agent_manifest;
+mod ai_chain_mode;
+mod ai_hierarchy_abstraction;
 mod api_keys;
 mod basic_interactive;
+mod cline_integration;
 mod config;
 mod executor;
 mod ferramentas;
@@ -19,14 +22,13 @@ mod terminal;
 mod venz_agent;
 mod ui_huh;
 mod cotoa_async;
-mod cline_integration;
 
 // --- IMPORTS (use) ---
 // Agora a gente chama as funções dos *nossos* módulos.
 
 use agent_manifest::print_agent_manifest;
 use ai_chain_mode::{start_fenrir_chain_mode, get_fenrir_chain_status};
-use ai_integration::execute_professional_ai_command;
+use cline_integration::execute_professional_ai_command;
 use basic_interactive::start_basic_interactive_mode;
 use config::FenrirConfig;
 use grok_code_client::GrokCodeClient;

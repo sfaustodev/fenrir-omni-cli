@@ -302,7 +302,7 @@ fn construct_scan_parser() -> impl Parser<ScanCommand> {
     let quiet = long("quiet").short('q').switch();
     let no_dns = long("no-dns").switch();
     let aggressive = long("aggressive").short('a').switch();
-    let version_detection = long("version-detection").short('v').switch();
+    let version_detection = long("version-detection").short('V').switch();
     let scripts = long("script").argument("SCRIPTS").optional();
 
     construct!(ScanCommand {
