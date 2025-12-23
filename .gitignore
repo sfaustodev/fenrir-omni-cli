@@ -66,3 +66,14 @@ fenrir_tasks.log
 *brave*
 *Binance*
 *binance*
+
+# User-requested cleaning ignores
+**/*.sh
+# Tests and todos
+TODO*
+**/test_*.rs
+# Local config
+.claude/
+# Specific logs
+**/fenrir_*.log
+encaralhamento.log
