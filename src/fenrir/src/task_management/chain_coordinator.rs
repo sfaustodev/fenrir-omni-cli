@@ -40,6 +40,17 @@ pub struct ChainOfCaralhoManager {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ExternalTarefinhaPlan {
+    pub titulo: String,
+    pub descricao: String,
+    pub priority: Option<crate::task_management::Priority>,
+    pub complexity: Option<crate::task_management::Complexity>,
+    pub estimated_minutes: Option<u16>,
+    pub dependencies: Vec<String>,
+    pub async_ok: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ExecutionMode {
     Sequential, // Uma por vez
     Parallel,   // Múltiplas simultâneas
@@ -119,6 +130,69 @@ impl ChainOfCaralhoManager {
                 "⚡ Pilha async carregada com {} tarefinhas paralelizáveis",
                 async_count
             );
+        }
+
+        Ok(batch_id)
+    }
+
+    /// 🎯 CRIAR BATCH A PARTIR DE TAREFINHAS EXTERNAS (Fenrir_ORQ)
+    pub fn create_batch_from_external(
+        &mut self,
+        goal: String,
+        tasks: Vec<ExternalTarefinhaPlan>,
+    ) -> Result<Option<String>> {
+        self.run_weekly_log_review_if_due()?;
+        println!("🎯 Recebendo tarefinhas externas para: {}", goal);
+
+        let mut batch = TarefaFinhaBatch::new(goal.clone(), "Fenrir_ORQ".to_string());
+        let mut async_pilha: Vec<TarefaFinha> = vec![];
+
+        for task in tasks {
+            let priority = task
+                .priority
+                .unwrap_or(crate::task_management::Priority::Medium);
+            let complexity = task
+                .complexity
+                .unwrap_or(crate::task_management::Complexity::Pleno);
+            let estimated_minutes = task.estimated_minutes.unwrap_or(15);
+
+            let assignee = self.assign_tarefinha(&complexity);
+            let mut tarefinha = TarefaFinha::new(
+                task.titulo,
+                task.descricao,
+                assignee,
+                priority,
+                complexity,
+                estimated_minutes,
+            );
+            tarefinha.dependencies = task.dependencies;
+
+            if task.async_ok
+                && tarefinha.dependencies.is_empty()
+                && !matches!(
+                    tarefinha.priority,
+                    crate::task_management::Priority::Critical
+                        | crate::task_management::Priority::High
+                )
+            {
+                async_pilha.push(tarefinha);
+            } else {
+                batch.add_tarefa(tarefinha);
+            }
+        }
+
+        let mut batch_id = None;
+
+        if !batch.tarefinhas.is_empty() {
+            let tarefinhas_count = batch.tarefinhas.len();
+            self.metrics.total_tarefinhas_created += tarefinhas_count;
+            batch_id = Some(batch.batch_id.clone());
+            self.caderninhos.push(batch);
+        }
+
+        if !async_pilha.is_empty() {
+            self.metrics.total_tarefinhas_created += async_pilha.len();
+            self.pilha_async.extend(async_pilha);
         }
 
         Ok(batch_id)

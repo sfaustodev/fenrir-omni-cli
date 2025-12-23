@@ -1,10 +1,12 @@
 // 🔥 FENRIR BASIC INTERACTIVE - O básico que funcionava
 // Sem IA pra não dar merda - comandos diretos
 
+use crate::natural_request;
 use crate::operations::FenrirOperations;
 use crate::security_protection::{get_security, validate_command};
 use crate::venz_agent::get_venz_agent;
 use anyhow::Result;
+use indicatif::ProgressBar;
 use std::io::{self, Write};
 
 pub struct BasicInteractive {
@@ -33,7 +35,6 @@ impl BasicInteractive {
         println!("   🍽️ devorar <alvo>   - Engenharia reversa");
         println!("   🥷 venz <comando>     - Venz executa sem censura");
         println!("   🔒 security          - Status de segurança");
-        println!("   📋 help              - Ajuda básica");
         println!("   🚪 sair              - Sair");
         println!("\n⚠️ REGRAS DO CHEFE:");
         println!("   ✅ ROSNAR só em DISCO EXTERNO FÍSICO");
@@ -70,9 +71,6 @@ impl BasicInteractive {
                         "sair" | "exit" | "quit" => {
                             println!("🐺 FENRIR encerrando. Até a próxima!");
                             break;
-                        }
-                        "help" => {
-                            self.show_help();
                         }
                         "security" => {
                             let security = get_security();
@@ -112,8 +110,7 @@ impl BasicInteractive {
                             println!("⚠️ DEBUG MODE ATIVADO - Proteções relaxadas");
                         }
                         _ => {
-                            println!("❌ Comando desconhecido: {}", command);
-                            println!("💡 Digite 'help' para ver comandos disponíveis");
+                            self.handle_natural_language(input).await?;
                         }
                     }
                 }
@@ -124,6 +121,17 @@ impl BasicInteractive {
             }
         }
 
+        Ok(())
+    }
+
+    async fn handle_natural_language(&mut self, input: &str) -> Result<()> {
+        let pb = ProgressBar::new_spinner();
+        if let Err(e) = natural_request::process_natural_request(input, Some(&pb)).await {
+            pb.finish_with_message("❌ Falha no pipeline natural.");
+            eprintln!("❌ Erro no pipeline natural: {}", e);
+        } else {
+            pb.finish_with_message("✅ Pipeline natural concluído.");
+        }
         Ok(())
     }
 
@@ -212,41 +220,6 @@ impl BasicInteractive {
         venz_agent.show_operation_log();
 
         Ok(())
-    }
-
-    /// 📋 AJUDA BÁSICA
-    fn show_help(&self) {
-        println!("\n📋 FENRIR BASIC HELP");
-        println!("{}", "═".repeat(40));
-
-        println!("\n🔥 COMANDOS PRINCIPAIS:");
-        println!("   📍 morder <alvo>      - Atque direto ao alvo");
-        println!("   🔍 rosnar <alvo>     - Scan de reconhecimento");
-        println!("   🍽️ devorar <alvo>   - Engenharia reversa completa");
-        println!("   🥷 venz <comando>     - Agente sem censura");
-
-        println!("\n🔒 SEGURANÇA:");
-        println!("   🔒 ROSNAR só funciona em ALVOS EXTERNOS FÍSICOS");
-        println!("   🔒 MORDER/DEVORAR tem validações básicas");
-        println!("   🔒 Venz SEM CENSURA = Sem limites pro CHEFE");
-
-        println!("\n🥷 VENZ - AGENTE MULTI-USO:");
-        println!("   scan             - Reconhecimento avançado");
-        println!("   blockchain        - Análise crypto/blockchain");
-        println!("   leak             - Investigação de vazamentos");
-        println!("   investigate      - Investigação completa");
-
-        println!("\n⚠️ PROTEÇÕES:");
-        println!("   ✅ Validação de comandos perigosos");
-        println!("   ✅ Confirmação para operações de risco");
-        println!("   ✅ Log completo de todas as operações");
-
-        println!("\n💎 MODOS ESPECIAIS:");
-        println!("   ./fenrir --tarefinha  - Modo garçom (se quiser IA)");
-        println!("   ./fenrir --chain      - Modo hierarchy (profissional)");
-
-        println!("{}", "═".repeat(40));
-        println!("🎯 CHEFE: Use com sabedoria e responsabilidade!");
     }
 }
 
