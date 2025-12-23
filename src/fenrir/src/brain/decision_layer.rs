@@ -10,15 +10,9 @@ pub struct Decision {
     pub timestamp: u64,
 }
 
-struct PendingDecision {
-    id: String,
-    description: String,
-    decider: Box<dyn FnOnce() -> bool + Send>,
-}
-
 pub struct DecisionEngine {
     pub log: Vec<Decision>,
-    pending: VecDeque<PendingDecision>,
+    pub pending: VecDeque<Box<dyn FnOnce() -> bool + Send>>,
 }
 
 impl DecisionEngine {
@@ -33,11 +27,8 @@ impl DecisionEngine {
     where
         F: FnOnce() -> bool + Send + 'static,
     {
-        self.pending.push_back(PendingDecision {
-            id: id.to_string(),
-            description: desc.to_string(),
-            decider: Box::new(decider),
-        });
+        let _ = (id, desc);
+        self.pending.push_back(Box::new(decider));
     }
 
     pub fn commit(&mut self, id: String, desc: String, accepted: bool, reason: String) {
@@ -53,7 +44,7 @@ impl DecisionEngine {
         };
         self.log.push(decision);
         log::info!(
-            "DECISION -> ({}) {}",
+            "DECISION → ({}) {}",
             id,
             if accepted { "OK" } else { "NOK" }
         );
@@ -63,20 +54,13 @@ impl DecisionEngine {
         let mut accepted = 0;
         let mut rejected = 0;
 
-        while let Some(pending) = self.pending.pop_front() {
-            let result = (pending.decider)();
+        while let Some(decider) = self.pending.pop_front() {
+            let result = decider();
             if result {
                 accepted += 1;
             } else {
                 rejected += 1;
             }
-
-            self.commit(
-                pending.id,
-                pending.description,
-                result,
-                "auto-run".to_string(),
-            );
         }
 
         (accepted, rejected)
@@ -84,7 +68,7 @@ impl DecisionEngine {
 
     pub fn stats(&self) -> (usize, usize) {
         let accepted = self.log.iter().filter(|d| d.accepted).count();
-        let rejected = self.log.len().saturating_sub(accepted);
+        let rejected = self.log.len() - accepted;
         (accepted, rejected)
     }
 }
