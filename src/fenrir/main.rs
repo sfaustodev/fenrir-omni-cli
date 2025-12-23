@@ -12,7 +12,7 @@ use multi_ai_orchestrator::{AIOrchestrator, AIModel};
 #[derive(Parser)]
 #[command(name = "fenrir")]
 #[command(about = "🐺 FENRIR - Multi-AI Orchestration System")]
-#[command(version = "1.0.0")]
+#[command(version = "1.0.0", disable_help_flag = true, disable_help_subcommand = true)]
 pub struct Cli {
     #[command(subcommand)]
     command: Commands,
@@ -110,7 +110,7 @@ async fn handle_interactive_mode() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("\n🔥 FENRIR Interactive Mode Activated");
     println!("All AI models are now under FENRIR control");
-    println!("Type 'help' for commands or 'exit' to quit\n");
+    println!("Type 'exit' to quit\n");
 
     loop {
         print!("🐺 FENRIR> ");
@@ -125,12 +125,6 @@ async fn handle_interactive_mode() -> Result<(), Box<dyn std::error::Error>> {
             "exit" | "quit" => {
                 println!("🔥 FENRIR: Deactivating all AI systems");
                 break;
-            }
-            "help" => {
-                print_interactive_help();
-            }
-            "status" => {
-                print_system_status();
             }
             cmd if !cmd.is_empty() => {
                 if let Err(e) = orchestrator.parse_gemini_prompt(cmd).await {
@@ -266,29 +260,6 @@ async fn handle_chain(chain: String, format: Option<String>) -> Result<(), Box<d
     }
 
     Ok(())
-}
-
-fn print_interactive_help() {
-    println!("
-🐺 FENRIR Interactive Commands:
-
-📝 COMMANDS:
-  <any text>     - Execute using multi-AI delegation
-  status         - Show system status
-  help           - Show this help
-  exit/quit      - Exit interactive mode
-
-🧠 AI MODELS:
-  gemini         - Master Controller (delegates tasks)
-  claude         - Primary Executor (with guardrails)
-  qwen           - Secondary Executor (with guardrails)
-  codex          - CLI Interface (API integration)
-  venice         - RED TEAM (NO GUARDRAILS - unrestricted)
-
-🔴 SPECIAL MODES:
-  --no-guardrails - Disable safety restrictions
-  --yolo         - Execute without confirmation
-    ");
 }
 
 fn print_system_status() {

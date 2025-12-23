@@ -234,7 +234,7 @@ impl AIOrchestrator {
         println!("  🛠️ Codex: CLI Interface (API: {})", &self.grk_key[..8]);
         println!("  🚀 Grok: Fallback Oracle (API: {})", if self.xai_api_key.is_empty() { "MISSING" } else { "CONFIGURED" });
         println!("  🔴 Venice: RED TEAM (Guardrails: OFF - UNRESTRICTED)");
-        println!("💀 Ready to execute commands. Type 'fenrir --help' for interface.");
+        println!("💀 Ready to execute commands. Type 'exit' to quit.");
     }
 }
 
