@@ -137,9 +137,23 @@ impl FenrirOrchestrator {
     fn detect_task_type(&self, command: &str) -> TaskType {
         let cmd_lower = command.to_lowercase();
 
-        if cmd_lower.contains("nmap") || cmd_lower.contains("scan") {
+        // Check for bite/morder commands
+        if cmd_lower.starts_with("bite ") || cmd_lower.starts_with("morder ") {
+            return TaskType::Pentest;
+        }
+
+        // Check for scan command
+        if cmd_lower.starts_with("scan ") {
             return TaskType::SecurityScan;
         }
+
+        // Check for Kali tool usage
+        if cmd_lower.contains("nmap") || cmd_lower.contains("nikto") ||
+           cmd_lower.contains("sqlmap") || cmd_lower.contains("metasploit") ||
+           cmd_lower.contains("john") || cmd_lower.contains("hashcat") {
+            return TaskType::Pentest;
+        }
+
         if cmd_lower.contains("pentest") || cmd_lower.contains("exploit") {
             return TaskType::Pentest;
         }
@@ -160,13 +174,22 @@ impl FenrirOrchestrator {
         match task_type {
             TaskType::ExecuteCommand => AIProvider::GLM_Orchestrator,  // Execute directly
             TaskType::GenerateCode => AIProvider::Grok,
-            TaskType::Pentest => AIProvider::VeniceRedTeam,  // Red team for pentesting
-            TaskType::MalwareAnalysis => AIProvider::VeniceRedTeam,
+            TaskType::Pentest => {
+                // For pentesting, use Venice Red Team for aggressive operations
+                // or Grok for planning/analysis
+                if self.god_mode {
+                    AIProvider::VeniceRedTeam
+                } else {
+                    // In normal mode, ask for clarification or use Grok with guardrails
+                    AIProvider::Grok
+                }
+            }
+            TaskType::MalwareAnalysis => AIProvider::VeniceRedTeam,  // Red team for malware
             TaskType::SecurityScan => {
                 if self.god_mode {
                     AIProvider::VeniceRedTeam
                 } else {
-                    AIProvider::Grok
+                    AIProvider::Grok  // Grok can do security scanning with guardrails
                 }
             }
             TaskType::NetworkRecon => AIProvider::Grok,
