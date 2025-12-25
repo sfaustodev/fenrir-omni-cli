@@ -54,9 +54,6 @@ impl BasicInteractive {
                 Ok(0) => break,
                 Ok(_) => {
                     let input = input.trim();
-                    if input.is_empty() {
-                        continue;
-                    }
 
                     let parts: Vec<&str> = input.split_whitespace().collect();
                     if parts.is_empty() {
@@ -76,66 +73,30 @@ impl BasicInteractive {
                             security.show_operation_log();
                         }
                         "ai" | "ask" => {
-                            if args.is_empty() {
-                                println!("❌ Uso: ai <pergunta>");
-                                continue;
-                            }
                             self.handle_smart_api(args).await?;
                         }
                         "gemini" => {
-                            if args.is_empty() {
-                                println!("❌ Uso: gemini <pergunta>");
-                                continue;
-                            }
                             self.handle_gemini(args).await?;
                         }
                         "grok" | "xai" => {
-                            if args.is_empty() {
-                                println!("❌ Uso: grok <pergunta>");
-                                continue;
-                            }
                             self.handle_grok(args).await?;
                         }
                         "zai" => {
-                            if args.is_empty() {
-                                println!("❌ Uso: zai <pergunta>");
-                                continue;
-                            }
                             self.handle_zai(args).await?;
                         }
                         "qwen" => {
-                            if args.is_empty() {
-                                println!("❌ Uso: qwen <pergunta>");
-                                continue;
-                            }
                             self.handle_qwen(args).await?;
                         }
                         "morder" => {
-                            if args.is_empty() {
-                                println!("❌ Uso: morder <alvo>");
-                                continue;
-                            }
                             self.handle_morder(args).await?;
                         }
                         "rosnar" => {
-                            if args.is_empty() {
-                                println!("❌ Uso: rosnar <alvo-externo>");
-                                continue;
-                            }
                             self.handle_rosnar(args).await?;
                         }
                         "devorar" => {
-                            if args.is_empty() {
-                                println!("❌ Uso: devorar <alvo>");
-                                continue;
-                            }
                             self.handle_devorar(args).await?;
                         }
                         "venz" => {
-                            if args.is_empty() {
-                                println!("❌ Uso: venz <comando> [alvo]");
-                                continue;
-                            }
                             self.handle_venz(args).await?;
                         }
                         "debug" => {
