@@ -38,9 +38,22 @@ impl FenrirOrchestrator {
         println!("🐺 Fenrir Orchestrator activated...");
         println!("📥 Input: {}", user_input);
 
+        // Step 0: Read FENRIR_MCP.md as system prompt
+        let system_prompt = match std::fs::read_to_string("FENRIR_MCP.md") {
+            Ok(content) => {
+                println!("📚 FENRIR_MCP.md loaded ({:.1} KB)", content.len() as f64 / 1024.0);
+                content
+            }
+            Err(e) => {
+                println!("⚠️  Could not read FENRIR_MCP.md: {}", e);
+                String::from("You are Fenrir MCP 2.0 orchestrator. Coordinate AI tasks.")
+            }
+        };
+
         // Step 1: Call Gemini for translation
-        let translated = self.translate_input(user_input.clone()).await;
-        println!("🔄 Gemini: {}", translated);
+        println!("🔄 Calling Gemini for translation...");
+        let translated = self.translate_input_with_context(user_input.clone(), &system_prompt).await;
+        println!("✅ Gemini: {}", translated);
 
         // Step 2: Create task structure
         let mut task = self.create_task(user_input.clone(), translated).await;
@@ -51,10 +64,12 @@ impl FenrirOrchestrator {
 
         // Step 4: Split if complex
         if matches!(complexity, Complexity::Complex) {
+            println!("✂️  Splitting complex task...");
             task = self.split_into_subtasks(task).await;
         }
 
         // Step 5: Execute
+        println!("⚡ Executing task...");
         let result = self.execute_task(task).await;
 
         // Step 6: Format output
@@ -65,13 +80,15 @@ impl FenrirOrchestrator {
     // STEP 1: TRANSLATION (GEMINI)
     // ------------------------------------------------------------------------
 
-    async fn translate_input(&self, input: String) -> String {
+    async fn translate_input_with_context(&self, input: String, system_prompt: &str) -> String {
         let request = AIRequest {
             provider: AIProvider::GeminiTranslator,
-            system_prompt: String::from(
+            system_prompt: format!(
+                "{}\n\n{}\n\n",
+                system_prompt,
                 "TRANSLATE INPUT INTO COMMANDS AND SEND BOTH INPUT AND TRANSLATION TO FENRIR ORQ (GLM 4.7). \
-                You are a translation layer. Convert Portuguese/English input into terminal commands. \
-                Return ONLY the command, no explanation."
+                You are the translation layer. Convert Portuguese/English input into terminal commands. \
+                Return ONLY the translated command, no explanation."
             ),
             user_message: input,
             max_tokens: Some(500),
@@ -80,8 +97,12 @@ impl FenrirOrchestrator {
 
         match call_ai(request).await {
             response if response.success => response.content,
-            _ => String::from("Translation failed")
+            _ => String::from("Translation failed - using local fallback")
         }
+    }
+
+    async fn translate_input(&self, input: String) -> String {
+        self.translate_input_with_context(input, "Default context").await
     }
 
     // ------------------------------------------------------------------------

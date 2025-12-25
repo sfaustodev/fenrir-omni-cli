@@ -8,7 +8,18 @@ use std::time::Duration;
 
 // Load .env file at startup
 pub fn load_env() {
-    dotenv::dotenv().ok();
+    // Try to load from current directory first
+    if let Err(_) = dotenv::dotenv() {
+        // If not found, try from parent
+        let _ = dotenv::from_filename("../.env");
+    }
+
+    // Debug: Check if keys are loaded
+    if std::env::var("GEMINI_API_KEY").is_ok() {
+        eprintln!("✅ GEMINI_API_KEY loaded");
+    } else {
+        eprintln!("⚠️  GEMINI_API_KEY not found");
+    }
 }
 
 // ============================================================================
@@ -262,12 +273,15 @@ async fn call_gemini(request: AIRequest) -> AIResponse {
                 }
             }
         }
-        Err(e) => AIResponse {
-            success: false,
-            content: String::from(""),
-            error: Some(format!("Gemini API call failed: {}", e)),
-            provider: AIProvider::GeminiTranslator,
-            execution_time_ms: 0,
+        Err(e) => {
+            eprintln!("🔴 Gemini API Error: {}", e);
+            AIResponse {
+                success: false,
+                content: String::from(""),
+                error: Some(format!("Gemini API call failed: {}", e)),
+                provider: AIProvider::GeminiTranslator,
+                execution_time_ms: 0,
+            }
         }
     }
 }
