@@ -24,6 +24,9 @@ use fenrir_orchestrator::FenrirOrchestrator;
 
 #[tokio::main]
 async fn main() {
+    // Load environment variables from .env file
+    fenrir_ai_layer::load_env();
+
     let args: Vec<String> = env::args().collect();
     let pb = ProgressBar::new_spinner(); // Spinner pra gente ver rodando
 
