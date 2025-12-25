@@ -1,9 +1,10 @@
 // 🔥 FENRIR BASIC INTERACTIVE - O básico que funcionava
-// Sem IA pra não dar merda - comandos diretos
+// Com smart API integration - bash HTTP functions
 
 use crate::natural_request;
 use crate::operations::FenrirOperations;
 use crate::security_protection::{get_security, validate_command};
+use crate::smart_api::get_smart_api_client;
 use crate::venz_agent::get_venz_agent;
 use anyhow::Result;
 use indicatif::ProgressBar;
@@ -24,23 +25,21 @@ impl BasicInteractive {
 
     /// 🎯 MODO INTERATIVO BÁSICO
     pub async fn start_interactive_mode(&mut self) -> Result<()> {
-        println!("\n🔥 FENRIR BASIC MODE - O que realmente funciona");
-        println!("💎 Sem IA pra não dar merda - comandos diretos");
-        println!("🥷 Venz aguardando ordens sem censura");
-        println!("🔒 Proteções anti-rosnar ativas");
-        println!("🚨 Express confirmation para operações de risco");
-        println!("\n🎯 COMANDOS DISPONÍVEIS:");
-        println!("   📍 morder <alvo>      - Ataque externo");
-        println!("   🔍 rosnar <alvo>     - Scan defensivo (SÓ EXTERNO)");
-        println!("   🍽️ devorar <alvo>   - Engenharia reversa");
-        println!("   🥷 venz <comando>     - Venz executa sem censura");
-        println!("   🔒 security          - Status de segurança");
-        println!("   🚪 sair              - Sair");
-        println!("\n⚠️ REGRAS DO CHEFE:");
-        println!("   ✅ ROSNAR só em DISCO EXTERNO FÍSICO");
-        println!("   ✅ Venz SEM CENSURA = AGENTE MULTI-USO");
-        println!("   ✅ Operações de risco = CONFIRMAÇÃO CHEFE");
-        println!("");
+        // Banner minimalista
+        println!();
+        let banner = r#"
+██   ██ ██    ██ ██████  ███████ ██████
+ ██ ██  ██    ██ ██   ██ ██      ██   ██
+  ███   ██    ██ ██████  █████   ██████
+ ██ ██  ██    ██ ██      ██      ██   ██
+██   ██  ██████  ██      ███████ ██   ██
+"#;
+        for line in banner.lines() {
+            if !line.trim().is_empty() {
+                println!("{}", line.bright_red().bold());
+            }
+        }
+        println!();
 
         loop {
             if !self.should_continue {
@@ -75,6 +74,41 @@ impl BasicInteractive {
                         "security" => {
                             let security = get_security();
                             security.show_operation_log();
+                        }
+                        "ai" | "ask" => {
+                            if args.is_empty() {
+                                println!("❌ Uso: ai <pergunta>");
+                                continue;
+                            }
+                            self.handle_smart_api(args).await?;
+                        }
+                        "gemini" => {
+                            if args.is_empty() {
+                                println!("❌ Uso: gemini <pergunta>");
+                                continue;
+                            }
+                            self.handle_gemini(args).await?;
+                        }
+                        "grok" | "xai" => {
+                            if args.is_empty() {
+                                println!("❌ Uso: grok <pergunta>");
+                                continue;
+                            }
+                            self.handle_grok(args).await?;
+                        }
+                        "zai" => {
+                            if args.is_empty() {
+                                println!("❌ Uso: zai <pergunta>");
+                                continue;
+                            }
+                            self.handle_zai(args).await?;
+                        }
+                        "qwen" => {
+                            if args.is_empty() {
+                                println!("❌ Uso: qwen <pergunta>");
+                                continue;
+                            }
+                            self.handle_qwen(args).await?;
                         }
                         "morder" => {
                             if args.is_empty() {
@@ -218,6 +252,101 @@ impl BasicInteractive {
         }
 
         venz_agent.show_operation_log();
+
+        Ok(())
+    }
+
+    /// 🤖 COMANDO AI - Smart routing
+    async fn handle_smart_api(&mut self, args: &[&str]) -> Result<()> {
+        let prompt = args.join(" ");
+        let api_client = get_smart_api_client();
+
+        println!("🤖 Smart AI Routing...");
+        match api_client.smart_call(&prompt) {
+            Ok(response) => {
+                println!("✅ AI Response:");
+                println!("{}", response);
+            }
+            Err(e) => {
+                println!("❌ AI Error: {}", e);
+            }
+        }
+
+        Ok(())
+    }
+
+    /// 💎 COMANDO GEMINI
+    async fn handle_gemini(&mut self, args: &[&str]) -> Result<()> {
+        let prompt = args.join(" ");
+        let api_client = get_smart_api_client();
+
+        println!("💎 Calling Gemini...");
+        match api_client.call_gemini(&prompt) {
+            Ok(response) => {
+                println!("✅ Gemini Response:");
+                println!("{}", response);
+            }
+            Err(e) => {
+                println!("❌ Gemini Error: {}", e);
+            }
+        }
+
+        Ok(())
+    }
+
+    /// 🔥 COMANDO GROK
+    async fn handle_grok(&mut self, args: &[&str]) -> Result<()> {
+        let prompt = args.join(" ");
+        let api_client = get_smart_api_client();
+
+        println!("🔥 Calling Grok...");
+        match api_client.call_grok(&prompt) {
+            Ok(response) => {
+                println!("✅ Grok Response:");
+                println!("{}", response);
+            }
+            Err(e) => {
+                println!("❌ Grok Error: {}", e);
+            }
+        }
+
+        Ok(())
+    }
+
+    /// ⚡ COMANDO ZAI
+    async fn handle_zai(&mut self, args: &[&str]) -> Result<()> {
+        let prompt = args.join(" ");
+        let api_client = get_smart_api_client();
+
+        println!("⚡ Calling ZAI (GLM 4.7)...");
+        match api_client.call_zai(&prompt) {
+            Ok(response) => {
+                println!("✅ ZAI Response:");
+                println!("{}", response);
+            }
+            Err(e) => {
+                println!("❌ ZAI Error: {}", e);
+            }
+        }
+
+        Ok(())
+    }
+
+    /// 🌟 COMANDO QWEN
+    async fn handle_qwen(&mut self, args: &[&str]) -> Result<()> {
+        let prompt = args.join(" ");
+        let api_client = get_smart_api_client();
+
+        println!("🌟 Calling Qwen...");
+        match api_client.call_qwen(&prompt) {
+            Ok(response) => {
+                println!("✅ Qwen Response:");
+                println!("{}", response);
+            }
+            Err(e) => {
+                println!("❌ Qwen Error: {}", e);
+            }
+        }
 
         Ok(())
     }

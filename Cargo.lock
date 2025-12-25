@@ -785,6 +785,7 @@ dependencies = [
 name = "fenrir_cli"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "bpaf",
  "clap",
  "clap_complete",
@@ -793,9 +794,12 @@ dependencies = [
  "console 0.15.11",
  "dirs",
  "inquire",
+ "reqwest",
  "serde",
+ "serde_json",
  "serde_yaml",
  "thiserror",
+ "tokio",
  "tracing",
  "tracing-subscriber",
  "url",

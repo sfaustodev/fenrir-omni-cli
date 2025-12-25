@@ -3,6 +3,7 @@
 //! Ponto de entrada principal da aplicação Fenrir.
 //! Inicializa o sistema de erros, logging e delega para o módulo CLI.
 
+mod ai;
 mod cli;
 mod commands;
 mod completions;

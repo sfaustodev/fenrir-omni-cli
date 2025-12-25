@@ -102,6 +102,13 @@ pub enum Commands {
 
     /// Interface interativa estilo Huh? para montar comandos
     Huh,
+
+    /// Natural language mode - describe what you want in plain English/Portuguese
+    Ai {
+        /// Natural language request (if not provided, enters interactive mode)
+        #[arg(short = 'p', long)]
+        prompt: Option<String>,
+    },
 }
 
 /// Função principal que executa o CLI
@@ -128,7 +135,14 @@ pub fn run() -> Result<()> {
             ui::print_available_commands();
             Ok(())
         }
-        Some(cmd) => execute_command(cmd, &config, cli.verbose),
+        Some(cmd) => {
+            // AI command needs async runtime
+            if matches!(cmd, Commands::Ai { .. }) {
+                tokio::runtime::Runtime::new()?.block_on(execute_command_async(cmd, &config, cli.verbose))
+            } else {
+                execute_command(cmd, &config, cli.verbose)
+            }
+        }
     }
 }
 
@@ -155,5 +169,22 @@ fn execute_command(cmd: Commands, config: &Config, verbose: bool) -> Result<()> 
         Commands::Init { force } => commands::init::execute(force),
         Commands::Gitar { message } => commands::gitar::execute(message, verbose),
         Commands::Huh => commands::huh_ui::execute(config, verbose),
+        Commands::Ai { .. } => unreachable!("AI command should be handled by execute_command_async"),
+    }
+}
+
+/// Executa comandos assíncronos (AI)
+async fn execute_command_async(cmd: Commands, _config: &Config, _verbose: bool) -> Result<()> {
+    match cmd {
+        Commands::Ai { prompt } => {
+            if let Some(prompt_text) = prompt {
+                let result = crate::ai::process_natural_input(&prompt_text).await?;
+                crate::ai::display_natural_result(&result);
+                Ok(())
+            } else {
+                crate::ai::interactive_mode().await
+            }
+        }
+        _ => unreachable!("Non-async commands should not use execute_command_async"),
     }
 }

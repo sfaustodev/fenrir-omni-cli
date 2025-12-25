@@ -3,10 +3,11 @@ use crate::task_management::chain_coordinator::{ChainOfCaralhoManager, ExternalT
 use crate::task_management::{Complexity, Priority};
 use anyhow::{Context, Result};
 use indicatif::ProgressBar;
+use reqwest::Client;
 use serde::de::DeserializeOwned;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::env;
-use tokio::process::Command;
+use std::time::Duration;
 
 #[derive(Debug)]
 struct GeminiSummary {
@@ -52,6 +53,85 @@ struct GrokTarefinha {
     estimated_minutes: Option<u16>,
     dependencies: Option<Vec<String>>,
     async_ok: Option<bool>,
+}
+
+// API Request/Response structures
+#[derive(Debug, Serialize)]
+struct GeminiRequest {
+    contents: Vec<GeminiContent>,
+    generation_config: Option<GeminiConfig>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct GeminiContent {
+    parts: Vec<GeminiPart>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct GeminiPart {
+    text: String,
+}
+
+#[derive(Debug, Serialize)]
+struct GeminiConfig {
+    temperature: f32,
+    max_output_tokens: i32,
+}
+
+#[derive(Debug, Deserialize)]
+struct GeminiApiResponse {
+    candidates: Vec<GeminiCandidate>,
+}
+
+#[derive(Debug, Deserialize)]
+struct GeminiCandidate {
+    content: GeminiContent,
+}
+
+#[derive(Debug, Serialize)]
+struct ClaudeRequest {
+    model: String,
+    max_tokens: i32,
+    messages: Vec<ClaudeMessage>,
+}
+
+#[derive(Debug, Serialize)]
+struct ClaudeMessage {
+    role: String,
+    content: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct ClaudeApiResponse {
+    content: Vec<ClaudeContentBlock>,
+}
+
+#[derive(Debug, Deserialize)]
+struct ClaudeContentBlock {
+    text: String,
+}
+
+#[derive(Debug, Serialize)]
+struct GrokRequest {
+    model: String,
+    messages: Vec<GrokMessage>,
+    temperature: f32,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct GrokMessage {
+    role: String,
+    content: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct GrokApiResponse {
+    choices: Vec<GrokChoice>,
+}
+
+#[derive(Debug, Deserialize)]
+struct GrokChoice {
+    message: GrokMessage,
 }
 
 pub async fn process_natural_request(input: &str, pb: Option<&ProgressBar>) -> Result<()> {
@@ -205,10 +285,50 @@ fn set_progress(pb: Option<&ProgressBar>, message: &str) {
 }
 
 async fn gemini_translate_and_extract(input: &str) -> Result<GeminiSummary> {
+    let api_key =
+        env::var("GEMINI_API_KEY").context("GEMINI_API_KEY not found in environment")?;
+
     let prompt = format!(
         "Translate the user request to English. Extract action keywords and summarize intent.\nReturn ONLY JSON with keys: english, keywords, summary, actions.\nUser request: {input}"
     );
-    let output = run_cli_with_key("gemini", "GEMINI_API_KEY", &[prompt]).await?;
+
+    let client = Client::builder()
+        .timeout(Duration::from_secs(30))
+        .build()?;
+
+    let request_body = GeminiRequest {
+        contents: vec![GeminiContent {
+            parts: vec![GeminiPart { text: prompt }],
+        }],
+        generation_config: Some(GeminiConfig {
+            temperature: 0.7,
+            max_output_tokens: 1024,
+        }),
+    };
+
+    let response = client
+        .post(format!(
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key={}",
+            api_key
+        ))
+        .json(&request_body)
+        .send()
+        .await
+        .context("Failed to call Gemini API")?;
+
+    if !response.status().is_success() {
+        let error_text = response.text().await?;
+        return Err(anyhow::anyhow!("Gemini API error: {}", error_text));
+    }
+
+    let api_response: GeminiApiResponse = response.json().await?;
+    let output = api_response
+        .candidates
+        .first()
+        .and_then(|c| c.content.parts.first())
+        .map(|p| p.text.clone())
+        .unwrap_or_default();
+
     let parsed: GeminiResponse =
         parse_json_response(&output).context("Failed to parse Gemini JSON response")?;
 
@@ -221,11 +341,53 @@ async fn gemini_translate_and_extract(input: &str) -> Result<GeminiSummary> {
 }
 
 async fn claude_sanitize(summary: &GeminiSummary) -> Result<ClaudeSanitized> {
+    // Try multiple possible API key variables for Claude
+    let api_key = env::var("GLM_API_KEY")
+        .or_else(|_| env::var("GLM_4_6_KEY"))
+        .or_else(|_| env::var("GLM_KEY"))
+        .or_else(|_| env::var("GLM_API_KEY"))
+        .context("GLM_API_KEY or equivalent not found in environment")?;
+
     let prompt = format!(
         "You are a safety filter. Remove dangerous operations (e.g., rm -rf ./, destructive deletes).\nReturn ONLY JSON with keys: sanitized_summary, removed_items, safe_actions.\nInput summary: {}\nActions: {:?}\nKeywords: {:?}",
         summary.summary, summary.actions, summary.keywords
     );
-    let output = run_cli_with_key("claude", "GLM_API_KEY", &[prompt]).await?;
+
+    let client = Client::builder()
+        .timeout(Duration::from_secs(30))
+        .build()?;
+
+    let request_body = ClaudeRequest {
+        model: "claude-3-5-sonnet-20241022".to_string(),
+        max_tokens: 1024,
+        messages: vec![ClaudeMessage {
+            role: "user".to_string(),
+            content: prompt,
+        }],
+    };
+
+    let response = client
+        .post("https://api.anthropic.com/v1/messages")
+        .header("x-api-key", api_key)
+        .header("anthropic-version", "2023-06-01")
+        .header("content-type", "application/json")
+        .json(&request_body)
+        .send()
+        .await
+        .context("Failed to call Claude API")?;
+
+    if !response.status().is_success() {
+        let error_text = response.text().await?;
+        return Err(anyhow::anyhow!("Claude API error: {}", error_text));
+    }
+
+    let api_response: ClaudeApiResponse = response.json().await?;
+    let output = api_response
+        .content
+        .first()
+        .map(|c| c.text.clone())
+        .unwrap_or_default();
+
     let parsed: ClaudeResponse =
         parse_json_response(&output).context("Failed to parse Claude JSON response")?;
 
@@ -241,45 +403,62 @@ async fn claude_sanitize(summary: &GeminiSummary) -> Result<ClaudeSanitized> {
 }
 
 async fn grok_decompose(sanitized: &ClaudeSanitized) -> Result<GrokResponse> {
+    // Try multiple possible API key variables for Grok
+    let api_key = env::var("GROK_API_KEY")
+        .or_else(|_| env::var("XAI_API_KEY"))
+        .or_else(|_| env::var("GLI_KEY"))
+        .or_else(|_| env::var("KAT_KEY"))
+        .context("GROK_API_KEY or equivalent not found in environment")?;
+
     let prompt = format!(
         "Divide the request into tarefinhas for execution. Return ONLY JSON with:\n{{\"tarefinhas\":[{{\"titulo\":\"...\",\"descricao\":\"...\",\"priority\":\"Critical|High|Medium|Low\",\"complexity\":\"Junior|Pleno|Senior|GodMode\",\"estimated_minutes\":10,\"dependencies\":[],\"async_ok\":true}}]}}\nRequest: {}\nSafe actions: {:?}\nRemoved items: {:?}",
         sanitized.sanitized_summary, sanitized.safe_actions, sanitized.removed_items
     );
-    let output = run_cli_with_key("grok", "GROK_API_KEY", &[prompt]).await?;
+
+    let client = Client::builder()
+        .timeout(Duration::from_secs(30))
+        .build()?;
+
+    let request_body = GrokRequest {
+        model: "grok-beta".to_string(),
+        messages: vec![GrokMessage {
+            role: "user".to_string(),
+            content: prompt,
+        }],
+        temperature: 0.7,
+    };
+
+    let response = client
+        .post("https://api.x.ai/v1/chat/completions")
+        .header("authorization", format!("Bearer {}", api_key))
+        .header("content-type", "application/json")
+        .json(&request_body)
+        .send()
+        .await
+        .context("Failed to call Grok API")?;
+
+    if !response.status().is_success() {
+        let error_text = response.text().await?;
+        return Err(anyhow::anyhow!("Grok API error: {}", error_text));
+    }
+
+    let api_response: GrokApiResponse = response.json().await?;
+    let output = api_response
+        .choices
+        .first()
+        .map(|c| c.message.content.clone())
+        .unwrap_or_default();
+
+    // Try to parse as GrokResponse first
     let parsed: Result<GrokResponse> = parse_json_response(&output);
     if let Ok(response) = parsed {
         return Ok(response);
     }
 
+    // Fallback: try parsing as a list of tarefinhas
     let list: Vec<GrokTarefinha> =
         parse_json_response(&output).context("Failed to parse Grok JSON response (list)")?;
     Ok(GrokResponse { tarefinhas: list })
-}
-
-async fn run_cli_with_key(command: &str, key_var: &str, args: &[String]) -> Result<String> {
-    let api_key =
-        env::var(key_var).with_context(|| format!("{} is required for {}", key_var, command))?;
-
-    let mut cmd = Command::new(command);
-    cmd.env(key_var, api_key);
-    for arg in args {
-        cmd.arg(arg);
-    }
-
-    let output = cmd
-        .output()
-        .await
-        .context(format!("Failed to execute {} CLI for {}", command, key_var))?;
-
-    if !output.status.success() {
-        return Err(anyhow::anyhow!(
-            "{} CLI failed: {}",
-            command,
-            String::from_utf8_lossy(&output.stderr)
-        ));
-    }
-
-    Ok(String::from_utf8_lossy(&output.stdout).to_string())
 }
 
 fn parse_json_response<T: DeserializeOwned>(raw: &str) -> Result<T> {

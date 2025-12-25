@@ -3,6 +3,7 @@
 mod agent_manifest;
 mod ai_chain_mode;
 mod ai_hierarchy_abstraction;
+mod ai_integration;
 mod api_keys;
 mod basic_interactive;
 mod brain;
@@ -19,6 +20,7 @@ mod natural_request;
 mod operations;
 mod oraculo;
 mod security_protection;
+mod smart_api;
 mod starship;
 mod task_management;
 mod terminal;
