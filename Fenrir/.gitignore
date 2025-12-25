@@ -1,1 +1,12 @@
 target/
+
+# Environment variables with API keys
+.env
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
