@@ -1,5 +1,5 @@
 // --- ARQUIVOS DE MÓDULO ---
-// FENRIR MCP 2.0 - MULTI-AI ORCHESTRATION SYSTEM
+// FENRIR MCP 3.0 - MULTI-AI ORCHESTRATION SYSTEM
 mod executor;
 mod oraculo;
 mod ferramentas;
@@ -7,6 +7,8 @@ mod terminal;
 mod starship;
 mod fenrir_ai_layer;
 mod fenrir_orchestrator;
+mod kali_tools;
+mod kali_tools_comprehensive;
 
 // --- IMPORTS (use) ---
 // Agora a gente chama as funções dos *nossos* módulos.
@@ -21,6 +23,8 @@ use terminal::{bootstrap_terminal_interface, detect_terminal_capabilities};
 use executor::{ask_for_confirmation, handle_execute_command, handle_open_editor, log_task, FenrirTask};
 use starship::{initialize_fenrir_starship, FenrirStarship};
 use fenrir_orchestrator::FenrirOrchestrator;
+use kali_tools::{bite, scan, BiteConfig, BiteIntensity, ScanConfig, ScanType, ScanDepth, ScanOutput, get_available_tools};
+use kali_tools_comprehensive::{FenrirOrchestrationEngine, BreachDetector, DecisionLogger, KaliTool};
 
 #[tokio::main]
 async fn main() {
@@ -126,6 +130,269 @@ async fn interativo(pb: &ProgressBar, fenrir_terminal: &terminal::FenrirTerminal
                     last_command_status = 0;
                     continue;
                 }
+                if trimado.starts_with("bite ") || trimado.starts_with("morder ") {
+                    let parts: Vec<&str> = trimado.split_whitespace().collect();
+                    if parts.len() < 2 {
+                        println!("\n🐺 BITE (MORDER) - Advanced Penetration Testing\n");
+                        println!("Usage: bite <target> [options]");
+                        println!("  or:  morder <alvo> [opções]\n");
+                        println!("Examples:");
+                        println!("  bite 192.168.1.100            # Basic pentest");
+                        println!("  bite example.com --aggressive  # Aggressive mode");
+                        println!("  bite 10.0.0.1 --godmode        # Maximum intensity\n");
+                        println!("⚠️  For authorized bug bounty and security testing only");
+                    } else {
+                        let target = parts[1];
+                        let intensity = if parts.iter().any(|&p| p == "--godmode") {
+                            BiteIntensity::GodMode
+                        } else if parts.iter().any(|&p| p == "--aggressive") {
+                            BiteIntensity::Aggressive
+                        } else if parts.iter().any(|&p| p == "--cautious") {
+                            BiteIntensity::Cautious
+                        } else {
+                            BiteIntensity::Passive
+                        };
+
+                        let config = BiteConfig {
+                            target: target.to_string(),
+                            tools: vec![],
+                            intensity,
+                            categories: vec![],
+                            auto_exploit: parts.iter().any(|&p| p == "--exploit"),
+                            report_path: Some(format!("fenrir_bite_{}.md", target.replace(".", "_"))),
+                        };
+
+                        println!("\n🐺 Executing BITE (MORDER) penetration test...");
+                        match bite(target, config).await {
+                            Ok(result) => {
+                                println!("\n{}", result.report);
+                                last_command_status = 0;
+                            }
+                            Err(e) => {
+                                eprintln!("\n❌ Bite failed: {}", e);
+                                last_command_status = 1;
+                            }
+                        }
+                    }
+                    continue;
+                }
+                if trimado.starts_with("scan ") {
+                    let parts: Vec<&str> = trimado.split_whitespace().collect();
+                    if parts.len() < 2 {
+                        println!("\n🔍 FENRIR SCAN - Security Assessment Planning\n");
+                        println!("Usage: scan <target> [options]\n");
+                        println!("Examples:");
+                        println!("  scan 192.168.1.100              # Quick scan");
+                        println!("  scan example.com --comprehensive # Full assessment");
+                        println!("  scan 10.0.0.1 --stealth          # Stealth mode\n");
+                        println!("📊 Creates security plan without exploiting");
+                    } else {
+                        let target = parts[1];
+                        let scan_type = if parts.iter().any(|&p| p == "--stealth") {
+                            ScanType::Stealth
+                        } else if parts.iter().any(|&p| p == "--comprehensive") {
+                            ScanType::Comprehensive
+                        } else {
+                            ScanType::Quick
+                        };
+
+                        let depth = if parts.iter().any(|&p| p == "--deep") {
+                            ScanDepth::Deep
+                        } else if parts.iter().any(|&p| p == "--exhaustive") {
+                            ScanDepth::Exhaustive
+                        } else {
+                            ScanDepth::Surface
+                        };
+
+                        let config = ScanConfig {
+                            target: target.to_string(),
+                            scan_type,
+                            depth,
+                            output_format: ScanOutput::Terminal,
+                        };
+
+                        println!("\n🔍 Executing SCAN security assessment...");
+                        match scan(target, config).await {
+                            Ok(result) => {
+                                println!("\n📊 SCAN RESULTS:\n");
+                                println!("Target: {}", result.target);
+                                println!("Risk Score: {}/100", result.risk_score);
+                                println!("\nOpen Ports:");
+                                for port in &result.open_ports {
+                                    println!("  • {}/{} ({}) - {}",
+                                        port.port,
+                                        port.protocol,
+                                        port.state,
+                                        port.service.as_ref().unwrap_or(&"unknown".to_string())
+                                    );
+                                }
+                                println!("\nRecommendations:");
+                                for rec in &result.recommendations {
+                                    println!("  {}", rec);
+                                }
+                                println!("\n{}\n", result.security_plan);
+                                last_command_status = 0;
+                            }
+                            Err(e) => {
+                                eprintln!("\n❌ Scan failed: {}", e);
+                                last_command_status = 1;
+                            }
+                        }
+                    }
+                    continue;
+                }
+                if trimado == "tools" || trimado == "kali" {
+                    println!("\n🔧 FENRIR KALI TOOLS INTEGRATION\n");
+                    let available = get_available_tools();
+                    println!("Available Tools: {}/{}", available.len(), kali_tools::get_kali_tools().len());
+                    println!("\nAvailable Tools:");
+                    for tool in &available {
+                        println!("  • {} ({:?})", tool.name, tool.category);
+                    }
+                    println!("\nUse 'bite' or 'scan' to utilize these tools");
+                    last_command_status = 0;
+                    continue;
+                }
+                if trimado == "orchestrate" || trimado.starts_with("orchestrate ") {
+                    let target = if trimado.starts_with("orchestrate ") {
+                        let parts: Vec<&str> = trimado.split_whitespace().collect();
+                        if parts.len() >= 2 {
+                            parts[1].to_string()
+                        } else {
+                            "127.0.0.1".to_string()
+                        }
+                    } else {
+                        "127.0.0.1".to_string()
+                    };
+
+                    println!("\n🐺 FENRIR ORCHESTRATION ENGINE - Sequential Attack Mode");
+                    println!("🎯 Target: {}", target);
+
+                    let mut engine = FenrirOrchestrationEngine::new(target.clone());
+                    match engine.run_sequential_attack().await {
+                        Ok(_) => println!("\n✅ Orchestration complete"),
+                        Err(e) => eprintln!("\n❌ Orchestration failed: {}", e),
+                    }
+
+                    let report = engine.generate_ethical_report().await;
+
+                    let report_file = format!("fenrir_ethical_report_{}.md",
+                        target.replace(".", "_").replace("/", "_"));
+                    if let Ok(_) = std::fs::write(&report_file, report) {
+                        println!("📄 Ethical Analysis Final Report: {}", report_file);
+                    }
+
+                    last_command_status = 0;
+                    continue;
+                }
+                if trimado == "wifi" || trimado.starts_with("wifi ") {
+                    println!("\n📶 FENRIR WIFI GATEWAY PASSWORD RECOVERY\n");
+
+                    // Get current gateway
+                    println!("🔍 Detecting WiFi gateway...");
+
+                    // Try macOS first
+                    #[cfg(target_os = "macos")]
+                    {
+                        use std::process::Command;
+                        let gateway_output = Command::new("route")
+                            .args(&["-n", "get", "default"])
+                            .output();
+
+                        if let Ok(output) = gateway_output {
+                            let gateway_info = String::from_utf8_lossy(&output.stdout);
+                            println!("{}", gateway_info);
+
+                            // Extract gateway IP
+                            if let Some(gateway_line) = gateway_info.lines().find(|l| l.contains("gateway")) {
+                                let gateway_ip = gateway_line.split(":").last().unwrap_or("").trim();
+                                println!("\n🎯 Gateway IP: {}", gateway_ip);
+
+                                // Try to get WiFi password
+                                println!("\n🔐 Attempting to retrieve WiFi credentials...");
+
+                                let wifi_output = Command::new("security")
+                                    .args(&["find-generic-password", "-wa", "WiFi"])
+                                    .output();
+
+                                if let Ok(wifi_result) = wifi_output {
+                                    let wifi_pass = String::from_utf8_lossy(&wifi_result.stdout).trim().to_string();
+                                    if !wifi_pass.is_empty() {
+                                        println!("✅ WiFi Password found: {}", wifi_pass);
+
+                                        // Save to breach detector for reporting
+                                        let mut detector = BreachDetector::new();
+                                        detector.sensitive_data.push(
+                                            kali_tools_comprehensive::SensitiveData {
+                                                data_id: uuid::Uuid::new_v4().to_string(),
+                                                data_type: kali_tools_comprehensive::SensitiveDataType::Password,
+                                                content: format!("Gateway WiFi Password: {}", wifi_pass),
+                                                file_path: None,
+                                                url: None,
+                                                confidence: 1.0,
+                                                timestamp: chrono::Utc::now(),
+                                            }
+                                        );
+
+                                        // Log the discovery
+                                        println!("\n📊 CREDENTIAL RECOVERY SUMMARY:");
+                                        println!("  Gateway IP: {}", gateway_ip);
+                                        println!("  WiFi Password: {}", wifi_pass);
+                                        println!("  Recovery Method: macOS Keychain");
+                                    } else {
+                                        println!("⚠️  WiFi password not found in keychain");
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Try Linux
+                    #[cfg(target_os = "linux")]
+                    {
+                        use std::process::Command;
+                        let gateway_output = Command::new("ip")
+                            .args(&["route", "show", "default"])
+                            .output();
+
+                        if let Ok(output) = gateway_output {
+                            let gateway_info = String::from_utf8_lossy(&output.stdout);
+                            println!("{}", gateway_info);
+
+                            // Extract gateway IP
+                            if let Some(gateway_line) = gateway_info.lines().next() {
+                                let parts: Vec<&str> = gateway_line.split_whitespace().collect();
+                                if parts.len() >= 3 {
+                                    let gateway_ip = parts[2];
+                                    println!("\n🎯 Gateway IP: {}", gateway_ip);
+                                }
+                            }
+                        }
+
+                        // Try to get WiFi password from NetworkManager
+                        println!("\n🔐 Checking NetworkManager connections...");
+                        let nmcli_output = Command::new("nmcli")
+                            .args(&["-t", "-f", "NAME,TYPE", "connection", "show"])
+                            .output();
+
+                        if let Ok(nm_result) = nmcli_output {
+                            let connections = String::from_utf8_lossy(&nmcli_result.stdout);
+                            println!("Available WiFi connections:");
+                            for line in connections.lines() {
+                                if line.contains(":802-11") {
+                                    let ssid = line.split(':').next().unwrap_or("");
+                                    println!("  • {}", ssid);
+                                }
+                            }
+                        }
+                    }
+
+                    println!("\n⚠️  NOTE: These credentials are from YOUR current network.");
+                    println!("   Only use this on networks you own or are authorized to test.\n");
+
+                    last_command_status = 0;
+                    continue;
+                }
 
                 // Limpar área de entrada antes de processar
                 let _ = fenrir_terminal.clear_input_area();
@@ -185,6 +452,229 @@ async fn interativo_fallback(pb: &ProgressBar, fenrir_starship: &mut FenrirStars
                 if trimado == "godmode" {
                     println!("\n🔴 FENRIR-STARSHIP GOD MODE!");
                     println!("💀 Poderes do Starship intensificados!");
+                    last_command_status = 0;
+                    continue;
+                }
+                if trimado.starts_with("bite ") || trimado.starts_with("morder ") {
+                    let parts: Vec<&str> = trimado.split_whitespace().collect();
+                    if parts.len() < 2 {
+                        println!("\n🐺 BITE (MORDER) - Advanced Penetration Testing\n");
+                        println!("Usage: bite <target> [options]");
+                        println!("  or:  morder <alvo> [opções]\n");
+                        println!("Examples:");
+                        println!("  bite 192.168.1.100            # Basic pentest");
+                        println!("  bite example.com --aggressive  # Aggressive mode");
+                        println!("  bite 10.0.0.1 --godmode        # Maximum intensity\n");
+                        println!("⚠️  For authorized bug bounty and security testing only");
+                    } else {
+                        let target = parts[1];
+                        let intensity = if parts.iter().any(|&p| p == "--godmode") {
+                            BiteIntensity::GodMode
+                        } else if parts.iter().any(|&p| p == "--aggressive") {
+                            BiteIntensity::Aggressive
+                        } else if parts.iter().any(|&p| p == "--cautious") {
+                            BiteIntensity::Cautious
+                        } else {
+                            BiteIntensity::Passive
+                        };
+
+                        let config = BiteConfig {
+                            target: target.to_string(),
+                            tools: vec![],
+                            intensity,
+                            categories: vec![],
+                            auto_exploit: parts.iter().any(|&p| p == "--exploit"),
+                            report_path: Some(format!("fenrir_bite_{}.md", target.replace(".", "_"))),
+                        };
+
+                        println!("\n🐺 Executing BITE (MORDER) penetration test...");
+                        match bite(target, config).await {
+                            Ok(result) => {
+                                println!("\n{}", result.report);
+                                last_command_status = 0;
+                            }
+                            Err(e) => {
+                                eprintln!("\n❌ Bite failed: {}", e);
+                                last_command_status = 1;
+                            }
+                        }
+                    }
+                    continue;
+                }
+                if trimado.starts_with("scan ") {
+                    let parts: Vec<&str> = trimado.split_whitespace().collect();
+                    if parts.len() < 2 {
+                        println!("\n🔍 FENRIR SCAN - Security Assessment Planning\n");
+                        println!("Usage: scan <target> [options]\n");
+                        println!("Examples:");
+                        println!("  scan 192.168.1.100              # Quick scan");
+                        println!("  scan example.com --comprehensive # Full assessment");
+                        println!("  scan 10.0.0.1 --stealth          # Stealth mode\n");
+                        println!("📊 Creates security plan without exploiting");
+                    } else {
+                        let target = parts[1];
+                        let scan_type = if parts.iter().any(|&p| p == "--stealth") {
+                            ScanType::Stealth
+                        } else if parts.iter().any(|&p| p == "--comprehensive") {
+                            ScanType::Comprehensive
+                        } else {
+                            ScanType::Quick
+                        };
+
+                        let depth = if parts.iter().any(|&p| p == "--deep") {
+                            ScanDepth::Deep
+                        } else if parts.iter().any(|&p| p == "--exhaustive") {
+                            ScanDepth::Exhaustive
+                        } else {
+                            ScanDepth::Surface
+                        };
+
+                        let config = ScanConfig {
+                            target: target.to_string(),
+                            scan_type,
+                            depth,
+                            output_format: ScanOutput::Terminal,
+                        };
+
+                        println!("\n🔍 Executing SCAN security assessment...");
+                        match scan(target, config).await {
+                            Ok(result) => {
+                                println!("\n📊 SCAN RESULTS:\n");
+                                println!("Target: {}", result.target);
+                                println!("Risk Score: {}/100", result.risk_score);
+                                println!("\nOpen Ports:");
+                                for port in &result.open_ports {
+                                    println!("  • {}/{} ({}) - {}",
+                                        port.port,
+                                        port.protocol,
+                                        port.state,
+                                        port.service.as_ref().unwrap_or(&"unknown".to_string())
+                                    );
+                                }
+                                println!("\nRecommendations:");
+                                for rec in &result.recommendations {
+                                    println!("  {}", rec);
+                                }
+                                println!("\n{}\n", result.security_plan);
+                                last_command_status = 0;
+                            }
+                            Err(e) => {
+                                eprintln!("\n❌ Scan failed: {}", e);
+                                last_command_status = 1;
+                            }
+                        }
+                    }
+                    continue;
+                }
+                if trimado == "tools" || trimado == "kali" {
+                    println!("\n🔧 FENRIR KALI TOOLS INTEGRATION\n");
+                    let available = get_available_tools();
+                    println!("Available Tools: {}/{}", available.len(), kali_tools::get_kali_tools().len());
+                    println!("\nAvailable Tools:");
+                    for tool in &available {
+                        println!("  • {} ({:?})", tool.name, tool.category);
+                    }
+                    println!("\nUse 'bite' or 'scan' to utilize these tools");
+                    last_command_status = 0;
+                    continue;
+                }
+                if trimado == "wifi" {
+                    println!("\n📶 FENRIR WIFI GATEWAY PASSWORD RECOVERY\n");
+
+                    // Get current gateway
+                    println!("🔍 Detecting WiFi gateway...");
+
+                    // Try macOS first
+                    #[cfg(target_os = "macos")]
+                    {
+                        use std::process::Command;
+                        let gateway_output = Command::new("route")
+                            .args(&["-n", "get", "default"])
+                            .output();
+
+                        if let Ok(output) = gateway_output {
+                            let gateway_info = String::from_utf8_lossy(&output.stdout);
+                            println!("{}", gateway_info);
+
+                            // Extract gateway IP
+                            if let Some(gateway_line) = gateway_info.lines().find(|l| l.contains("gateway")) {
+                                let gateway_ip = gateway_line.split(":").last().unwrap_or("").trim();
+                                println!("\n🎯 Gateway IP: {}", gateway_ip);
+
+                                // Try to get WiFi password
+                                println!("\n🔐 Attempting to retrieve WiFi credentials...");
+
+                                let wifi_output = Command::new("security")
+                                    .args(&["find-generic-password", "-wa", "WiFi"])
+                                    .output();
+
+                                if let Ok(wifi_result) = wifi_output {
+                                    let wifi_pass = String::from_utf8_lossy(&wifi_result.stdout).trim().to_string();
+                                    if !wifi_pass.is_empty() {
+                                        println!("✅ WiFi Password found: {}", wifi_pass);
+
+                                        // Log the discovery
+                                        println!("\n📊 CREDENTIAL RECOVERY SUMMARY:");
+                                        println!("  Gateway IP: {}", gateway_ip);
+                                        println!("  WiFi Password: {}", wifi_pass);
+                                        println!("  Recovery Method: macOS Keychain");
+                                    } else {
+                                        println!("⚠️  WiFi password not found in keychain");
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Try Linux
+                    #[cfg(target_os = "linux")]
+                    {
+                        use std::process::Command;
+                        let gateway_output = Command::new("ip")
+                            .args(&["route", "show", "default"])
+                            .output();
+
+                        if let Ok(output) = gateway_output {
+                            let gateway_info = String::from_utf8_lossy(&output.stdout);
+                            println!("{}", gateway_info);
+                        }
+                    }
+
+                    println!("\n⚠️  NOTE: These credentials are from YOUR current network.");
+                    println!("   Only use this on networks you own or are authorized to test.\n");
+
+                    last_command_status = 0;
+                    continue;
+                }
+                if trimado == "orchestrate" || trimado.starts_with("orchestrate ") {
+                    let target = if trimado.starts_with("orchestrate ") {
+                        let parts: Vec<&str> = trimado.split_whitespace().collect();
+                        if parts.len() >= 2 {
+                            parts[1].to_string()
+                        } else {
+                            "127.0.0.1".to_string()
+                        }
+                    } else {
+                        "127.0.0.1".to_string()
+                    };
+
+                    println!("\n🐺 FENRIR ORCHESTRATION ENGINE - Sequential Attack Mode");
+                    println!("🎯 Target: {}", target);
+
+                    let mut engine = FenrirOrchestrationEngine::new(target.clone());
+                    match engine.run_sequential_attack().await {
+                        Ok(_) => println!("\n✅ Orchestration complete"),
+                        Err(e) => eprintln!("\n❌ Orchestration failed: {}", e),
+                    }
+
+                    let report = engine.generate_ethical_report().await;
+
+                    let report_file = format!("fenrir_ethical_report_{}.md",
+                        target.replace(".", "_").replace("/", "_"));
+                    if let Ok(_) = std::fs::write(&report_file, report) {
+                        println!("📄 Ethical Analysis Final Report: {}", report_file);
+                    }
+
                     last_command_status = 0;
                     continue;
                 }
