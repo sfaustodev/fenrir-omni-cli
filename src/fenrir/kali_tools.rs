@@ -612,8 +612,8 @@ pub enum ScanOutput {
     Markdown,
     #[serde(rename = "json")]
     Json,
-    #[serde(rename = "terminal")]
-    Terminal,
+    #[serde(rename = "console")]
+    Console,
 }
 
 pub struct ScanResult {
