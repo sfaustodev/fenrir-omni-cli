@@ -6,6 +6,11 @@
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
+// Load .env file at startup
+pub fn load_env() {
+    dotenv::dotenv().ok();
+}
+
 // ============================================================================
 // TASK STRUCTURES - SERDE MARKDOWN FRIENDLY
 // ============================================================================
