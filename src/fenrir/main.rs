@@ -54,6 +54,73 @@ async fn main() {
                     continue;
                 }
 
+                // Parse pentest commands
+                let parts: Vec<&str> = user_input.splitn(3, ' ').collect();
+                if parts.len() >= 2 {
+                    match parts[0] {
+                        "scan" => {
+                            let target = parts[1];
+                            let comprehensive = parts.len() >= 3 && parts[2] == "comprehensive";
+                            let config = kali_tools::ScanConfig {
+                                target: target.to_string(),
+                                scan_type: if comprehensive {
+                                    kali_tools::ScanType::Comprehensive
+                                } else {
+                                    kali_tools::ScanType::Quick
+                                },
+                                depth: if comprehensive {
+                                    kali_tools::ScanDepth::Deep
+                                } else {
+                                    kali_tools::ScanDepth::Surface
+                                },
+                                output_format: kali_tools::ScanOutput::Console,
+                            };
+                            match kali_tools::scan(target, config).await {
+                                Ok(result) => {
+                                    println!("\n✅ SCAN COMPLETE");
+                                    println!("🎯 Target: {}", result.target);
+                                    println!("🔍 Open Ports: {}", result.open_ports.len());
+                                    println!("🛡️  Risk Score: {}/100", result.risk_score);
+                                    println!("📋 Security Plan:\n{}\n", result.security_plan);
+                                }
+                                Err(e) => println!("❌ Scan failed: {}\n", e),
+                            }
+                            continue;
+                        }
+                        "bite" | "morder" => {
+                            let target = parts[1];
+                            let aggressive = parts.len() >= 3 && parts[2] == "aggressive";
+                            let config = kali_tools::BiteConfig {
+                                target: target.to_string(),
+                                tools: vec![],
+                                intensity: if aggressive {
+                                    kali_tools::BiteIntensity::Aggressive
+                                } else {
+                                    kali_tools::BiteIntensity::Cautious
+                                },
+                                categories: vec![],
+                                auto_exploit: false,
+                                report_path: None,
+                            };
+                            match kali_tools::bite(target, config).await {
+                                Ok(result) => {
+                                    println!("\n✅ BITE COMPLETE - FENRIR HAS DEVOURED THE TARGET");
+                                    println!("🎯 Success: {}", result.success);
+                                    println!("🔍 Findings: {}", result.findings.len());
+                                    println!("💥 Vulnerabilities: {}", result.vulnerabilities.len());
+                                    if !result.vulnerabilities.is_empty() {
+                                        println!("📊 Vulnerabilities:\n{}", result.vulnerabilities.join("\n"));
+                                    }
+                                    println!("📄 Report:\n{}\n", result.report);
+                                }
+                                Err(e) => println!("❌ Bite failed: {}\n", e),
+                            }
+                            continue;
+                        }
+                        _ => {}
+                    }
+                }
+
                 // Process through broadcast AI system via HTTP
                 process_broadcast_http(&http_client, user_input).await;
             }
