@@ -146,22 +146,6 @@ async fn main() {
                             }
                             continue;
                         }
-                        "gemini" => {
-                            println!("❌ Gemini API quota exceeded. Please try again later or check your billing.\n");
-                            continue;
-                        }
-                        "qwen" => {
-                            println!("❌ Qwen API key invalid. Please set a valid QWEN_API_KEY.\n");
-                            continue;
-                        }
-                        "venice" => {
-                            println!("❌ Venice API key not set. Please set VENICE_API_KEY.\n");
-                            continue;
-                        }
-                        "zai" => {
-                            println!("❌ Zai API connection failed. Service may be unavailable.\n");
-                            continue;
-                        }
                         _ => {
                             println!("❌ Unknown command: {}\n", parts[0]);
                             println!("Available: scan, bite, grok, gita tudo, gita ai, exit\n");
