@@ -1,5 +1,6 @@
 use anyhow::{anyhow, Result};
 use std::env;
+use crate::secrets::{get_secret, SecretConfig, SecretBackend, init_secrets_manager};
 
 /// Source/name of the environment variable that satisfied the lookup.
 #[derive(Debug, Clone)]
@@ -24,7 +25,24 @@ pub const API_KEY_PRIORITY: &[&str] = &[
 ];
 
 /// Resolve the primary API key respecting the priority list above.
+/// Now supports secrets manager backends in addition to environment variables.
 pub fn resolve_primary_grok_key() -> Result<ApiKeyResolution> {
+    // Try secrets manager first (if initialized)
+    if let Ok(mut manager) = crate::secrets::get_secrets_manager() {
+        for &var in API_KEY_PRIORITY {
+            if let Ok(value) = manager.get_secret(var) {
+                let trimmed = value.trim();
+                if !trimmed.is_empty() {
+                    return Ok(ApiKeyResolution {
+                        value: trimmed.to_string(),
+                        source: &format!("secrets:{}", var),
+                    });
+                }
+            }
+        }
+    }
+
+    // Fallback to environment variables
     for &var in API_KEY_PRIORITY {
         if let Ok(value) = env::var(var) {
             let trimmed = value.trim();
@@ -38,7 +56,7 @@ pub fn resolve_primary_grok_key() -> Result<ApiKeyResolution> {
     }
 
     Err(anyhow!(
-        "Configure at least one API key (order: {}).",
+        "Configure at least one API key (order: {}). Available backends: environment variables, keyring, vault, age files.",
         API_KEY_PRIORITY.join(" → ")
     ))
 }

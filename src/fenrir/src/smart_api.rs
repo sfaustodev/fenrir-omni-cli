@@ -5,6 +5,7 @@
 
 use std::process::Command;
 use anyhow::{Result, Context};
+use crate::http_client::get_shared_client;
 
 /// Smart API client that uses bash HTTP functions
 pub struct SmartAPIClient {
@@ -103,7 +104,7 @@ impl SmartAPIClient {
         let api_key = std::env::var("GEMINI_API_KEY")
             .context("GEMINI_API_KEY not set")?;
 
-        let client = reqwest::Client::new();
+        let client = get_shared_client();
         let url = format!(
             "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key={}",
             api_key
@@ -133,7 +134,7 @@ impl SmartAPIClient {
         let base_url = std::env::var("GROK_BASE_URL")
             .unwrap_or_else(|_| "https://api.x.ai/v1".to_string());
 
-        let client = reqwest::Client::new();
+        let client = get_shared_client();
         let url = format!("{}/chat/completions", base_url);
 
         let payload = serde_json::json!({
@@ -161,7 +162,7 @@ impl SmartAPIClient {
         let base_url = std::env::var("ANTHROPIC_BASE_URL")
             .unwrap_or_else(|_| "https://api.z.ai/api/anthropic".to_string());
 
-        let client = reqwest::Client::new();
+        let client = get_shared_client();
         let url = format!("{}/v1/messages", base_url);
 
         let payload = serde_json::json!({
@@ -188,7 +189,7 @@ impl SmartAPIClient {
         let api_key = std::env::var("QWEN3_API_KEY")
             .context("QWEN3_API_KEY not set")?;
 
-        let client = reqwest::Client::new();
+        let client = get_shared_client();
         let url = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions";
 
         let payload = serde_json::json!({

@@ -2,9 +2,9 @@
 // Comunicação com Gemini AI (Oracle) e Grok AI (Fallback) para planejamento estratégico.
 
 use serde::{Deserialize, Serialize};
-use reqwest::Client;
 use std::time::Duration;
 use anyhow::{Result, anyhow};
+use crate::http_client::get_shared_client;
 
 // Estrutura para resposta da API (simplificada para JSON geral)
 #[derive(Debug, Deserialize)]
@@ -44,9 +44,7 @@ pub async fn get_execution_plan(prompt: &str, api_key: &str) -> Result<String> {
         return Err(anyhow!("API Key do Oráculo (Gemini) não configurada ($api_key)."));
     }
 
-    let client = Client::builder()
-        .timeout(Duration::from_secs(30))
-        .build()?;
+    let client = get_shared_client();
 
     let system_prompt = r#""
     You are the Master Controller of the FENRIR Multi-AI System.
@@ -115,9 +113,7 @@ pub async fn get_grok_plan(prompt: &str, api_key: &str) -> Result<String> {
 
     println!("⚡ Acionando Grok AI para planejamento de contingência...");
 
-    let client = Client::builder()
-        .timeout(Duration::from_secs(30))
-        .build()?;
+    let client = get_shared_client();
 
     let system_prompt = "You are the FENRIR Backup Controller. The primary Oracle failed. Generate the execution plan JSON.";
 
@@ -159,7 +155,7 @@ pub async fn execute_grok_command(prompt: &str, api_key: &str) -> Result<String>
         return Err(anyhow!("API Key do Grok ausente para execução."));
     }
 
-    let client = Client::new();
+    let client = get_shared_client();
     let url = "https://api.x.ai/v1/chat/completions";
 
     let body = serde_json::json!({

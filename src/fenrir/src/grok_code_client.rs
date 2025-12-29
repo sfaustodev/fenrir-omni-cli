@@ -1,4 +1,5 @@
 use crate::api_keys::{describe_priority, resolve_primary_grok_key};
+use crate::http_client::get_shared_client;
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::env;
@@ -8,7 +9,6 @@ pub struct GrokCodeClient {
     api_key: String,
     base_url: String,
     model: String,
-    client: reqwest::Client,
 }
 
 #[derive(Serialize)]
@@ -64,11 +64,11 @@ impl GrokCodeClient {
             api_key,
             base_url,
             model,
-            client: reqwest::Client::new(),
         })
     }
 
     pub async fn ask(&self, prompt: &str) -> Result<String> {
+        let client = get_shared_client();
         let resp = if self.base_url.contains("generativelanguage.googleapis.com") {
             // Gemini API format
             #[derive(Serialize)]
@@ -121,7 +121,7 @@ impl GrokCodeClient {
                     self.base_url, self.model, self.api_key)
             };
 
-            self.client
+            client
                 .post(endpoint)
                 .header("Content-Type", "application/json")
                 .json(&gemini_req)
@@ -138,7 +138,7 @@ impl GrokCodeClient {
                 max_tokens: 4096,
             };
 
-            self.client
+            client
                 .post(format!("{}/chat/completions", self.base_url))
                 .header("Authorization", format!("Bearer {}", self.api_key))
                 .header("Content-Type", "application/json")
