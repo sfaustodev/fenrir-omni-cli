@@ -73,13 +73,20 @@ impl SecretsManager {
     }
 
     /// Set a secret
-    pub fn set_secret(&self, key: &str, value: &str) -> Result<()> {
-        match &self.config.backend {
+    pub fn set_secret(&mut self, key: &str, value: &str) -> Result<()> {
+        let result = match &self.config.backend {
             SecretBackend::Env => Err(anyhow!("Cannot set environment variables through secrets manager")),
             SecretBackend::Keyring => self.set_in_keyring(key, value),
             SecretBackend::Vault => self.set_in_vault(key, value),
             SecretBackend::AgeFile => self.set_in_age_file(key, value),
+        };
+
+        // Invalidate/update cache on successful set
+        if result.is_ok() {
+            self.cache.insert(key.to_string(), value.to_string());
         }
+
+        result
     }
 
     /// Get from environment variables (fallback/default)
