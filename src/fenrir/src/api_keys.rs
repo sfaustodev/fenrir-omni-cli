@@ -1,12 +1,11 @@
 use anyhow::{anyhow, Result};
 use std::env;
-use crate::secrets::{get_secret, SecretConfig, SecretBackend, init_secrets_manager};
 
 /// Source/name of the environment variable that satisfied the lookup.
 #[derive(Debug, Clone)]
 pub struct ApiKeyResolution {
     pub value: String,
-    pub source: &'static str,
+    pub source: String,  // Changed from &'static str to String to support dynamic sources
 }
 
 /// Priority list for Fenrir CLI API keys.
@@ -28,15 +27,17 @@ pub const API_KEY_PRIORITY: &[&str] = &[
 /// Now supports secrets manager backends in addition to environment variables.
 pub fn resolve_primary_grok_key() -> Result<ApiKeyResolution> {
     // Try secrets manager first (if initialized)
-    if let Ok(mut manager) = crate::secrets::get_secrets_manager() {
-        for &var in API_KEY_PRIORITY {
-            if let Ok(value) = manager.get_secret(var) {
-                let trimmed = value.trim();
-                if !trimmed.is_empty() {
-                    return Ok(ApiKeyResolution {
-                        value: trimmed.to_string(),
-                        source: &format!("secrets:{}", var),
-                    });
+    if let Ok(mut guard) = crate::secrets::get_secrets_manager() {
+        if let Some(ref mut manager) = *guard {
+            for &var in API_KEY_PRIORITY {
+                if let Ok(value) = manager.get_secret(var) {
+                    let trimmed = value.trim();
+                    if !trimmed.is_empty() {
+                        return Ok(ApiKeyResolution {
+                            value: trimmed.to_string(),
+                            source: format!("secrets:{}", var),
+                        });
+                    }
                 }
             }
         }
@@ -49,7 +50,7 @@ pub fn resolve_primary_grok_key() -> Result<ApiKeyResolution> {
             if !trimmed.is_empty() {
                 return Ok(ApiKeyResolution {
                     value: trimmed.to_string(),
-                    source: var,
+                    source: var.to_string(),
                 });
             }
         }

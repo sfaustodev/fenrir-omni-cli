@@ -3,10 +3,10 @@
 // Supports multiple backends: environment variables, keyring, HashiCorp Vault, age-encrypted files
 
 use std::collections::HashMap;
-use std::fs;
 use std::path::PathBuf;
+use std::sync::Mutex;
 use anyhow::{Result, anyhow};
-use dirs;
+use once_cell::sync::Lazy;
 
 /// Secret storage backends
 #[derive(Debug, Clone)]
@@ -72,14 +72,22 @@ impl SecretsManager {
         Ok(value)
     }
 
-    /// Set a secret
-    pub fn set_secret(&self, key: &str, value: &str) -> Result<()> {
+    /// Set a secret (invalidates cache for the key)
+    pub fn set_secret(&mut self, key: &str, value: &str) -> Result<()> {
+        // Invalidate cache for this key before setting
+        self.cache.remove(key);
+        
         match &self.config.backend {
             SecretBackend::Env => Err(anyhow!("Cannot set environment variables through secrets manager")),
             SecretBackend::Keyring => self.set_in_keyring(key, value),
             SecretBackend::Vault => self.set_in_vault(key, value),
             SecretBackend::AgeFile => self.set_in_age_file(key, value),
         }
+    }
+
+    /// Invalidate the entire cache
+    pub fn invalidate_cache(&mut self) {
+        self.cache.clear();
     }
 
     /// Get from environment variables (fallback/default)
@@ -166,31 +174,36 @@ impl SecretsManager {
     }
 }
 
-/// Global secrets manager instance
-static mut SECRETS_MANAGER: Option<SecretsManager> = None;
+/// Thread-safe global secrets manager instance using Lazy<Mutex<...>>
+static SECRETS_MANAGER: Lazy<Mutex<Option<SecretsManager>>> = Lazy::new(|| Mutex::new(None));
 
-/// Initialize the global secrets manager
+/// Initialize the global secrets manager (thread-safe)
 pub fn init_secrets_manager(config: SecretConfig) -> Result<()> {
-    unsafe {
-        SECRETS_MANAGER = Some(SecretsManager::new(config));
-    }
+    let mut guard = SECRETS_MANAGER.lock()
+        .map_err(|e| anyhow!("Failed to acquire lock on secrets manager: {}", e))?;
+    *guard = Some(SecretsManager::new(config));
     Ok(())
 }
 
-/// Get the global secrets manager
-pub fn get_secrets_manager() -> Result<&'static mut SecretsManager> {
-    unsafe {
-        SECRETS_MANAGER.as_mut()
-            .ok_or_else(|| anyhow!("Secrets manager not initialized"))
-    }
+/// Get the global secrets manager with mutable access (thread-safe)
+/// Returns a MutexGuard that provides access to the SecretsManager
+pub fn get_secrets_manager() -> Result<std::sync::MutexGuard<'static, Option<SecretsManager>>> {
+    SECRETS_MANAGER.lock()
+        .map_err(|e| anyhow!("Failed to acquire lock on secrets manager: {}", e))
 }
 
-/// Convenience function to get a secret
+/// Convenience function to get a secret (thread-safe)
 pub fn get_secret(key: &str) -> Result<String> {
-    get_secrets_manager()?.get_secret(key)
+    let mut guard = get_secrets_manager()?;
+    let manager = guard.as_mut()
+        .ok_or_else(|| anyhow!("Secrets manager not initialized"))?;
+    manager.get_secret(key)
 }
 
-/// Convenience function to set a secret
+/// Convenience function to set a secret (thread-safe)
 pub fn set_secret(key: &str, value: &str) -> Result<()> {
-    get_secrets_manager()?.set_secret(key, value)
+    let mut guard = get_secrets_manager()?;
+    let manager = guard.as_mut()
+        .ok_or_else(|| anyhow!("Secrets manager not initialized"))?;
+    manager.set_secret(key, value)
 }
