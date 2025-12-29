@@ -14,11 +14,13 @@ mod executor;
 mod ferramentas;
 mod grok_code_client;
 mod grok_coordinator;
+mod http_client;
 mod interactive_trinity;
 mod multi_ai_coordinator;
 mod natural_request;
 mod operations;
 mod oraculo;
+mod secrets;
 mod security_protection;
 mod smart_api;
 mod starship;
@@ -41,6 +43,7 @@ use indicatif::{ProgressBar, ProgressStyle};
 use multi_ai_coordinator::MultiAICoordinator;
 use natural_request::process_natural_request;
 use operations::FenrirOperations;
+use secrets::{SecretConfig, SecretBackend, init_secrets_manager};
 use starship::{initialize_fenrir_starship, FenrirStarship};
 use std::env;
 use std::io::{self, Write};
@@ -77,6 +80,15 @@ async fn main() {
             FenrirConfig::default()
         }
     };
+
+    // 🔐 Inicializar Secrets Manager
+    let secrets_config = SecretConfig::default(); // Uses environment variables by default
+    if let Err(e) = init_secrets_manager(secrets_config) {
+        println!("⚠️ Erro ao inicializar secrets manager: {}", e);
+        println!("🔄 Continuando com variáveis de ambiente...");
+    } else {
+        println!("🔐 Secrets Manager inicializado!");
+    }
 
     // Ativar GOD Mode automaticamente se configurado
     if fenrir_config.should_activate_god_mode_automatically() {

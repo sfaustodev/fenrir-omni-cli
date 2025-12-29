@@ -4,8 +4,8 @@
 use serde::{Deserialize, Serialize};
 use anyhow::{Context, Result};
 use std::env;
-use reqwest::Client;
 use serde_json::{json, Value};
+use crate::http_client::get_shared_client;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VeniceClient {
@@ -169,7 +169,7 @@ impl VeniceClient {
 
     /// 🔥 CHAMADA API VENICE (CORE)
     async fn call_venice_api(&self, prompt: &str) -> Result<Vec<String>> {
-        let client = Client::new();
+        let client = get_shared_client();
 
         let request_body = json!({
             "model": self.model,
