@@ -45,15 +45,27 @@ pub fn log_task(task: &FenrirTask) -> io::Result<()> {
 pub fn handle_execute_command(command: &str) {
     println!("🐺 Executando comando: {}", command);
 
-    let parts: Vec<&str> = command.split_whitespace().collect();
-    if parts.is_empty() {
-        eprintln!("❌ Comando vazio!");
-        return;
-    }
+    // Check if command needs shell (has operators like &&, ||, |, ;, >, <)
+    let needs_shell = command.contains("&&") || command.contains("||") ||
+                      command.contains('|') || command.contains(';') ||
+                      command.contains('>') || command.contains('<') ||
+                      command.contains("cd ");
 
-    let (cmd, args) = parts.split_first().unwrap();
+    let output = if needs_shell {
+        // Use shell for compound commands
+        Command::new("sh").arg("-c").arg(command).output()
+    } else {
+        // Simple command - execute directly
+        let parts: Vec<&str> = command.split_whitespace().collect();
+        if parts.is_empty() {
+            eprintln!("❌ Comando vazio!");
+            return;
+        }
+        let (cmd, args) = parts.split_first().unwrap();
+        Command::new(cmd).args(args).output()
+    };
 
-    match Command::new(cmd).args(args).output() {
+    match output {
         Ok(output) => {
             if output.status.success() {
                 println!("✅ Comando executado com sucesso!");
@@ -68,7 +80,7 @@ pub fn handle_execute_command(command: &str) {
             }
         }
         Err(e) => {
-            eprintln!("❌ Falha ao executar comando '{}': {}", cmd, e);
+            eprintln!("❌ Falha ao executar comando: {}", e);
         }
     }
 }
