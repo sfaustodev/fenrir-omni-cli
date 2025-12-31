@@ -9,6 +9,38 @@ mod fenrir_orchestrator;
 mod kali_tools;
 mod kali_tools_comprehensive;
 mod git_automation;
+mod cli;
+mod confirm;
+mod http_client;
+mod secrets;
+mod metrics;
+mod health;
+mod circuit_breaker;
+mod solana;
+mod zcash;
+mod liquidity;
+mod plugins;
+mod wrapper;
+mod sandbox;
+mod bugbounty;
+mod osint;
+mod net;
+mod cli;
+mod confirm;
+mod http_client;
+mod secrets;
+mod metrics;
+mod health;
+mod circuit_breaker;
+mod solana;
+mod zcash;
+mod liquidity;
+mod plugins;
+mod wrapper;
+mod sandbox;
+mod bugbounty;
+mod osint;
+mod net;
 
 use std::io::{self, Write};
 use reqwest::Client;
@@ -107,6 +139,20 @@ Return ONLY the JSON, no other text."#;
 #[tokio::main]
 async fn main() {
     fenrir_ai_layer::load_env();
+
+    if std::env::args().len() > 1 {
+        if let Err(err) = cli::run_cli().await {
+            eprintln!("❌ {}", err);
+        }
+        return;
+    }
+
+    if std::env::args().len() > 1 {
+        if let Err(err) = cli::run_cli().await {
+            eprintln!("❌ {}", err);
+        }
+        return;
+    }
 
     println!("🐺 FENRIR 4.0 - AI-Powered Command Translation");
     println!("Security Testing Platform\n");
