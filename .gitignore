@@ -2,6 +2,7 @@ target/
 
 # Environment variables with API keys
 .env
+.env.template
 
 # IDE
 .vscode/
@@ -13,3 +14,10 @@ Thumbs.db
 
 # Claude Code
 .claude/
+
+# Documentation (keep in repo, but ignore drafts)
+*_DRAFT.md
+*_TODO.md
+
+# Test scripts
+test_*.rs
