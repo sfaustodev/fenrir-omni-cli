@@ -1,31 +1,25 @@
-# Fenrir CLI Evolution - TODO List
+# TODO: Test Pentest Stealthy Discovery of Netflix Credentials
 
-## Phase 1: Core Infrastructure (Priority 1)
-- [ ] Create `plan.rs` module for natural language interpretation
-- [ ] Create `safe_check.rs` module for risk pattern scanning
-- [ ] Create `explain.rs` module for AI-powered explanations
-- [ ] Create `util_integrations.rs` for CLI tool wrappers
-- [ ] Create `decision_history.rs` for tracking user decisions
+## Step 1: Resolve Build Issues
+- [ ] Fix dependency conflicts (solana-client vs zcash packages)
+- [ ] Attempt to build the project successfully
 
-## Phase 2: CLI Enhancement (Priority 1)
-- [ ] Update `cli.rs` to add new subcommands: plan, safe, util, explain, monitor
-- [ ] Update `main.rs` for enhanced interactive mode with history
-- [ ] Update `mod.rs` to declare new modules
+## Step 2: Test Stealthy Network Scanning
+- [ ] Run `scan` command with stealth mode on local network (e.g., 192.168.1.0/24)
+- [ ] Verify nmap stealth options (-sS, -T1) are used to avoid detection
+- [ ] Document discovered devices and open ports
 
-## Phase 3: Feature Implementation (Priority 2)
-- [ ] Enhance `disk_cleanup.rs` with duplicate detection by hash
-- [ ] Implement CLI utility integrations (fzf, ripgrep, fd, bat, taskwarrior, denet)
-- [ ] Add AI explanation features before risky actions
-- [ ] Implement decision history tracking
+## Step 3: Test Stealthy Penetration Testing
+- [ ] Run `bite` command with cautious intensity on discovered targets
+- [ ] Check for any credential-related findings or vulnerabilities
+- [ ] Ensure no exploitation is performed (auto_exploit=false)
 
-## Phase 4: Testing & Documentation (Priority 3)
-- [ ] Test all new features
-- [ ] Update Cargo.toml for new dependencies
-- [ ] Update README.md with new features
-- [ ] Create integration tests
+## Step 4: Analyze for Netflix Credential Discovery
+- [ ] Review scan/bite output for potential Netflix-related services (ports 80/443, etc.)
+- [ ] Note limitations: No built-in Netflix-specific tools; OSINT is stub-only
+- [ ] Suggest manual use of tools like Wireshark for credential sniffing if needed
 
-## Phase 5: Advanced Features (Priority 4)
-- [ ] Plugin manager for easy module installation
-- [ ] Local AI integration (Grok 4.7)
-- [ ] External AI CLI connectors
-- [ ] Advanced monitoring features
+## Step 5: Document Results
+- [ ] Record stealth effectiveness and detection avoidance
+- [ ] Note any issues with dependency conflicts impacting functionality
+- [ ] Provide summary of testing outcomes

@@ -26,22 +26,6 @@ mod bugbounty;
 mod osint;
 mod net;
 mod nlp;
-mod cli;
-mod confirm;
-mod http_client;
-mod secrets;
-mod metrics;
-mod health;
-mod circuit_breaker;
-mod solana;
-mod zcash;
-mod liquidity;
-mod plugins;
-mod wrapper;
-mod sandbox;
-mod bugbounty;
-mod osint;
-mod net;
 
 use std::io::{self, Write};
 use reqwest::Client;
@@ -51,13 +35,6 @@ use executor::FenrirTask;
 #[tokio::main]
 async fn main() {
     fenrir_ai_layer::load_env();
-
-    if std::env::args().len() > 1 {
-        if let Err(err) = cli::run_cli().await {
-            eprintln!("❌ {}", err);
-        }
-        return;
-    }
 
     if std::env::args().len() > 1 {
         if let Err(err) = cli::run_cli().await {

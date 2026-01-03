@@ -35,7 +35,7 @@ aes-gcm = { workspace = true }
 rand = { workspace = true }
 hex = { workspace = true }
 sha2 = { workspace = true }
-age = { workspace = true }
+# age = { workspace = true }
 keyring = { workspace = true }
 secrecy = { workspace = true }
 pnet = { workspace = true }
