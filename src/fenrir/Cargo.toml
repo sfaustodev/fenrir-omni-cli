@@ -53,8 +53,18 @@ prometheus = { workspace = true }
 axum = { workspace = true }
 tower = { workspace = true }
 libloading = { workspace = true }
-solana-sdk = { workspace = true }
-solana-client = { workspace = true }
-zcash_primitives = { workspace = true }
-zcash_client_backend = { workspace = true }
-zcash_address = { workspace = true }
+nix.workspace = true
+futures.workspace = true
+walkdir = { workspace = true }
+urlencoding = "2.1.3"
+md5 = "0.8.0"
+# Temporarily disabled due to dependency conflicts
+# solana-sdk = { workspace = true, optional = true }
+# solana-client = { workspace = true, optional = true }
+# zcash_primitives = { workspace = true, optional = true }
+# zcash_client_backend = { workspace = true, optional = true }
+# zcash_address = { workspace = true, optional = true }
+
+[features]
+default = []
+# crypto = ["solana-sdk", "solana-client", "zcash_primitives", "zcash_client_backend", "zcash_address"]
