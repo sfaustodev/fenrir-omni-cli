@@ -1,8 +1,6 @@
 use crate::bugbounty;
 use crate::confirm;
-use crate::disk_cleanup;
 use crate::health;
-#[cfg(feature = "crypto")]
 use crate::liquidity;
 use crate::metrics;
 use crate::net;
@@ -10,10 +8,8 @@ use crate::osint;
 use crate::plugins::PluginRegistry;
 use crate::sandbox;
 use crate::secrets::SecretStore;
-#[cfg(feature = "crypto")]
 use crate::solana;
 use crate::wrapper;
-#[cfg(feature = "crypto")]
 use crate::zcash;
 use clap::{Parser, Subcommand};
 use std::net::SocketAddr;
@@ -26,7 +22,7 @@ pub struct FenrirCli {
     command: Commands,
 }
 
-#[derive(clap::Subcommand)]
+#[derive(Subcommand)]
 enum Commands {
     Blockchain(BlockchainCmd),
     Secrets(SecretsCmd),
@@ -37,27 +33,20 @@ enum Commands {
     Osint(OsintCmd),
     Sandbox(SandboxCmd),
     Plugins(PluginCmd),
-    DiskCleanup(DiskCleanupCmd),
     Status,
 }
 
-#[derive(clap::Subcommand)]
+#[derive(Subcommand)]
 enum BlockchainCmd {
-    #[cfg(feature = "crypto")]
     Solana(SolanaCmd),
-    #[cfg(feature = "crypto")]
     Zcash(ZcashCmd),
-    #[cfg(feature = "crypto")]
     Liquidity(LiquidityCmd),
-    #[cfg(feature = "crypto")]
     Swap(SwapCmd),
-    #[cfg(feature = "crypto")]
     Analyze(AnalyzeCmd),
     Anonymous,
 }
 
-#[cfg(feature = "crypto")]
-#[derive(clap::Subcommand)]
+#[derive(Subcommand)]
 enum SolanaCmd {
     Balance { rpc: String, pubkey: String },
     Transfer { rpc: String, keypair: PathBuf, to: String, lamports: u64 },
@@ -65,33 +54,29 @@ enum SolanaCmd {
     WsPing { ws: String },
 }
 
-#[cfg(feature = "crypto")]
-#[derive(clap::Subcommand)]
+#[derive(Subcommand)]
 enum ZcashCmd {
     Keys { #[arg(long)] generate: bool },
 }
 
-#[cfg(feature = "crypto")]
-#[derive(clap::Subcommand)]
+#[derive(Subcommand)]
 enum LiquidityCmd {
     Jupiter { input: String, output: String, amount: u64 },
     Orca,
 }
 
-#[cfg(feature = "crypto")]
-#[derive(clap::Subcommand)]
+#[derive(Subcommand)]
 enum SwapCmd {
     CrossChain { from: String, to: String, amount: u64 },
 }
 
-#[cfg(feature = "crypto")]
-#[derive(clap::Subcommand)]
+#[derive(Subcommand)]
 enum AnalyzeCmd {
     Solana { rpc: String, pubkey: String },
     Zcash { address: String },
 }
 
-#[derive(clap::Subcommand)]
+#[derive(Subcommand)]
 enum SecretsCmd {
     Set { key: String, value: String },
     Get { key: String },
@@ -99,83 +84,46 @@ enum SecretsCmd {
     List,
 }
 
-#[derive(clap::Subcommand)]
+#[derive(Subcommand)]
 enum MetricsCmd {
     Show,
     Serve { addr: String },
 }
 
-#[derive(clap::Subcommand)]
+#[derive(Subcommand)]
 enum HealthCmd {
     Check,
     Serve { addr: String },
 }
 
-#[derive(clap::Subcommand)]
+#[derive(Subcommand)]
 enum WrapperCmd {
     Generate { tool: String, output: Option<PathBuf> },
 }
 
-#[derive(clap::Subcommand)]
+#[derive(Subcommand)]
 enum BugBountyCmd {
     Recon { target: String },
     Report { target: String },
 }
 
-#[derive(clap::Subcommand)]
+#[derive(Subcommand)]
 enum OsintCmd {
     TorProbe { url: String },
     Ssh { target: String },
 }
 
-#[derive(clap::Subcommand)]
+#[derive(Subcommand)]
 enum SandboxCmd {
     Run { cmd: String },
 }
 
-#[derive(clap::Subcommand)]
+#[derive(Subcommand)]
 enum PluginCmd {
     List,
     Load { path: PathBuf },
     Run { name: String, input: String },
 }
-
-#[derive(clap::Subcommand)]
-enum DiskCleanupCmd {
-    Analyze {
-        #[arg(short, long)]
-        path: Option<String>,
-        #[arg(short, long)]
-        detailed: bool,
-    },
-    Clean {
-        #[arg(short, long)]
-        path: Option<String>,
-        #[arg(short, long, default_value = "true")]
-        dry_run: bool,
-        #[arg(short, long)]
-        aggressive: bool,
-        #[arg(short, long)]
-        force: bool,
-    },
-    List {
-        #[arg(short, long)]
-        category: Option<String>,
-        #[arg(short, long)]
-        min_size: Option<u64>,
-    },
-    Schedule {
-        #[arg(short, long)]
-        interval: Option<String>,
-        #[arg(short, long)]
-        auto_clean: bool,
-    },
-    Daemon {
-        #[arg(short, long)]
-        action: String,
-    },
-}
-
 
 /// Executa CLI moderna.
 pub async fn run_cli() -> anyhow::Result<()> {
@@ -191,7 +139,6 @@ pub async fn run_cli() -> anyhow::Result<()> {
         Commands::Osint(cmd) => handle_osint(cmd).await?,
         Commands::Sandbox(cmd) => handle_sandbox(cmd)?,
         Commands::Plugins(cmd) => handle_plugins(cmd)?,
-        Commands::DiskCleanup(cmd) => handle_disk_cleanup(cmd).await?,
         Commands::Status => {
             let report = health::check();
             println!("🐺 STATUS: {} | uptime {}s", report.status, report.uptime_seconds);
@@ -399,52 +346,6 @@ fn handle_plugins(cmd: PluginCmd) -> anyhow::Result<()> {
         PluginCmd::Run { name, input } => {
             let output = registry.run(&name, &input)?;
             println!("🐺 Plugin output {}", output);
-        }
-    }
-    Ok(())
-}
-
-async fn handle_disk_cleanup(cmd: DiskCleanupCmd) -> anyhow::Result<()> {
-    match cmd {
-        DiskCleanupCmd::Analyze { path, detailed } => {
-            let report = disk_cleanup::analyze_disk_usage(path.as_deref(), detailed)?;
-            println!("\n📊 {} Analysis Complete:", "[RESULTS]".green());
-            println!("  Total files: {}", report.file_count);
-            println!("  Total size: {}", disk_cleanup::format_size(report.total_size));
-            println!("\n  By category:");
-            for (category, size) in report.by_category {
-                println!("    {:?}: {}", category, disk_cleanup::format_size(size));
-            }
-        }
-        DiskCleanupCmd::Clean { path, dry_run, aggressive, force } => {
-            if !force && !dry_run {
-                if !confirm::confirm("This will permanently delete files. Continue?")? {
-                    println!("❌ Cleanup cancelled");
-                    return Ok(());
-                }
-            }
-
-            let config = disk_cleanup::CleanupConfig {
-                dry_run,
-                aggressive_mode: aggressive,
-                ..Default::default()
-            };
-
-            disk_cleanup::clean_disk(&config, path.as_deref())?;
-        }
-        DiskCleanupCmd::List { category: _, min_size } => {
-            disk_cleanup::list_categories(min_size)?;
-        }
-        DiskCleanupCmd::Schedule { interval: _, auto_clean: _ } => {
-            println!("🐺 Daemon scheduling feature coming soon! Use 'daemon start' to launch the service.");
-        }
-        DiskCleanupCmd::Daemon { action } => {
-            match action.as_str() {
-                "start" => println!("🐺 Fenrir cleanup daemon starting... (LaunchAgent integration coming soon)"),
-                "stop" => println!("🐺 Fenrir cleanup daemon stopping..."),
-                "status" => println!("🐺 Fenrir cleanup daemon status: Not running"),
-                _ => println!("❌ Unknown daemon action. Use: start, stop, status"),
-            }
         }
     }
     Ok(())
