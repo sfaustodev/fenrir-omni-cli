@@ -37,11 +37,11 @@ crossterm = "0.28"
 console = "0.15"
 nu-ansi-term = "0.50"
 # Crypto
-aes-gcm = "0.10"
+aes-gcm = "0.9"
 rand = "0.8"
 hex = "0.4"
 sha2 = "0.10"
-age = "0.10"
+age = "0.8"
 keyring = "2.3"
 secrecy = "0.8"
 # System information
@@ -69,11 +69,12 @@ prometheus = "0.13"
 axum = "0.7"
 tower = "0.4"
 libloading = "0.8"
-solana-sdk = "1.18.26"
-solana-client = "1.18.26"
-zcash_primitives = "0.13"
-zcash_client_backend = "0.14"
-zcash_address = "0.4"
+# Temporarily disabled due to dependency conflicts - can be re-enabled later
+# solana-sdk = "1.18.26"
+# solana-client = "1.18.26"
+# zcash_primitives = "0.13"
+# zcash_client_backend = "0.14"
+# zcash_address = "0.4"
 
 [profile.release]
 opt-level = 3
