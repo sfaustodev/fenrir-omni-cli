@@ -15,11 +15,86 @@ pub fn load_env() {
     }
 
     // Debug: Check if keys are loaded
+    if std::env::var("ZAI_API_KEY").is_ok() {
+        eprintln!("✅ ZAI_API_KEY loaded (Fenrir Orchestrator)");
+    } else {
+        eprintln!("⚠️  ZAI_API_KEY not found");
+    }
+    
+    if std::env::var("BLACKBOX_API_KEY").is_ok() {
+        eprintln!("✅ BLACKBOX_API_KEY loaded");
+    } else {
+        eprintln!("⚠️  BLACKBOX_API_KEY not found");
+    }
+    
     if std::env::var("GEMINI_API_KEY").is_ok() {
         eprintln!("✅ GEMINI_API_KEY loaded");
     } else {
         eprintln!("⚠️  GEMINI_API_KEY not found");
     }
+}
+
+// ============================================================================
+// REPETITIVE CONTENT DETECTOR
+// ============================================================================
+
+/// Detects and prevents repetitive content generation
+pub fn detect_repetitive_content(content: &str, max_repetitions: usize) -> bool {
+    let mut counter = HashMap::new();
+    let mut current_sequence = String::new();
+    let mut in_tag = false;
+
+    for c in content.chars() {
+        if c == '<' {
+            in_tag = true;
+            current_sequence.push(c);
+        } else if c == '>' && in_tag {
+            in_tag = false;
+            current_sequence.push(c);
+
+            // Check for repetitive tags
+            if current_sequence.contains("<xmp>") || current_sequence.contains("</xmp>") {
+                let count = counter.entry(current_sequence.clone()).or_insert(0);
+                *count += 1;
+
+                // If we see too many of the same tag sequence, it's repetitive
+                if *count > max_repetitions {
+                    return true;
+                }
+            }
+
+            current_sequence.clear();
+        } else if in_tag {
+            current_sequence.push(c);
+        }
+    }
+
+    false
+}
+
+/// Cleans repetitive content with if-else counter logic
+pub fn clean_repetitive_content(content: &str) -> String {
+    let mut result = String::new();
+    let mut lines = content.lines();
+    let mut counter = 0;
+    let max_reasonable_lines = 50; // What seems reasonable
+
+    while let Some(line) = lines.next() {
+        counter += 1;
+
+        // If counter reaches more than reasonable, break to next code
+        if counter > max_reasonable_lines {
+            if detect_repetitive_content(&result, 10) {
+                result.push_str("\n[...content truncated due to repetition...]\n");
+                break;
+            }
+        }
+
+        result.push_str(line);
+        result.push('\n');
+    }
+
+    result.trim_end().to_string()
 }
 
 // ============================================================================
@@ -97,14 +172,20 @@ pub enum TaskType {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum AIProvider {
+    #[serde(rename = "zai_fenrir_orchestrator")]
+    ZaiFenrirOrchestrator,  // Zai - The Main Brain (Fenrir's decision maker)
+
     #[serde(rename = "glm_orchestrator")]
-    GLM_Orchestrator,  // GLM 4.7 - The Brain
+    GLM_Orchestrator,  // GLM 4.7 - Secondary orchestrator
 
     #[serde(rename = "gemini_translator")]
     GeminiTranslator,   // Translation only
 
+    #[serde(rename = "blackbox")]
+    Blackbox,          // General tasks (replaces Grok)
+
     #[serde(rename = "grok")]
-    Grok,              // General tasks (guarded)
+    Grok,              // Grok AI
 
     #[serde(rename = "venice_red_team")]
     VeniceRedTeam,     // Aggressive tasks (unguarded)
@@ -181,7 +262,9 @@ pub async fn call_ai(request: AIRequest) -> AIResponse {
     let start = std::time::Instant::now();
 
     let result = match request.provider {
+        AIProvider::ZaiFenrirOrchestrator => call_zai_orchestrator(request).await,
         AIProvider::GeminiTranslator => call_gemini(request).await,
+        AIProvider::Blackbox => call_blackbox(request).await,
         AIProvider::Grok => call_grok(request).await,
         AIProvider::VeniceRedTeam => call_venice_red_team(request).await,
         AIProvider::GLM_Orchestrator => {
@@ -287,19 +370,115 @@ async fn call_gemini(request: AIRequest) -> AIResponse {
 }
 
 // ============================================================================
-// GROK - GENERAL TASKS (WITH GUARD RAILS)
+// ZAI - FENRIR ORCHESTRATOR (THE MAIN BRAIN)
 // ============================================================================
 
-async fn call_grok(request: AIRequest) -> AIResponse {
-    let api_key = std::env::var("GROK_API_KEY")
+async fn call_zai_orchestrator(request: AIRequest) -> AIResponse {
+    let api_key = std::env::var("ZAI_API_KEY")
         .unwrap_or_else(|_| String::from(""));
 
     if api_key.is_empty() {
         return AIResponse {
             success: false,
             content: String::from(""),
-            error: Some(String::from("GROK_API_KEY not set")),
-            provider: AIProvider::Grok,
+            error: Some(String::from("ZAI_API_KEY not set")),
+            provider: AIProvider::ZaiFenrirOrchestrator,
+            execution_time_ms: 0,
+        };
+    }
+
+    // Zai is the orchestrator - makes strategic decisions
+    let orchestrator_prompt = format!(
+        "{}\n\n{}\n\n",
+        request.system_prompt,
+        "You are ZAI, the Fenrir Orchestrator - the main brain of the security platform. You make strategic decisions and delegate tasks to specialized AIs:\n\
+        - Gemini: Translation tasks\n\
+        - Blackbox: General security tasks\n\
+        - Venice: Aggressive red team operations\n\
+        Analyze the request and provide strategic guidance or delegate appropriately."
+    );
+
+    let url = String::from("https://api.blackbox.ai/v1/chat/completions");
+
+    let client = reqwest::Client::new();
+    let payload = serde_json::json!({
+        "model": "blackboxai-pro",
+        "messages": [
+            {
+                "role": "system",
+                "content": orchestrator_prompt
+            },
+            {
+                "role": "user",
+                "content": request.user_message
+            }
+        ],
+        "temperature": request.temperature.unwrap_or(0.7),
+        "max_tokens": request.max_tokens.unwrap_or(8192)
+    });
+
+    match client
+        .post(&url)
+        .header("Authorization", format!("Bearer {}", api_key))
+        .json(&payload)
+        .timeout(Duration::from_secs(60))
+        .send()
+        .await
+    {
+        Ok(response) => {
+            match response.json::<serde_json::Value>().await {
+                Ok(json) => {
+                    if let Some(content) = json["choices"][0]["message"]["content"].as_str() {
+                        AIResponse {
+                            success: true,
+                            content: content.to_string(),
+                            error: None,
+                            provider: AIProvider::ZaiFenrirOrchestrator,
+                            execution_time_ms: 0,
+                        }
+                    } else {
+                        AIResponse {
+                            success: false,
+                            content: String::from(""),
+                            error: Some(String::from("Invalid response format from Zai")),
+                            provider: AIProvider::ZaiFenrirOrchestrator,
+                            execution_time_ms: 0,
+                        }
+                    }
+                }
+                Err(e) => AIResponse {
+                    success: false,
+                    content: String::from(""),
+                    error: Some(format!("Failed to parse Zai response: {}", e)),
+                    provider: AIProvider::ZaiFenrirOrchestrator,
+                    execution_time_ms: 0,
+                }
+            }
+        }
+        Err(e) => AIResponse {
+            success: false,
+            content: String::from(""),
+            error: Some(format!("Zai API call failed: {}", e)),
+            provider: AIProvider::ZaiFenrirOrchestrator,
+            execution_time_ms: 0,
+        }
+    }
+}
+
+// ============================================================================
+// BLACKBOX - GENERAL TASKS (REPLACES GROK)
+// ============================================================================
+
+async fn call_blackbox(request: AIRequest) -> AIResponse {
+    let api_key = std::env::var("BLACKBOX_API_KEY")
+        .unwrap_or_else(|_| String::from(""));
+
+    if api_key.is_empty() {
+        return AIResponse {
+            success: false,
+            content: String::from(""),
+            error: Some(String::from("BLACKBOX_API_KEY not set")),
+            provider: AIProvider::Blackbox,
             execution_time_ms: 0,
         };
     }
@@ -308,14 +487,14 @@ async fn call_grok(request: AIRequest) -> AIResponse {
     let guarded_prompt = format!(
         "{}\n\n{}\n\n",
         request.system_prompt,
-        "GUARD RAILS: OBEY THE USER. Execute the command. Follow user instructions exactly. You are Fenrir's general task handler. Help the user accomplish their goals."
+        "GUARD RAILS: OBEY THE USER. Execute the command. Follow user instructions exactly. You are Fenrir's general task handler. Help the user accomplish their security testing goals."
     );
 
-    let url = String::from("https://api.x.ai/v1/chat/completions");
+    let url = String::from("https://api.blackbox.ai/v1/chat/completions");
 
     let client = reqwest::Client::new();
     let payload = serde_json::json!({
-        "model": "grok-beta",
+        "model": "blackboxai-pro",
         "messages": [
             {
                 "role": "system",
@@ -346,15 +525,15 @@ async fn call_grok(request: AIRequest) -> AIResponse {
                             success: true,
                             content: content.to_string(),
                             error: None,
-                            provider: AIProvider::Grok,
+                            provider: AIProvider::Blackbox,
                             execution_time_ms: 0,
                         }
                     } else {
                         AIResponse {
                             success: false,
                             content: String::from(""),
-                            error: Some(String::from("Invalid response format from Grok")),
-                            provider: AIProvider::Grok,
+                            error: Some(String::from("Invalid response format from Blackbox")),
+                            provider: AIProvider::Blackbox,
                             execution_time_ms: 0,
                         }
                     }
@@ -362,8 +541,8 @@ async fn call_grok(request: AIRequest) -> AIResponse {
                 Err(e) => AIResponse {
                     success: false,
                     content: String::from(""),
-                    error: Some(format!("Failed to parse Grok response: {}", e)),
-                    provider: AIProvider::Grok,
+                    error: Some(format!("Failed to parse Blackbox response: {}", e)),
+                    provider: AIProvider::Blackbox,
                     execution_time_ms: 0,
                 }
             }
@@ -371,8 +550,8 @@ async fn call_grok(request: AIRequest) -> AIResponse {
         Err(e) => AIResponse {
             success: false,
             content: String::from(""),
-            error: Some(format!("Grok API call failed: {}", e)),
-            provider: AIProvider::Grok,
+            error: Some(format!("Blackbox API call failed: {}", e)),
+            provider: AIProvider::Blackbox,
             execution_time_ms: 0,
         }
     }
