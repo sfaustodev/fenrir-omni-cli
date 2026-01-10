@@ -8,6 +8,7 @@ mod fenrir_ai_layer;
 mod fenrir_orchestrator;
 mod kali_tools;
 mod kali_tools_comprehensive;
+mod batch_executor;
 mod git_automation;
 mod cli;
 mod confirm;
@@ -16,8 +17,8 @@ mod secrets;
 mod metrics;
 mod health;
 mod circuit_breaker;
-mod solana;
-mod zcash;
+// mod solana;
+// mod zcash;
 mod liquidity;
 mod plugins;
 mod wrapper;
@@ -53,6 +54,10 @@ async fn main() {
     println!("🎯 Special Commands:");
     println!("  scan <target> [comprehensive]  - Security scan");
     println!("  bite <target> [aggressive]     - Penetration test");
+    println!("  batch recon <target>           - Batch reconnaissance");
+    println!("  batch vuln <target>            - Batch vulnerability scan");
+    println!("  batch passwd <target>          - Batch password attacks");
+    println!("  batch full <target>            - Full penetration test suite");
     println!("  grok \"prompt\"                  - Query Grok AI");
     println!("  gita tudo                       - Git: add, commit, push");
     println!("  gita ai                         - Git: add, commit");
@@ -90,10 +95,145 @@ async fn main() {
                     continue;
                 }
 
+                // Batch commands
+                if user_input.starts_with("batch ") {
+                    let parts: Vec<&str> = user_input.split_whitespace().collect();
+                    if parts.len() >= 3 {
+                        let batch_type = parts[1];
+                        let target = parts[2];
+
+                        let executor = batch_executor::BatchExecutor::new(target.to_string());
+
+                        match batch_type {
+                            "recon" => {
+                                let job = batch_executor::create_recon_job(target);
+                                match executor.submit_job(job.clone()).await {
+                                    Ok(job_id) => {
+                                        println!("🔍 Submitted reconnaissance job: {}", job_id);
+                                        match executor.execute_job(&job_id).await {
+                                            Ok(result) => {
+                                                println!("✅ Recon complete: {}/{} tools successful",
+                                                    result.successful_tools, result.total_tools);
+                                                println!("{}", result.summary);
+                                            }
+                                            Err(e) => println!("❌ Recon failed: {}", e),
+                                        }
+                                    }
+                                    Err(e) => println!("❌ Failed to submit job: {}", e),
+                                }
+                            }
+                            "vuln" => {
+                                let job = batch_executor::create_vuln_scan_job(target);
+                                match executor.submit_job(job.clone()).await {
+                                    Ok(job_id) => {
+                                        println!("🔎 Submitted vulnerability scan job: {}", job_id);
+                                        match executor.execute_job(&job_id).await {
+                                            Ok(result) => {
+                                                println!("✅ Vuln scan complete: {}/{} tools successful",
+                                                    result.successful_tools, result.total_tools);
+                                                println!("{}", result.summary);
+                                            }
+                                            Err(e) => println!("❌ Vuln scan failed: {}", e),
+                                        }
+                                    }
+                                    Err(e) => println!("❌ Failed to submit job: {}", e),
+                                }
+                            }
+                            "passwd" => {
+                                let job = batch_executor::create_password_attack_job(target);
+                                match executor.submit_job(job.clone()).await {
+                                    Ok(job_id) => {
+                                        println!("🔐 Submitted password attack job: {}", job_id);
+                                        match executor.execute_job(&job_id).await {
+                                            Ok(result) => {
+                                                println!("✅ Password attack complete: {}/{} tools successful",
+                                                    result.successful_tools, result.total_tools);
+                                                println!("{}", result.summary);
+                                            }
+                                            Err(e) => println!("❌ Password attack failed: {}", e),
+                                        }
+                                    }
+                                    Err(e) => println!("❌ Failed to submit job: {}", e),
+                                }
+                            }
+                            "full" => {
+                                let job = batch_executor::create_full_pentest_job(target);
+                                match executor.submit_job(job.clone()).await {
+                                    Ok(job_id) => {
+                                        println!("🎯 Submitted full pentest job: {}", job_id);
+                                        match executor.execute_job(&job_id).await {
+                                            Ok(result) => {
+                                                println!("✅ Full pentest complete: {}/{} tools successful",
+                                                    result.successful_tools, result.total_tools);
+                                                println!("{}", result.summary);
+                                            }
+                                            Err(e) => println!("❌ Full pentest failed: {}", e),
+                                        }
+                                    }
+                                    Err(e) => println!("❌ Failed to submit job: {}", e),
+                                }
+                            }
+                            _ => {
+                                println!("❌ Unknown batch type: {}. Use: recon, vuln, passwd, full", batch_type);
+                            }
+                        }
+                    } else {
+                        println!("❌ Usage: batch <type> <target>");
+                        println!("   Types: recon, vuln, passwd, full");
+                    }
+                    continue;
+                }
+
                 // Parse commands with arguments
-                let parts: Vec<&str> = user_input.splitn(2, ' ').collect();
+                let parts: Vec<&str> = user_input.splitn(3, ' ').collect();
                 if parts.len() >= 2 {
                     match parts[0] {
+                        "batch" => {
+                            if parts.len() < 3 {
+                                println!("❌ Usage: batch <type> <target>\n");
+                                println!("  Types: recon, vuln, passwd, full\n");
+                                continue;
+                            }
+                            let batch_type = parts[1];
+                            let target = parts[2];
+
+                            let job = match batch_type {
+                                "recon" => batch_executor::create_recon_job(target),
+                                "vuln" => batch_executor::create_vuln_scan_job(target),
+                                "passwd" => batch_executor::create_password_attack_job(target),
+                                "full" => batch_executor::create_full_pentest_job(target),
+                                _ => {
+                                    println!("❌ Unknown batch type: {}\n", batch_type);
+                                    println!("  Available: recon, vuln, passwd, full\n");
+                                    continue;
+                                }
+                            };
+
+                            let executor = batch_executor::BatchExecutor::new(target.to_string());
+                            match executor.submit_job(job.clone()).await {
+                                Ok(job_id) => {
+                                    println!("🔧 Submitted batch job: {}", job.name);
+                                    println!("📋 Job ID: {}", job_id);
+                                    println!("🎯 Target: {}", target);
+                                    println!("🔧 Tools: {}", job.tools.len());
+                                    println!("⚙️  Mode: {:?}\n", job.config.mode);
+
+                                    // Execute immediately
+                                    match executor.execute_job(&job_id).await {
+                                        Ok(result) => {
+                                            println!("✅ BATCH EXECUTION COMPLETE");
+                                            println!("🎯 Successful: {}/{}", result.successful_tools, result.total_tools);
+                                            println!("❌ Failed: {}", result.failed_tools);
+                                            println!("⏱️  Total Time: {:.2}s", result.total_execution_time.as_secs_f64());
+                                            println!("\n📄 Summary:\n{}\n", result.summary);
+                                        }
+                                        Err(e) => println!("❌ Batch execution failed: {}\n", e),
+                                    }
+                                }
+                                Err(e) => println!("❌ Failed to submit job: {}\n", e),
+                            }
+                            continue;
+                        }
                         "scan" => {
                             let target = parts[1].split_whitespace().next().unwrap_or("");
                             let comprehensive = parts[1].contains("comprehensive");

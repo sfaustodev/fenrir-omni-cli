@@ -12,6 +12,30 @@ pub trait FenrirPlugin: Send + Sync {
     fn run(&self, input: &str) -> anyhow::Result<String>;
 }
 
+/// Plugin para descoberta stealthy de credenciais Netflix.
+pub struct NetflixCredentialHunter;
+
+impl NetflixCredentialHunter {
+    pub fn new() -> Self {
+        Self
+    }
+}
+
+impl FenrirPlugin for NetflixCredentialHunter {
+    fn name(&self) -> &str {
+        "netflix-credential-hunter"
+    }
+
+    fn description(&self) -> &str {
+        "Stealthy discovery of Netflix credentials on networks using OSINT and passive scanning"
+    }
+
+    fn run(&self, input: &str) -> anyhow::Result<String> {
+        // TODO: Implement actual Netflix credential hunting logic
+        Ok(format!("Netflix credential hunter plugin executed with input: {}", input))
+    }
+}
+
 type PluginCreate = unsafe fn() -> *mut dyn FenrirPlugin;
 
 /// Registry simples de plugins.

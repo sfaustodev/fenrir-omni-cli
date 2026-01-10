@@ -8,22 +8,14 @@ use crate::osint;
 use crate::plugins::PluginRegistry;
 use crate::sandbox;
 use crate::secrets::SecretStore;
-use crate::solana;
 use crate::wrapper;
-use crate::zcash;
-use clap::{Parser, Subcommand};
+use bpaf::*;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 
-#[derive(Parser)]
-#[command(name = "fenrir", version, about = "🐺 FENRIR OMNI CLI")]
-pub struct FenrirCli {
-    #[command(subcommand)]
-    command: Commands,
-}
-
-#[derive(Subcommand)]
-enum Commands {
+// Command definitions using bpaf
+#[derive(Debug, Clone)]
+pub enum Commands {
     Blockchain(BlockchainCmd),
     Secrets(SecretsCmd),
     Metrics(MetricsCmd),
@@ -36,112 +28,103 @@ enum Commands {
     Status,
 }
 
-#[derive(Subcommand)]
-enum BlockchainCmd {
-    Solana(SolanaCmd),
-    Zcash(ZcashCmd),
+#[derive(Debug, Clone)]
+pub enum BlockchainCmd {
     Liquidity(LiquidityCmd),
     Swap(SwapCmd),
     Analyze(AnalyzeCmd),
     Anonymous,
 }
 
-#[derive(Subcommand)]
-enum SolanaCmd {
-    Balance { rpc: String, pubkey: String },
-    Transfer { rpc: String, keypair: PathBuf, to: String, lamports: u64 },
-    Keygen { output: PathBuf },
-    WsPing { ws: String },
-}
-
-#[derive(Subcommand)]
-enum ZcashCmd {
-    Keys { #[arg(long)] generate: bool },
-}
-
-#[derive(Subcommand)]
-enum LiquidityCmd {
+#[derive(Debug, Clone)]
+pub enum LiquidityCmd {
     Jupiter { input: String, output: String, amount: u64 },
     Orca,
 }
 
-#[derive(Subcommand)]
-enum SwapCmd {
+#[derive(Debug, Clone)]
+pub enum SwapCmd {
     CrossChain { from: String, to: String, amount: u64 },
 }
 
-#[derive(Subcommand)]
-enum AnalyzeCmd {
-    Solana { rpc: String, pubkey: String },
-    Zcash { address: String },
+#[derive(Debug, Clone)]
+pub enum AnalyzeCmd {
+    Stub { target: String },
 }
 
-#[derive(Subcommand)]
-enum SecretsCmd {
+#[derive(Debug, Clone)]
+pub enum SecretsCmd {
     Set { key: String, value: String },
     Get { key: String },
     Delete { key: String },
     List,
 }
 
-#[derive(Subcommand)]
-enum MetricsCmd {
+#[derive(Debug, Clone)]
+pub enum MetricsCmd {
     Show,
     Serve { addr: String },
 }
 
-#[derive(Subcommand)]
-enum HealthCmd {
+#[derive(Debug, Clone)]
+pub enum HealthCmd {
     Check,
     Serve { addr: String },
 }
 
-#[derive(Subcommand)]
-enum WrapperCmd {
+#[derive(Debug, Clone)]
+pub enum WrapperCmd {
     Generate { tool: String, output: Option<PathBuf> },
 }
 
-#[derive(Subcommand)]
-enum BugBountyCmd {
+#[derive(Debug, Clone)]
+pub enum BugBountyCmd {
     Recon { target: String },
     Report { target: String },
 }
 
-#[derive(Subcommand)]
-enum OsintCmd {
+#[derive(Debug, Clone)]
+pub enum OsintCmd {
     TorProbe { url: String },
     Ssh { target: String },
 }
 
-#[derive(Subcommand)]
-enum SandboxCmd {
+#[derive(Debug, Clone)]
+pub enum SandboxCmd {
     Run { cmd: String },
 }
 
-#[derive(Subcommand)]
-enum PluginCmd {
+#[derive(Debug, Clone)]
+pub enum PluginCmd {
     List,
     Load { path: PathBuf },
     Run { name: String, input: String },
 }
 
+// bpaf parser - simplified for now
+fn commands_parser() -> impl Parser<Commands> {
+    // For now, just support status command to get basic functionality working
+    literal("status").map(|_| Commands::Status)
+}
+
 /// Executa CLI moderna.
 pub async fn run_cli() -> anyhow::Result<()> {
     metrics::init_metrics();
-    let cli = FenrirCli::parse();
-    match cli.command {
-        Commands::Blockchain(cmd) => handle_blockchain(cmd).await?,
-        Commands::Secrets(cmd) => handle_secrets(cmd)?,
-        Commands::Metrics(cmd) => handle_metrics(cmd).await?,
-        Commands::Health(cmd) => handle_health(cmd).await?,
-        Commands::Wrapper(cmd) => handle_wrapper(cmd)?,
-        Commands::BugBounty(cmd) => handle_bugbounty(cmd)?,
-        Commands::Osint(cmd) => handle_osint(cmd).await?,
-        Commands::Sandbox(cmd) => handle_sandbox(cmd)?,
-        Commands::Plugins(cmd) => handle_plugins(cmd)?,
+
+    let parser = commands_parser()
+        .to_options()
+        .descr("🐺 FENRIR OMNI CLI")
+        .version(env!("CARGO_PKG_VERSION"));
+
+    let command = parser.run();
+
+    match command {
         Commands::Status => {
             let report = health::check();
             println!("🐺 STATUS: {} | uptime {}s", report.status, report.uptime_seconds);
+        }
+        _ => {
+            println!("🐺 Command not implemented yet in bpaf parser");
         }
     }
     Ok(())
@@ -149,38 +132,6 @@ pub async fn run_cli() -> anyhow::Result<()> {
 
 async fn handle_blockchain(cmd: BlockchainCmd) -> anyhow::Result<()> {
     match cmd {
-        BlockchainCmd::Solana(cmd) => match cmd {
-            SolanaCmd::Balance { rpc, pubkey } => {
-                let client = solana::rpc_client(&rpc);
-                let balance = solana::balance(&client, &pubkey)?;
-                println!("🐺 SOLANA BALANCE {} lamports", balance);
-            }
-            SolanaCmd::Transfer { rpc, keypair, to, lamports } => {
-                let client = solana::rpc_client(&rpc);
-                let keypair = solana::load_keypair(&keypair)?;
-                let sig = solana::transfer(&client, &keypair, &to, lamports)?;
-                println!("🐺 TX SENT {}", sig);
-            }
-            SolanaCmd::Keygen { output } => {
-                solana::generate_keypair(&output)?;
-                println!("🐺 KEYPAIR GERADO em {}", output.display());
-            }
-            SolanaCmd::WsPing { ws } => {
-                let response = solana::ws_ping(&ws).await?;
-                println!("🐺 WS PING {}", response);
-            }
-        },
-        BlockchainCmd::Zcash(cmd) => match cmd {
-            ZcashCmd::Keys { generate } => {
-                if !generate {
-                    println!("🐺 Use --generate para criar chaves.");
-                    return Ok(());
-                }
-                let keys = zcash::generate_keys()?;
-                println!("🐺 ZCASH ADDRESS {}", keys.address);
-                println!("🐺 SEED {}", keys.seed);
-            }
-        },
         BlockchainCmd::Liquidity(cmd) => match cmd {
             LiquidityCmd::Jupiter { input, output, amount } => {
                 let quote = liquidity::jupiter_quote(&input, &output, amount).await?;
@@ -203,13 +154,8 @@ async fn handle_blockchain(cmd: BlockchainCmd) -> anyhow::Result<()> {
             }
         },
         BlockchainCmd::Analyze(cmd) => match cmd {
-            AnalyzeCmd::Solana { rpc, pubkey } => {
-                let client = solana::rpc_client(&rpc);
-                let balance = solana::balance(&client, &pubkey)?;
-                println!("🐺 ANALYZE SOLANA balance {}", balance);
-            }
-            AnalyzeCmd::Zcash { address } => {
-                println!("🐺 ANALYZE ZCASH {} (stub)", address);
+            AnalyzeCmd::Stub { target } => {
+                println!("🐺 ANALYZE {} (stub - blockchain analysis not implemented)", target);
             }
         },
         BlockchainCmd::Anonymous => {

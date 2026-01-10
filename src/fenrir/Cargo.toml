@@ -17,6 +17,7 @@ chrono = { workspace = true }
 reqwest = { workspace = true }
 url = { workspace = true }
 tokio-tungstenite = { workspace = true }
+bpaf = { workspace = true }
 clap = { workspace = true }
 colored = { workspace = true }
 indicatif = { workspace = true }
@@ -35,7 +36,7 @@ aes-gcm = { workspace = true }
 rand = { workspace = true }
 hex = { workspace = true }
 sha2 = { workspace = true }
-# age = { workspace = true }
+age = { workspace = true }
 keyring = { workspace = true }
 secrecy = { workspace = true }
 pnet = { workspace = true }
@@ -53,8 +54,10 @@ prometheus = { workspace = true }
 axum = { workspace = true }
 tower = { workspace = true }
 libloading = { workspace = true }
-solana-sdk = { workspace = true }
-solana-client = { workspace = true }
-zcash_primitives = { workspace = true }
-zcash_client_backend = { workspace = true }
-zcash_address = { workspace = true }
+nix = { workspace = true }
+futures = { workspace = true }
+# solana-sdk = { workspace = true }
+# solana-client = { workspace = true }
+# zcash_primitives = { workspace = true }
+# zcash_client_backend = { workspace = true }
+# zcash_address = { workspace = true }

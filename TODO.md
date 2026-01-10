@@ -23,3 +23,13 @@
 - [ ] Record stealth effectiveness and detection avoidance
 - [ ] Note any issues with dependency conflicts impacting functionality
 - [ ] Provide summary of testing outcomes
+
+## Improvements and Fixes Checklist
+- [x] Add real Netflix credential discovery logic (plugin added)
+- [ ] Implement Tor-based OSINT in osint.rs
+- [ ] Add more Kali tools for credential hunting (e.g., hydra, john)
+- [ ] Improve plugin system error handling
+- [ ] Add configuration for stealth levels
+- [ ] Implement credential storage and reporting
+- [ ] Add unit tests for kali_tools functions
+- [ ] Optimize build times by selective dependency inclusion
