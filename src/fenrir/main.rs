@@ -28,7 +28,6 @@ mod plugins;
 mod sandbox;
 mod wrapper;
 
-use executor::FenrirTask;
 use reqwest::Client;
 use serde_json::{json, Value};
 use std::io::{self, Write};

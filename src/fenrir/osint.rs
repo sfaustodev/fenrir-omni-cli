@@ -1,5 +1,4 @@
 use crate::http_client;
-use std::collections::HashMap;
 
 /// Real integração Tor para OSINT stealthy.
 pub async fn tor_probe(url: &str) -> anyhow::Result<String> {

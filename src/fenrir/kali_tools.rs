@@ -3,8 +3,6 @@
 // For authorized bug bounty and security auditing purposes
 
 use serde::{Deserialize, Serialize};
-use std::os::unix::process::CommandExt;
-use std::path::Path;
 use std::process::Command;
 
 // ============================================================================

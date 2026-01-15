@@ -10,7 +10,7 @@ use std::time::Duration;
 use tokio::sync::Mutex;
 
 // Re-export for convenience
-pub use crate::kali_tools_comprehensive::{FenrirOrchestrationEngine, KaliTool, KaliToolCategory};
+pub use crate::kali_tools_comprehensive::FenrirOrchestrationEngine;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ExecutionMode {

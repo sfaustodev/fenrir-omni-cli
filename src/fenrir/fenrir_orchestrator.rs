@@ -3,10 +3,9 @@
 // Coordinates all AI operations
 
 use crate::fenrir_ai_layer::{
-    call_ai, AIProvider, AIRequest, AIResponse, ExecutionMode, FenrirTask, TaskStatus, TaskType,
+    call_ai, AIProvider, AIRequest, ExecutionMode, FenrirTask, TaskStatus, TaskType,
 };
 use std::time::Instant;
-use tokio::join;
 
 // ============================================================================
 // ORCHESTRATOR - THE BRAIN
@@ -366,7 +365,7 @@ impl FenrirOrchestrator {
         task.subtasks = task
             .subtasks
             .into_iter()
-            .map(|mut t| {
+            .map(|t| {
                 // Update status from results
                 t
             })
