@@ -1,8 +1,8 @@
 // --- MÓDULO FERRAMENTAS ---
 // Utilidades e ferramentas auxiliares para o Fenrir
 
-use std::process::Command;
 use std::fs;
+use std::process::Command;
 
 pub fn verificar_dependencias() -> Vec<String> {
     let mut faltantes = Vec::new();
@@ -58,7 +58,12 @@ pub fn mostrar_info_sistema() {
     }
 
     // Verificar Ghostty
-    if Command::new("which").arg("ghostty").output().map(|o| o.status.success()).unwrap_or(false) {
+    if Command::new("which")
+        .arg("ghostty")
+        .output()
+        .map(|o| o.status.success())
+        .unwrap_or(false)
+    {
         println!("   🎯 Ghostty: ✅ Instalado");
     } else {
         println!("   🎯 Ghostty: ❌ Não encontrado");

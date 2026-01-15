@@ -2,24 +2,24 @@
 // Abstractions for batch execution of Kali tools
 // Enables parallel/sequential execution with progress tracking
 
-use std::sync::Arc;
-use tokio::sync::Mutex;
-use std::collections::HashMap;
-use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::sync::Arc;
 use std::time::Duration;
+use tokio::sync::Mutex;
 
 // Re-export for convenience
-pub use crate::kali_tools_comprehensive::{KaliTool, KaliToolCategory, FenrirOrchestrationEngine};
+pub use crate::kali_tools_comprehensive::{FenrirOrchestrationEngine, KaliTool, KaliToolCategory};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ExecutionMode {
     #[serde(rename = "sequential")]
-    Sequential,  // Execute tools one by one
+    Sequential, // Execute tools one by one
     #[serde(rename = "parallel")]
-    Parallel,    // Execute tools in parallel with limits
+    Parallel, // Execute tools in parallel with limits
     #[serde(rename = "pipeline")]
-    Pipeline,    // Execute in dependency-aware pipeline
+    Pipeline, // Execute in dependency-aware pipeline
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -158,7 +158,8 @@ impl BatchExecutor {
 
     pub async fn execute_job(&self, job_id: &str) -> Result<BatchResult, String> {
         let mut jobs = self.active_jobs.lock().await;
-        let job = jobs.get_mut(job_id)
+        let job = jobs
+            .get_mut(job_id)
             .ok_or_else(|| format!("Job {} not found", job_id))?;
 
         // Update status
@@ -195,7 +196,8 @@ impl BatchExecutor {
         let total_time = start_time.elapsed();
 
         // Generate summary
-        let summary = self.generate_batch_summary(&job_clone, &results, successful, failed, total_time);
+        let summary =
+            self.generate_batch_summary(&job_clone, &results, successful, failed, total_time);
 
         let batch_result = BatchResult {
             job_id: job_id.to_string(),
@@ -210,7 +212,11 @@ impl BatchExecutor {
         // Update job status
         let mut jobs = self.active_jobs.lock().await;
         if let Some(job) = jobs.get_mut(job_id) {
-            job.status = if failed == 0 { JobStatus::Completed } else { JobStatus::Failed };
+            job.status = if failed == 0 {
+                JobStatus::Completed
+            } else {
+                JobStatus::Failed
+            };
         }
 
         // Store result
@@ -228,7 +234,11 @@ impl BatchExecutor {
             println!("🔧 Executing {} (sequential)", tool_name);
 
             // Get tool info first (immutable borrow)
-            let tool_info = engine.tools.iter().find(|t| t.name == *tool_name).cloned()
+            let tool_info = engine
+                .tools
+                .iter()
+                .find(|t| t.name == *tool_name)
+                .cloned()
                 .ok_or_else(|| format!("Tool {} not found", tool_name))?;
 
             let start = std::time::Instant::now();
@@ -239,8 +249,10 @@ impl BatchExecutor {
                 let mut engine_guard = self.engine.lock().await;
                 match tokio::time::timeout(
                     job.config.timeout_per_tool,
-                    engine_guard.execute_tool(&tool_info, &args)
-                ).await {
+                    engine_guard.execute_tool(&tool_info, &args),
+                )
+                .await
+                {
                     Ok(Ok(output)) => ToolExecutionResult {
                         tool_name: tool_name.clone(),
                         success: true,
@@ -290,8 +302,8 @@ impl BatchExecutor {
     }
 
     async fn execute_parallel(&self, job: &BatchJob) -> Result<Vec<ToolExecutionResult>, String> {
-        use tokio::sync::Semaphore;
         use std::sync::Arc;
+        use tokio::sync::Semaphore;
 
         let semaphore = Arc::new(Semaphore::new(job.config.max_parallel));
         let mut handles = Vec::new();
@@ -313,7 +325,11 @@ impl BatchExecutor {
                 // Get tool info first (immutable borrow)
                 let tool_info = {
                     let engine_guard = engine.lock().await;
-                    engine_guard.tools.iter().find(|t| t.name == tool_name).cloned()
+                    engine_guard
+                        .tools
+                        .iter()
+                        .find(|t| t.name == tool_name)
+                        .cloned()
                 };
 
                 let tool = tool_info.ok_or_else(|| format!("Tool {} not found", tool_name))?;
@@ -324,10 +340,9 @@ impl BatchExecutor {
                 // Execute tool (mutable borrow in separate scope)
                 let result = {
                     let mut engine_guard = engine.lock().await;
-                    match tokio::time::timeout(
-                        timeout,
-                        engine_guard.execute_tool(&tool, &args)
-                    ).await {
+                    match tokio::time::timeout(timeout, engine_guard.execute_tool(&tool, &args))
+                        .await
+                    {
                         Ok(Ok(output)) => ToolExecutionResult {
                             tool_name: tool_name.clone(),
                             success: true,
@@ -451,8 +466,10 @@ impl BatchExecutor {
                 ));
 
                 if result.success {
-                    summary.push_str(&format!("**Output Preview**:\n```\n{}\n```\n\n",
-                        result.output.chars().take(500).collect::<String>()));
+                    summary.push_str(&format!(
+                        "**Output Preview**:\n```\n{}\n```\n\n",
+                        result.output.chars().take(500).collect::<String>()
+                    ));
                 } else if let Some(error) = &result.error {
                     summary.push_str(&format!("**Error**: {}\n\n", error));
                 }
@@ -496,7 +513,11 @@ impl BatchExecutor {
 // Helper functions for creating common batch jobs
 pub fn create_recon_job(target: &str) -> BatchJob {
     BatchJob {
-        job_id: format!("recon_{}_{}", target.replace(".", "_"), Utc::now().timestamp()),
+        job_id: format!(
+            "recon_{}_{}",
+            target.replace(".", "_"),
+            Utc::now().timestamp()
+        ),
         name: format!("Reconnaissance Scan - {}", target),
         description: "Comprehensive reconnaissance scanning".to_string(),
         tools: vec![
@@ -520,7 +541,11 @@ pub fn create_recon_job(target: &str) -> BatchJob {
 
 pub fn create_vuln_scan_job(target: &str) -> BatchJob {
     BatchJob {
-        job_id: format!("vuln_{}_{}", target.replace(".", "_"), Utc::now().timestamp()),
+        job_id: format!(
+            "vuln_{}_{}",
+            target.replace(".", "_"),
+            Utc::now().timestamp()
+        ),
         name: format!("Vulnerability Scan - {}", target),
         description: "Comprehensive vulnerability assessment".to_string(),
         tools: vec![
@@ -543,7 +568,11 @@ pub fn create_vuln_scan_job(target: &str) -> BatchJob {
 
 pub fn create_password_attack_job(target: &str) -> BatchJob {
     BatchJob {
-        job_id: format!("passwd_{}_{}", target.replace(".", "_"), Utc::now().timestamp()),
+        job_id: format!(
+            "passwd_{}_{}",
+            target.replace(".", "_"),
+            Utc::now().timestamp()
+        ),
         name: format!("Password Attack Suite - {}", target),
         description: "Comprehensive password cracking and analysis".to_string(),
         tools: vec![
@@ -568,7 +597,11 @@ pub fn create_password_attack_job(target: &str) -> BatchJob {
 
 pub fn create_full_pentest_job(target: &str) -> BatchJob {
     BatchJob {
-        job_id: format!("full_{}_{}", target.replace(".", "_"), Utc::now().timestamp()),
+        job_id: format!(
+            "full_{}_{}",
+            target.replace(".", "_"),
+            Utc::now().timestamp()
+        ),
         name: format!("Full Penetration Test - {}", target),
         description: "Complete penetration testing suite".to_string(),
         tools: vec![

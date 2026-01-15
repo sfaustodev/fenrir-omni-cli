@@ -2,13 +2,13 @@
 // 100+ Kali tools with async orchestration and detailed logging
 // For authorized security testing only
 
-use std::process::Command;
-use std::collections::HashMap;
-use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::path::Path;
+use std::process::Command;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use std::path::Path;
 
 // ============================================================================
 // COMPREHENSIVE TOOL CATEGORIES
@@ -130,7 +130,11 @@ impl DecisionLogger {
         std::fs::create_dir_all(log_dir).unwrap();
 
         let timestamp = Utc::now().format("%Y%m%d_%H%M%S");
-        let log_file = format!("fenrir_logs/brain_{}_{}.json", target.replace(".", "_"), timestamp);
+        let log_file = format!(
+            "fenrir_logs/brain_{}_{}.json",
+            target.replace(".", "_"),
+            timestamp
+        );
 
         DecisionLogger {
             log_file,
@@ -159,18 +163,31 @@ impl DecisionLogger {
         let mut report = format!("# 🧠 FENRIR BRAIN DECISION LOG\n\n");
         report.push_str(&format!("**Target**: {}\n", target));
         report.push_str(&format!("**Total Decisions**: {}\n", decisions.len()));
-        report.push_str(&format!("**Generated**: {}\n\n", Utc::now().format("%Y-%m-%d %H:%M:%S UTC")));
+        report.push_str(&format!(
+            "**Generated**: {}\n\n",
+            Utc::now().format("%Y-%m-%d %H:%M:%S UTC")
+        ));
 
         report.push_str("---\n\n");
 
         for (idx, decision) in decisions.iter().enumerate() {
-            report.push_str(&format!("## Decision {}: {:?}\n\n", idx + 1, decision.decision_type));
-            report.push_str(&format!("**Time**: {}\n", decision.timestamp.format("%H:%M:%S")));
+            report.push_str(&format!(
+                "## Decision {}: {:?}\n\n",
+                idx + 1,
+                decision.decision_type
+            ));
+            report.push_str(&format!(
+                "**Time**: {}\n",
+                decision.timestamp.format("%H:%M:%S")
+            ));
             report.push_str(&format!("**Tool**: {}\n", decision.tool_selected));
             report.push_str(&format!("**Target**: {}\n", decision.target));
             report.push_str(&format!("**Success**: {}\n\n", decision.success));
             report.push_str(&format!("**Reasoning**:\n{}\n\n", decision.reasoning));
-            report.push_str(&format!("**Output**:\n```\n{}\n```\n\n", decision.output_summary));
+            report.push_str(&format!(
+                "**Output**:\n```\n{}\n```\n\n",
+                decision.output_summary
+            ));
             if !decision.next_steps.is_empty() {
                 report.push_str("**Next Steps**:\n");
                 for step in &decision.next_steps {
@@ -204,13 +221,13 @@ pub struct Breach {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum BreachSeverity {
     #[serde(rename = "critical")]
-    Critical,  // Immediate action required
+    Critical, // Immediate action required
     #[serde(rename = "high")]
-    High,      // Urgent attention needed
+    High, // Urgent attention needed
     #[serde(rename = "medium")]
-    Medium,    // Should be addressed
+    Medium, // Should be addressed
     #[serde(rename = "low")]
-    Low,       // Informational
+    Low, // Informational
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -291,15 +308,19 @@ impl BreachDetector {
 
     pub fn analyze_output(&mut self, tool_output: &str, tool_name: &str) {
         // SQL Injection Detection
-        if tool_output.to_lowercase().contains("sql") &&
-           (tool_output.to_lowercase().contains("inject") ||
-            tool_output.to_lowercase().contains("syntax error") ||
-            tool_output.to_lowercase().contains("mysql")) {
+        if tool_output.to_lowercase().contains("sql")
+            && (tool_output.to_lowercase().contains("inject")
+                || tool_output.to_lowercase().contains("syntax error")
+                || tool_output.to_lowercase().contains("mysql"))
+        {
             self.detected_breaches.push(Breach {
                 breach_id: uuid::Uuid::new_v4().to_string(),
                 severity: BreachSeverity::Critical,
                 breach_type: BreachType::SQLInjection,
-                description: format!("Potential SQL injection vulnerability detected by {}", tool_name),
+                description: format!(
+                    "Potential SQL injection vulnerability detected by {}",
+                    tool_name
+                ),
                 evidence: vec![tool_output.lines().take(5).collect::<Vec<_>>().join("\n")],
                 affected_systems: vec![],
                 recommendations: vec![
@@ -312,14 +333,18 @@ impl BreachDetector {
         }
 
         // XSS Detection
-        if tool_output.to_lowercase().contains("xss") ||
-           tool_output.to_lowercase().contains("cross-site") ||
-           tool_output.contains("<script>") {
+        if tool_output.to_lowercase().contains("xss")
+            || tool_output.to_lowercase().contains("cross-site")
+            || tool_output.contains("<script>")
+        {
             self.detected_breaches.push(Breach {
                 breach_id: uuid::Uuid::new_v4().to_string(),
                 severity: BreachSeverity::High,
                 breach_type: BreachType::XSS,
-                description: format!("Cross-site scripting vulnerability detected by {}", tool_name),
+                description: format!(
+                    "Cross-site scripting vulnerability detected by {}",
+                    tool_name
+                ),
                 evidence: vec![tool_output.lines().take(5).collect::<Vec<_>>().join("\n")],
                 affected_systems: vec![],
                 recommendations: vec![
@@ -332,10 +357,11 @@ impl BreachDetector {
         }
 
         // Authentication Bypass
-        if tool_output.to_lowercase().contains("admin") &&
-           (tool_output.to_lowercase().contains("bypass") ||
-            tool_output.to_lowercase().contains("unauthorized") ||
-            tool_output.to_lowercase().contains("authentication")) {
+        if tool_output.to_lowercase().contains("admin")
+            && (tool_output.to_lowercase().contains("bypass")
+                || tool_output.to_lowercase().contains("unauthorized")
+                || tool_output.to_lowercase().contains("authentication"))
+        {
             self.detected_breaches.push(Breach {
                 breach_id: uuid::Uuid::new_v4().to_string(),
                 severity: BreachSeverity::Critical,
@@ -353,7 +379,8 @@ impl BreachDetector {
         }
 
         // Sensitive Data Detection (Emails)
-        let email_regex = regex::Regex::new(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}").unwrap();
+        let email_regex =
+            regex::Regex::new(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}").unwrap();
         for email in email_regex.find_iter(tool_output) {
             self.sensitive_data.push(SensitiveData {
                 data_id: uuid::Uuid::new_v4().to_string(),
@@ -397,8 +424,11 @@ impl BreachDetector {
         }
 
         // API Key Detection
-        if tool_output.contains("api_key") || tool_output.contains("apikey") ||
-           tool_output.contains("API_KEY") || tool_output.contains("secret") {
+        if tool_output.contains("api_key")
+            || tool_output.contains("apikey")
+            || tool_output.contains("API_KEY")
+            || tool_output.contains("secret")
+        {
             self.sensitive_data.push(SensitiveData {
                 data_id: uuid::Uuid::new_v4().to_string(),
                 data_type: SensitiveDataType::APIKey,
@@ -426,8 +456,16 @@ impl BreachDetector {
 
             // Check for images
             if let Some(ext) = path.extension() {
-                if matches!(ext.to_str(), Some("jpg") | Some("jpeg") | Some("png") |
-                    Some("gif") | Some("bmp") | Some("svg") | Some("webp")) {
+                if matches!(
+                    ext.to_str(),
+                    Some("jpg")
+                        | Some("jpeg")
+                        | Some("png")
+                        | Some("gif")
+                        | Some("bmp")
+                        | Some("svg")
+                        | Some("webp")
+                ) {
                     self.images_found.push(path_str.clone());
                     self.sensitive_data.push(SensitiveData {
                         data_id: uuid::Uuid::new_v4().to_string(),
@@ -444,8 +482,16 @@ impl BreachDetector {
 
             // Check for documents
             if let Some(ext) = path.extension() {
-                if matches!(ext.to_str(), Some("pdf") | Some("doc") | Some("docx") |
-                    Some("txt") | Some("xls") | Some("xlsx") | Some("ppt")) {
+                if matches!(
+                    ext.to_str(),
+                    Some("pdf")
+                        | Some("doc")
+                        | Some("docx")
+                        | Some("txt")
+                        | Some("xls")
+                        | Some("xlsx")
+                        | Some("ppt")
+                ) {
                     self.files_analyzed.push(path_str.clone());
                     self.sensitive_data.push(SensitiveData {
                         data_id: uuid::Uuid::new_v4().to_string(),
@@ -472,15 +518,32 @@ impl BreachDetector {
     pub fn get_summary(&self) -> String {
         let mut summary = String::from("## 🔍 BREACH & SENSITIVE DATA SUMMARY\n\n");
 
-        summary.push_str(&format!("**Breaches Detected**: {}\n", self.detected_breaches.len()));
-        summary.push_str(&format!("**Sensitive Data Items**: {}\n", self.sensitive_data.len()));
-        summary.push_str(&format!("**Files Analyzed**: {}\n", self.files_analyzed.len()));
-        summary.push_str(&format!("**Images Found**: {}\n\n", self.images_found.len()));
+        summary.push_str(&format!(
+            "**Breaches Detected**: {}\n",
+            self.detected_breaches.len()
+        ));
+        summary.push_str(&format!(
+            "**Sensitive Data Items**: {}\n",
+            self.sensitive_data.len()
+        ));
+        summary.push_str(&format!(
+            "**Files Analyzed**: {}\n",
+            self.files_analyzed.len()
+        ));
+        summary.push_str(&format!(
+            "**Images Found**: {}\n\n",
+            self.images_found.len()
+        ));
 
         if !self.detected_breaches.is_empty() {
             summary.push_str("### 🚨 DETECTED BREACHES\n\n");
             for (idx, breach) in self.detected_breaches.iter().enumerate() {
-                summary.push_str(&format!("#### {}. {:?} - {:?}\n\n", idx + 1, breach.breach_type, breach.severity));
+                summary.push_str(&format!(
+                    "#### {}. {:?} - {:?}\n\n",
+                    idx + 1,
+                    breach.breach_type,
+                    breach.severity
+                ));
                 summary.push_str(&format!("**Description**: {}\n\n", breach.description));
                 if !breach.evidence.is_empty() {
                     summary.push_str("**Evidence**:\n```\n");
@@ -2821,6 +2884,13 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
         KaliTool {
             name: "arp-scan".to_string(),
             category: KaliToolCategory::NetworkScanning,
+            description: "ARP scanning tool".to_string(),
+            command: "arp-scan".to_string(),
+            typical_args: vec!["--localnet".to_string()],
+            requires_root: true,
+            install_command: Some("sudo apt install arp-scan".to_string()),
+            execution_time_estimate: 15,
+        },
     ]
 }
 
@@ -2848,7 +2918,11 @@ impl FenrirOrchestrationEngine {
         }
     }
 
-    pub async fn execute_tool(&mut self, tool: &KaliTool, args: &[String]) -> Result<String, String> {
+    pub async fn execute_tool(
+        &mut self,
+        tool: &KaliTool,
+        args: &[String],
+    ) -> Result<String, String> {
         let start = std::time::Instant::now();
 
         // Check if tool is available
@@ -2861,9 +2935,17 @@ impl FenrirOrchestrationEngine {
                 tool_selected: tool.name.clone(),
                 target: self.target.clone(),
                 success: false,
-                output_summary: format!("Tool not found. Install: {}", tool.install_command.as_ref().unwrap_or(&"unknown".to_string())),
+                output_summary: format!(
+                    "Tool not found. Install: {}",
+                    tool.install_command
+                        .as_ref()
+                        .unwrap_or(&"unknown".to_string())
+                ),
                 execution_time_ms: 0,
-                next_steps: vec![format!("Install tool: {}", tool.install_command.as_ref().unwrap_or(&"".to_string()))],
+                next_steps: vec![format!(
+                    "Install tool: {}",
+                    tool.install_command.as_ref().unwrap_or(&"".to_string())
+                )],
             };
 
             self.logger.log_decision(decision).await;
@@ -2901,9 +2983,7 @@ impl FenrirOrchestrationEngine {
         // Execute tool
         println!("🔧 Executing {} on {}", tool.name, self.target);
 
-        let output = Command::new(&tool.command)
-            .args(args)
-            .output();
+        let output = Command::new(&tool.command).args(args).output();
 
         let execution_time = start.elapsed().as_millis() as u64;
 
@@ -2919,24 +2999,39 @@ impl FenrirOrchestrationEngine {
                 let decision = BrainDecision {
                     timestamp: Utc::now(),
                     decision_id: uuid::Uuid::new_v4().to_string(),
-                    decision_type: if success { DecisionType::ToolSelection } else { DecisionType::StrategyChange },
-                    reasoning: format!("Executed {} - Status: {}", tool.name, if success { "Success" } else { "Failed" }),
+                    decision_type: if success {
+                        DecisionType::ToolSelection
+                    } else {
+                        DecisionType::StrategyChange
+                    },
+                    reasoning: format!(
+                        "Executed {} - Status: {}",
+                        tool.name,
+                        if success { "Success" } else { "Failed" }
+                    ),
                     tool_selected: tool.name.clone(),
                     target: self.target.clone(),
                     success,
                     output_summary: combined_output.chars().take(500).collect(),
                     execution_time_ms: execution_time,
                     next_steps: if success {
-                        vec!["Analyze output for vulnerabilities".to_string(), "Check for sensitive data".to_string()]
+                        vec![
+                            "Analyze output for vulnerabilities".to_string(),
+                            "Check for sensitive data".to_string(),
+                        ]
                     } else {
-                        vec!["Review error logs".to_string(), "Try alternative tool".to_string()]
+                        vec![
+                            "Review error logs".to_string(),
+                            "Try alternative tool".to_string(),
+                        ]
                     },
                 };
 
                 self.logger.log_decision(decision).await;
 
                 // Analyze output for breaches
-                self.breach_detector.analyze_output(&combined_output, &tool.name);
+                self.breach_detector
+                    .analyze_output(&combined_output, &tool.name);
 
                 if success {
                     Ok(combined_output)
@@ -2955,7 +3050,10 @@ impl FenrirOrchestrationEngine {
                     success: false,
                     output_summary: format!("Error: {}", e),
                     execution_time_ms: execution_time,
-                    next_steps: vec!["Check tool installation".to_string(), "Verify permissions".to_string()],
+                    next_steps: vec![
+                        "Check tool installation".to_string(),
+                        "Verify permissions".to_string(),
+                    ],
                 };
 
                 self.logger.log_decision(decision).await;
@@ -2973,8 +3071,15 @@ impl FenrirOrchestrationEngine {
         // Phase 1: Reconnaissance
         println!("\n🔍 PHASE 1: RECONNAISSANCE");
 
-        let recon_tools: Vec<KaliTool> = self.tools.iter()
-            .filter(|t| matches!(t.category, KaliToolCategory::NetworkScanning | KaliToolCategory::DnsEnumeration))
+        let recon_tools: Vec<KaliTool> = self
+            .tools
+            .iter()
+            .filter(|t| {
+                matches!(
+                    t.category,
+                    KaliToolCategory::NetworkScanning | KaliToolCategory::DnsEnumeration
+                )
+            })
             .take(3)
             .cloned()
             .collect();
@@ -2995,8 +3100,16 @@ impl FenrirOrchestrationEngine {
         // Phase 2: Vulnerability Scanning
         println!("\n🔎 PHASE 2: VULNERABILITY SCANNING");
 
-        let vuln_tools: Vec<KaliTool> = self.tools.iter()
-            .filter(|t| matches!(t.category, KaliToolCategory::VulnerabilityAnalysis | KaliToolCategory::WebApplicationAnalysis))
+        let vuln_tools: Vec<KaliTool> = self
+            .tools
+            .iter()
+            .filter(|t| {
+                matches!(
+                    t.category,
+                    KaliToolCategory::VulnerabilityAnalysis
+                        | KaliToolCategory::WebApplicationAnalysis
+                )
+            })
             .take(3)
             .cloned()
             .collect();
@@ -3016,7 +3129,9 @@ impl FenrirOrchestrationEngine {
 
         // Phase 3: Sensitive Data Scanning
         println!("\n🔐 PHASE 3: SENSITIVE DATA SCANNING");
-        self.breach_detector.scan_files_for_sensitive_data(".").await;
+        self.breach_detector
+            .scan_files_for_sensitive_data(".")
+            .await;
 
         Ok(all_results.join("\n\n"))
     }
@@ -3078,7 +3193,9 @@ impl FenrirOrchestrationEngine {
 // Helper methods
 impl KaliTool {
     pub fn is_available(&self) -> bool {
-        Command::new("which").arg(&self.command).output()
+        Command::new("which")
+            .arg(&self.command)
+            .output()
             .map(|output| output.status.success())
             .unwrap_or(false)
     }

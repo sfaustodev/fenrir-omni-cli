@@ -1,37 +1,37 @@
 // --- FENRIR 4.0 - DIRECT AI COMMANDS ---
 // Simple interface with direct AI calls
 
-mod executor;
-mod oraculo;
-mod ferramentas;
-mod fenrir_ai_layer;
-mod fenrir_orchestrator;
-mod kali_tools;
-mod kali_tools_comprehensive;
 mod batch_executor;
-mod git_automation;
+mod circuit_breaker;
 mod cli;
 mod confirm;
-mod http_client;
-mod secrets;
-mod metrics;
+mod executor;
+mod fenrir_ai_layer;
+mod fenrir_orchestrator;
+mod ferramentas;
+mod git_automation;
 mod health;
-mod circuit_breaker;
+mod http_client;
+mod kali_tools;
+mod kali_tools_comprehensive;
+mod metrics;
+mod oraculo;
+mod secrets;
 // mod solana;
 // mod zcash;
-mod liquidity;
-mod plugins;
-mod wrapper;
-mod sandbox;
 mod bugbounty;
-mod osint;
+mod liquidity;
 mod net;
 mod nlp;
+mod osint;
+mod plugins;
+mod sandbox;
+mod wrapper;
 
-use std::io::{self, Write};
+use executor::FenrirTask;
 use reqwest::Client;
 use serde_json::{json, Value};
-use executor::FenrirTask;
+use std::io::{self, Write};
 
 #[tokio::main]
 async fn main() {
@@ -112,8 +112,10 @@ async fn main() {
                                         println!("🔍 Submitted reconnaissance job: {}", job_id);
                                         match executor.execute_job(&job_id).await {
                                             Ok(result) => {
-                                                println!("✅ Recon complete: {}/{} tools successful",
-                                                    result.successful_tools, result.total_tools);
+                                                println!(
+                                                    "✅ Recon complete: {}/{} tools successful",
+                                                    result.successful_tools, result.total_tools
+                                                );
                                                 println!("{}", result.summary);
                                             }
                                             Err(e) => println!("❌ Recon failed: {}", e),
@@ -129,8 +131,10 @@ async fn main() {
                                         println!("🔎 Submitted vulnerability scan job: {}", job_id);
                                         match executor.execute_job(&job_id).await {
                                             Ok(result) => {
-                                                println!("✅ Vuln scan complete: {}/{} tools successful",
-                                                    result.successful_tools, result.total_tools);
+                                                println!(
+                                                    "✅ Vuln scan complete: {}/{} tools successful",
+                                                    result.successful_tools, result.total_tools
+                                                );
                                                 println!("{}", result.summary);
                                             }
                                             Err(e) => println!("❌ Vuln scan failed: {}", e),
@@ -174,7 +178,10 @@ async fn main() {
                                 }
                             }
                             _ => {
-                                println!("❌ Unknown batch type: {}. Use: recon, vuln, passwd, full", batch_type);
+                                println!(
+                                    "❌ Unknown batch type: {}. Use: recon, vuln, passwd, full",
+                                    batch_type
+                                );
                             }
                         }
                     } else {
@@ -222,9 +229,15 @@ async fn main() {
                                     match executor.execute_job(&job_id).await {
                                         Ok(result) => {
                                             println!("✅ BATCH EXECUTION COMPLETE");
-                                            println!("🎯 Successful: {}/{}", result.successful_tools, result.total_tools);
+                                            println!(
+                                                "🎯 Successful: {}/{}",
+                                                result.successful_tools, result.total_tools
+                                            );
                                             println!("❌ Failed: {}", result.failed_tools);
-                                            println!("⏱️  Total Time: {:.2}s", result.total_execution_time.as_secs_f64());
+                                            println!(
+                                                "⏱️  Total Time: {:.2}s",
+                                                result.total_execution_time.as_secs_f64()
+                                            );
                                             println!("\n📄 Summary:\n{}\n", result.summary);
                                         }
                                         Err(e) => println!("❌ Batch execution failed: {}\n", e),
@@ -291,9 +304,15 @@ async fn main() {
                                     println!("\n✅ BITE COMPLETE - FENRIR HAS DEVOURED THE TARGET");
                                     println!("🎯 Success: {}", result.success);
                                     println!("🔍 Findings: {}", result.findings.len());
-                                    println!("💥 Vulnerabilities: {}", result.vulnerabilities.len());
+                                    println!(
+                                        "💥 Vulnerabilities: {}",
+                                        result.vulnerabilities.len()
+                                    );
                                     if !result.vulnerabilities.is_empty() {
-                                        println!("📊 Vulnerabilities:\n{}", result.vulnerabilities.join("\n"));
+                                        println!(
+                                            "📊 Vulnerabilities:\n{}",
+                                            result.vulnerabilities.join("\n")
+                                        );
                                     }
                                     println!("📄 Report:\n{}\n", result.report);
                                 }

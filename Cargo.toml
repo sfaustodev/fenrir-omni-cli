@@ -50,7 +50,7 @@ pnet = "0.34"
 ipnetwork = "0.20"
 # System monitoring
 libc = "0.2"
-nix = "0.27"
+nix = { version = "0.27", features = ["resource"] }
 futures = "0.3"
 walkdir = "2.3"
 sysinfo = "0.29"

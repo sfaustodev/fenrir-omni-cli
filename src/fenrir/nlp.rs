@@ -46,7 +46,13 @@ pub async fn parse_command(client: &Client, user_input: &str) -> Result<ParsedCo
     match translate_with_ai(client, user_input).await {
         Ok(parsed) => {
             let valid = validate_command(&parsed.command);
-            log_entry(user_input, &parsed.command, &parsed.explanation, "ai", valid);
+            log_entry(
+                user_input,
+                &parsed.command,
+                &parsed.explanation,
+                "ai",
+                valid,
+            );
             if valid {
                 candidates.push(Candidate {
                     command: parsed.command,
@@ -152,7 +158,11 @@ fn log_entry(input: &str, command: &str, explanation: &str, source: &str, valid:
         valid,
     };
     if let Ok(mut file) = OpenOptions::new().create(true).append(true).open(path) {
-        let _ = writeln!(file, "{}", serde_json::to_string(&entry).unwrap_or_default());
+        let _ = writeln!(
+            file,
+            "{}",
+            serde_json::to_string(&entry).unwrap_or_default()
+        );
     }
 }
 
@@ -160,10 +170,13 @@ fn load_from_history(input: &str) -> Option<CommandLogEntry> {
     let path = history_path();
     let file = fs::File::open(path).ok()?;
     let reader = BufReader::new(file);
-    reader
+    let entries: Vec<CommandLogEntry> = reader
         .lines()
         .flatten()
         .filter_map(|line| serde_json::from_str::<CommandLogEntry>(&line).ok())
+        .collect();
+    entries
+        .into_iter()
         .rev()
         .find(|entry| entry.input == input && entry.valid)
 }
@@ -217,8 +230,8 @@ Return ONLY the JSON, no other text."#;
         .as_str()
         .ok_or_else(|| "No content in response".to_string())?;
 
-    let parsed: serde_json::Value = serde_json::from_str(content)
-        .map_err(|_| format!("Invalid JSON response: {}", content))?;
+    let parsed: serde_json::Value =
+        serde_json::from_str(content).map_err(|_| format!("Invalid JSON response: {}", content))?;
 
     let command = parsed["command"]
         .as_str()

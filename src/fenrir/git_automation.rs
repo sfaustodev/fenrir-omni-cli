@@ -15,7 +15,7 @@ pub fn gita_tudo() {
             return;
         }
     }
-    
+
     println!("\n📦 Step 2: Adding all...");
     let _ = Command::new("git").args(&["add", "-A"]).output();
     println!("✅ Staged");
@@ -29,12 +29,14 @@ pub fn gita_tudo() {
     }
 
     println!("\n🚀 Step 4: Pushing...");
-    let push_result = Command::new("git").args(&["push", "origin", "main"]).output();
+    let push_result = Command::new("git")
+        .args(&["push", "origin", "main"])
+        .output();
     match push_result {
         Ok(result) if result.status.success() => println!("✅ Pushed"),
         _ => println!("✅ Up to date"),
     }
-    
+
     println!("\n✅ GITA TUDO COMPLETE!");
     println!("🐺 WOOF! WOOF! WOOF! 🐺\n");
 }
@@ -80,7 +82,7 @@ pub fn gita_ai() {
         Ok(result) if result.status.success() => println!("✅ Committed"),
         _ => println!("ℹ️ No changes to commit"),
     }
-    
+
     println!("\n✅ GITA AI COMPLETE!");
     println!("🐺 WOOF! WOOF! 🐺\n");
 }

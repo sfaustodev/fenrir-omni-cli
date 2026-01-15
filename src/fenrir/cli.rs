@@ -38,13 +38,21 @@ pub enum BlockchainCmd {
 
 #[derive(Debug, Clone)]
 pub enum LiquidityCmd {
-    Jupiter { input: String, output: String, amount: u64 },
+    Jupiter {
+        input: String,
+        output: String,
+        amount: u64,
+    },
     Orca,
 }
 
 #[derive(Debug, Clone)]
 pub enum SwapCmd {
-    CrossChain { from: String, to: String, amount: u64 },
+    CrossChain {
+        from: String,
+        to: String,
+        amount: u64,
+    },
 }
 
 #[derive(Debug, Clone)]
@@ -74,7 +82,10 @@ pub enum HealthCmd {
 
 #[derive(Debug, Clone)]
 pub enum WrapperCmd {
-    Generate { tool: String, output: Option<PathBuf> },
+    Generate {
+        tool: String,
+        output: Option<PathBuf>,
+    },
 }
 
 #[derive(Debug, Clone)]
@@ -121,7 +132,10 @@ pub async fn run_cli() -> anyhow::Result<()> {
     match command {
         Commands::Status => {
             let report = health::check();
-            println!("🐺 STATUS: {} | uptime {}s", report.status, report.uptime_seconds);
+            println!(
+                "🐺 STATUS: {} | uptime {}s",
+                report.status, report.uptime_seconds
+            );
         }
         _ => {
             println!("🐺 Command not implemented yet in bpaf parser");
@@ -133,7 +147,11 @@ pub async fn run_cli() -> anyhow::Result<()> {
 async fn handle_blockchain(cmd: BlockchainCmd) -> anyhow::Result<()> {
     match cmd {
         BlockchainCmd::Liquidity(cmd) => match cmd {
-            LiquidityCmd::Jupiter { input, output, amount } => {
+            LiquidityCmd::Jupiter {
+                input,
+                output,
+                amount,
+            } => {
                 let quote = liquidity::jupiter_quote(&input, &output, amount).await?;
                 println!("🐺 JUPITER OUT {}", quote.outAmount);
             }
@@ -155,7 +173,10 @@ async fn handle_blockchain(cmd: BlockchainCmd) -> anyhow::Result<()> {
         },
         BlockchainCmd::Analyze(cmd) => match cmd {
             AnalyzeCmd::Stub { target } => {
-                println!("🐺 ANALYZE {} (stub - blockchain analysis not implemented)", target);
+                println!(
+                    "🐺 ANALYZE {} (stub - blockchain analysis not implemented)",
+                    target
+                );
             }
         },
         BlockchainCmd::Anonymous => {
@@ -211,7 +232,10 @@ async fn handle_health(cmd: HealthCmd) -> anyhow::Result<()> {
     match cmd {
         HealthCmd::Check => {
             let report = health::check();
-            println!("🐺 HEALTH {} uptime {}s", report.status, report.uptime_seconds);
+            println!(
+                "🐺 HEALTH {} uptime {}s",
+                report.status, report.uptime_seconds
+            );
         }
         HealthCmd::Serve { addr } => {
             let socket: SocketAddr = addr.parse()?;

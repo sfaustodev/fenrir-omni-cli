@@ -32,7 +32,10 @@ impl FenrirPlugin for NetflixCredentialHunter {
 
     fn run(&self, input: &str) -> anyhow::Result<String> {
         // TODO: Implement actual Netflix credential hunting logic
-        Ok(format!("Netflix credential hunter plugin executed with input: {}", input))
+        Ok(format!(
+            "Netflix credential hunter plugin executed with input: {}",
+            input
+        ))
     }
 }
 
@@ -64,8 +67,7 @@ impl PluginRegistry {
         let constructor: libloading::Symbol<PluginCreate> = lib.get(b"fenrir_plugin_create")?;
         let boxed_raw = constructor();
         let plugin = Box::from_raw(boxed_raw);
-        self.plugins
-            .insert(plugin.name().to_string(), plugin);
+        self.plugins.insert(plugin.name().to_string(), plugin);
         self._libs.push(lib);
         Ok(())
     }
