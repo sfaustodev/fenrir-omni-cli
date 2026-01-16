@@ -319,15 +319,8 @@ impl BatchExecutor {
         use std::sync::Arc;
         use tokio::sync::Semaphore;
 
-        // Clone job data to avoid lifetime issues
-        let tools = job.tools.clone();
-        let target = job.target.clone();
-        let timeout = job.config.timeout_per_tool;
-        let continue_on_failure = job.config.continue_on_failure;
-        let max_parallel = job.config.max_parallel;
-
         // Create progress bar with big green rotating spinner
-        let pb = Arc::new(ProgressBar::new(tools.len() as u64));
+        let pb = Arc::new(ProgressBar::new(job.tools.len() as u64));
         pb.set_style(
             ProgressStyle::default_bar()
                 .template("{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {pos:>7}/{len:7} {msg}")
@@ -336,25 +329,23 @@ impl BatchExecutor {
         );
         pb.set_message("Starting parallel execution...");
 
-        let semaphore = Arc::new(Semaphore::new(max_parallel));
+        let semaphore = Arc::new(Semaphore::new(job.config.max_parallel));
         let mut handles = Vec::new();
         let engine = Arc::clone(&self.engine);
         let pb_clone = Arc::clone(&pb);
 
-        for tool_name in &tools {
-            let tool_name = tool_name.clone();
-            let target = target.clone();
-            let timeout = timeout;
-            let continue_on_failure = continue_on_failure;
+        for tool_name in &job.tools {
+
+            let target = job.target.clone();
+            let timeout = job.config.timeout_per_tool;
+            let continue_on_failure = job.config.continue_on_failure;
             let semaphore = Arc::clone(&semaphore);
             let engine = Arc::clone(&engine);
             let pb_task = Arc::clone(&pb_clone);
 
+            let tool_name_clone = tool_name.clone();
             let handle = tokio::spawn(async move {
                 let _permit = semaphore.acquire().await.unwrap();
-
-                pb_task.set_message(format!("🔧 Executing {} (parallel)", tool_name));
-
                 // Get tool info first (immutable borrow)
                 let tool_info = {
                     let engine_guard = engine.lock().await;
@@ -433,7 +424,7 @@ impl BatchExecutor {
                     pb.inc(1);
                 }
                 Ok(Err(e)) => {
-                    if !continue_on_failure {
+                    if !job.config.continue_on_failure {
                         pb.finish_with_message("Parallel execution failed!");
                         return Err(e);
                     }

@@ -5,6 +5,7 @@ mod batch_executor;
 mod circuit_breaker;
 mod cli;
 mod confirm;
+mod daemon;
 mod executor;
 mod fenrir_ai_layer;
 mod fenrir_orchestrator;
@@ -31,6 +32,13 @@ mod wrapper;
 use reqwest::Client;
 use serde_json::{json, Value};
 use std::io::{self, Write};
+use std::sync::Arc;
+use tokio::sync::Mutex;
+use lazy_static::lazy_static;
+
+lazy_static! {
+    static ref DAEMON: Arc<Mutex<Option<daemon::FenrirDaemon>>> = Arc::new(Mutex::new(None));
+}
 
 #[tokio::main]
 async fn main() {
@@ -57,6 +65,10 @@ async fn main() {
     println!("  batch vuln <target>            - Batch vulnerability scan");
     println!("  batch passwd <target>          - Batch password attacks");
     println!("  batch full <target>            - Full penetration test suite");
+    println!("  daemon start [target]          - Start continuous security monitoring");
+    println!("  daemon stop                     - Stop daemon service");
+    println!("  daemon status                   - Show daemon status");
+    println!("  security breach detected        - Check for detected breaches");
     println!("  grok \"prompt\"                  - Query Grok AI");
     println!("  gita tudo                       - Git: add, commit, push");
     println!("  gita ai                         - Git: add, commit");
@@ -91,6 +103,79 @@ async fn main() {
                 }
                 if user_input == "gita ai" {
                     git_automation::gita_ai();
+                    continue;
+                }
+
+                // Daemon commands
+                if user_input.starts_with("daemon ") {
+                    let parts: Vec<&str> = user_input.split_whitespace().collect();
+                    if parts.len() >= 2 {
+                        match parts[1] {
+                            "start" => {
+                                let target = parts.get(2).unwrap_or(&"localhost").to_string();
+                                let config = daemon::DaemonConfig::default();
+                                let daemon_instance = daemon::FenrirDaemon::new(target, config);
+
+                                match daemon_instance.start().await {
+                                    Ok(()) => {
+                                        let mut d = DAEMON.lock().await;
+                                        *d = Some(daemon_instance);
+                                        println!("✅ Daemon started successfully\n");
+                                    }
+                                    Err(e) => println!("❌ Failed to start daemon: {}\n", e),
+                                }
+                            }
+                            "stop" => {
+                                let d = DAEMON.lock().await;
+                                if let Some(daemon_instance) = &*d {
+                                    match daemon_instance.stop().await {
+                                        Ok(()) => println!("✅ Daemon stopped\n"),
+                                        Err(e) => println!("❌ Failed to stop daemon: {}\n", e),
+                                    }
+                                } else {
+                                    println!("❌ No daemon is running\n");
+                                }
+                            }
+                            "status" => {
+                                let d = DAEMON.lock().await;
+                                if let Some(daemon_instance) = &*d {
+                                    println!("{}", daemon_instance.status().await);
+                                } else {
+                                    println!("🐺 No daemon is running\n");
+                                }
+                            }
+                            _ => println!("❌ Unknown daemon command. Use: start, stop, status\n"),
+                        }
+                    } else {
+                        println!("❌ Usage: daemon <start|stop|status> [target]\n");
+                    }
+                    continue;
+                }
+
+                // Security breach command
+                if user_input == "security breach detected" {
+                    let d = DAEMON.lock().await;
+                    if let Some(daemon_instance) = &*d {
+                        let breach_detector = daemon_instance.breach_detector.lock().await;
+                        if breach_detector.detected_breaches.is_empty() {
+                            println!("✅ No security breaches detected\n");
+                        } else {
+                            println!("🚨 SECURITY BREACHES DETECTED:\n");
+                            for (i, breach) in breach_detector.detected_breaches.iter().enumerate() {
+                   println!("{}. {} - {}", i + 1, format!("{:?}", breach.breach_type), breach.description);
+                                println!("   Severity: {:?}", breach.severity);
+                                if !breach.recommendations.is_empty() {
+                                    println!("   Recommendations:");
+                                    for rec in &breach.recommendations {
+                                        println!("     - {}", rec);
+                                    }
+                                }
+                                println!();
+                            }
+                        }
+                    } else {
+                        println!("❌ No daemon is running. Start daemon first to monitor breaches.\n");
+                    }
                     continue;
                 }
 
@@ -274,6 +359,13 @@ async fn main() {
                                     println!("🔍 Open Ports: {}", result.open_ports.len());
                                     println!("🛡️  Risk Score: {}/100", result.risk_score);
                                     println!("📋 Security Plan:\n{}\n", result.security_plan);
+
+                                    // Suggest next steps
+                                    println!("\n💡 NEXT STEPS SUGGESTIONS:");
+                                    println!("  • bite {}          - Run penetration test on discovered vulnerabilities", target);
+                                    println!("  • batch vuln {}     - Execute comprehensive vulnerability scan", target);
+                                    println!("  • batch recon {}    - Gather more intelligence on the target", target);
+                                    println!("  • security breach detected - Check for detected security breaches\n");
                                 }
                                 Err(e) => println!("❌ Scan failed: {}\n", e),
                             }
@@ -314,6 +406,13 @@ async fn main() {
                                         );
                                     }
                                     println!("📄 Report:\n{}\n", result.report);
+
+                                    // Suggest next steps
+                                    println!("\n💡 NEXT STEPS SUGGESTIONS:");
+                                    println!("  • batch full {}     - Run complete penetration test suite", target);
+                                    println!("  • security breach detected - Check for security breaches found during testing");
+                                    println!("  • batch passwd {}    - Attempt password attacks on discovered services", target);
+                                    println!("  • scan {} comprehensive - Perform deeper security assessment\n", target);
                                 }
                                 Err(e) => println!("❌ Bite failed: {}\n", e),
                             }

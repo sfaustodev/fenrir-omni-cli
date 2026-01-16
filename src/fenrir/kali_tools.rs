@@ -73,12 +73,12 @@ impl KaliTool {
                 self.name,
                 self.install_command
                     .as_ref()
-                    .unwrap_or(&format!("sudo apt install {}", self.name))
+                    .unwrap_or(&format!("brew install {}", self.name))
             ));
         }
 
         // Check if running as root on Unix-like systems
-        if self.requires_root {
+        let use_sudo = if self.requires_root {
             #[cfg(unix)]
             {
                 use std::process::Command;
@@ -86,17 +86,27 @@ impl KaliTool {
 
                 if let Ok(output) = uid_check {
                     let uid_str = String::from_utf8_lossy(&output.stdout).trim().to_string();
-                    if uid_str != "0" {
-                        return Err(format!(
-                            "Tool '{}' requires root privileges. Run with sudo.",
-                            self.name
-                        ));
-                    }
+                    uid_str != "0"
+                } else {
+                    false
                 }
             }
-        }
+            #[cfg(not(unix))]
+            {
+                false
+            }
+        } else {
+            false
+        };
 
-        let output = Command::new(&self.command).args(args).output();
+        let output = if use_sudo {
+            // Run with sudo
+            let mut sudo_args = vec!["-S".to_string(), self.command.clone()];
+            sudo_args.extend(args.iter().cloned());
+            Command::new("sudo").args(&sudo_args).output()
+        } else {
+            Command::new(&self.command).args(args).output()
+        };
 
         match output {
             Ok(result) => {
@@ -126,7 +136,7 @@ pub fn get_kali_tools() -> Vec<KaliTool> {
             command: "nmap".to_string(),
             typical_args: vec!["-sV".to_string(), "-sC".to_string()],
             requires_root: true,
-            install_command: Some("sudo apt install nmap".to_string()),
+            install_command: Some("brew install nmap".to_string()),
         },
         KaliTool {
             name: "netdiscover".to_string(),
@@ -135,7 +145,7 @@ pub fn get_kali_tools() -> Vec<KaliTool> {
             command: "netdiscover".to_string(),
             typical_args: vec!["-r".to_string()],
             requires_root: true,
-            install_command: Some("sudo apt install netdiscover".to_string()),
+            install_command: Some("brew install netdiscover".to_string()),
         },
         KaliTool {
             name: "theHarvester".to_string(),
@@ -144,7 +154,7 @@ pub fn get_kali_tools() -> Vec<KaliTool> {
             command: "theHarvester".to_string(),
             typical_args: vec!["-d".to_string(), "-b".to_string(), "google".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install theharvester".to_string()),
+            install_command: Some("brew install theharvester".to_string()),
         },
         // SCANNING
         KaliTool {
@@ -154,7 +164,7 @@ pub fn get_kali_tools() -> Vec<KaliTool> {
             command: "nikto".to_string(),
             typical_args: vec!["-h".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install nikto".to_string()),
+            install_command: Some("brew install nikto".to_string()),
         },
         KaliTool {
             name: "masscan".to_string(),
@@ -163,7 +173,7 @@ pub fn get_kali_tools() -> Vec<KaliTool> {
             command: "masscan".to_string(),
             typical_args: vec!["-p80,8000-8100".to_string()],
             requires_root: true,
-            install_command: Some("sudo apt install masscan".to_string()),
+            install_command: Some("brew install masscan".to_string()),
         },
         // EXPLOITATION
         KaliTool {
@@ -173,7 +183,7 @@ pub fn get_kali_tools() -> Vec<KaliTool> {
             command: "msfconsole".to_string(),
             typical_args: vec!["-q".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install metasploit-framework".to_string()),
+            install_command: Some("brew install metasploit-framework".to_string()),
         },
         KaliTool {
             name: "sqlmap".to_string(),
@@ -182,7 +192,7 @@ pub fn get_kali_tools() -> Vec<KaliTool> {
             command: "sqlmap".to_string(),
             typical_args: vec!["-u".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install sqlmap".to_string()),
+            install_command: Some("brew install sqlmap".to_string()),
         },
         KaliTool {
             name: "exploitdb".to_string(),
@@ -191,7 +201,7 @@ pub fn get_kali_tools() -> Vec<KaliTool> {
             command: "searchsploit".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install exploitdb".to_string()),
+            install_command: Some("brew install exploitdb".to_string()),
         },
         // PASSWORD ATTACKS
         KaliTool {
@@ -201,7 +211,7 @@ pub fn get_kali_tools() -> Vec<KaliTool> {
             command: "john".to_string(),
             typical_args: vec!["--wordlist".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install john".to_string()),
+            install_command: Some("brew install john".to_string()),
         },
         KaliTool {
             name: "hashcat".to_string(),
@@ -210,7 +220,7 @@ pub fn get_kali_tools() -> Vec<KaliTool> {
             command: "hashcat".to_string(),
             typical_args: vec!["-m".to_string(), "0".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install hashcat".to_string()),
+            install_command: Some("brew install hashcat".to_string()),
         },
         KaliTool {
             name: "hydra".to_string(),
@@ -219,7 +229,7 @@ pub fn get_kali_tools() -> Vec<KaliTool> {
             command: "hydra".to_string(),
             typical_args: vec!["-l".to_string(), "user".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install hydra".to_string()),
+            install_command: Some("brew install hydra".to_string()),
         },
         // WEB APPLICATIONS
         KaliTool {
@@ -229,7 +239,7 @@ pub fn get_kali_tools() -> Vec<KaliTool> {
             command: "burpsuite".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install burpsuite".to_string()),
+            install_command: Some("brew install burpsuite".to_string()),
         },
         KaliTool {
             name: "owasp-zap".to_string(),
@@ -238,7 +248,7 @@ pub fn get_kali_tools() -> Vec<KaliTool> {
             command: "zap-cli".to_string(),
             typical_args: vec!["quick-scan".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install zaproxy".to_string()),
+            install_command: Some("brew install zaproxy".to_string()),
         },
         // WIRELESS ATTACKS
         KaliTool {
@@ -248,7 +258,7 @@ pub fn get_kali_tools() -> Vec<KaliTool> {
             command: "aircrack-ng".to_string(),
             typical_args: vec!["-w".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install aircrack-ng".to_string()),
+            install_command: Some("brew install aircrack-ng".to_string()),
         },
         KaliTool {
             name: "wifite".to_string(),
@@ -257,7 +267,7 @@ pub fn get_kali_tools() -> Vec<KaliTool> {
             command: "wifite".to_string(),
             typical_args: vec!["--all".to_string()],
             requires_root: true,
-            install_command: Some("sudo apt install wifite".to_string()),
+            install_command: Some("brew install wifite".to_string()),
         },
         // SNIFFING/SPOOFING
         KaliTool {
@@ -267,7 +277,7 @@ pub fn get_kali_tools() -> Vec<KaliTool> {
             command: "wireshark".to_string(),
             typical_args: vec!["-i".to_string(), "eth0".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install wireshark".to_string()),
+            install_command: Some("brew install wireshark".to_string()),
         },
         KaliTool {
             name: "ettercap".to_string(),
@@ -276,7 +286,7 @@ pub fn get_kali_tools() -> Vec<KaliTool> {
             command: "ettercap".to_string(),
             typical_args: vec!["-T".to_string(), "-M".to_string(), "arp".to_string()],
             requires_root: true,
-            install_command: Some("sudo apt install ettercap-text-only".to_string()),
+            install_command: Some("brew install ettercap-text-only".to_string()),
         },
         // REVERSE ENGINEERING
         KaliTool {
@@ -286,7 +296,7 @@ pub fn get_kali_tools() -> Vec<KaliTool> {
             command: "ghidraRun".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install ghidra".to_string()),
+            install_command: Some("brew install ghidra".to_string()),
         },
         KaliTool {
             name: "radare2".to_string(),
@@ -295,7 +305,7 @@ pub fn get_kali_tools() -> Vec<KaliTool> {
             command: "r2".to_string(),
             typical_args: vec!["-A".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install radare2".to_string()),
+            install_command: Some("brew install radare2".to_string()),
         },
         KaliTool {
             name: "objdump".to_string(),
@@ -304,7 +314,7 @@ pub fn get_kali_tools() -> Vec<KaliTool> {
             command: "objdump".to_string(),
             typical_args: vec!["-d".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install binutils".to_string()),
+            install_command: Some("brew install binutils".to_string()),
         },
         KaliTool {
             name: "strings".to_string(),
@@ -313,7 +323,7 @@ pub fn get_kali_tools() -> Vec<KaliTool> {
             command: "strings".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install binutils".to_string()),
+            install_command: Some("brew install binutils".to_string()),
         },
         // FORENSICS
         KaliTool {
@@ -323,7 +333,7 @@ pub fn get_kali_tools() -> Vec<KaliTool> {
             command: "autopsy".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install autopsy".to_string()),
+            install_command: Some("brew install autopsy".to_string()),
         },
         KaliTool {
             name: "binwalk".to_string(),
@@ -332,7 +342,7 @@ pub fn get_kali_tools() -> Vec<KaliTool> {
             command: "binwalk".to_string(),
             typical_args: vec!["-e".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install binwalk".to_string()),
+            install_command: Some("brew install binwalk".to_string()),
         },
         KaliTool {
             name: "volatility".to_string(),
@@ -341,7 +351,7 @@ pub fn get_kali_tools() -> Vec<KaliTool> {
             command: "vol".to_string(),
             typical_args: vec!["-f".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install volatility".to_string()),
+            install_command: Some("brew install volatility".to_string()),
         },
     ]
 }

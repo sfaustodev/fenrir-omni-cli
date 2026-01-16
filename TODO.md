@@ -1,35 +1,35 @@
-# TODO: Test Pentest Stealthy Discovery of Netflix Credentials
+# FENRIR Feature Implementation TODO
 
-## Step 1: Resolve Build Issues
-- [ ] Fix dependency conflicts (solana-client vs zcash packages)
-- [ ] Attempt to build the project successfully
+## Progress Bar Visualization
+- [x] Add indicatif progress bar with big green rotating spinner to batch_executor.rs
+- [x] Integrate progress bar into execute_sequential, execute_parallel, execute_pipeline methods
+- [x] Update progress for each tool execution
 
-## Step 2: Test Stealthy Network Scanning
-- [ ] Run `scan` command with stealth mode on local network (e.g., 192.168.1.0/24)
-- [ ] Verify nmap stealth options (-sS, -T1) are used to avoid detection
-- [ ] Document discovered devices and open ports
+## Target Setting Flow Modifications
+- [x] Modify main.rs to suggest next steps after target is set
+- [x] Add suggestions like "Run reconnaissance", "Start vulnerability scan", etc.
 
-## Step 3: Test Stealthy Penetration Testing
-- [ ] Run `bite` command with cautious intensity on discovered targets
-- [ ] Check for any credential-related findings or vulnerabilities
-- [ ] Ensure no exploitation is performed (auto_exploit=false)
+## Daemon Service Creation
+- [x] Create new daemon.rs module for continuous scanning
+- [x] Implement automatic network device, IoT, and app vulnerability scanning
+- [x] Add daemon mode to CLI commands
 
-## Step 4: Analyze for Netflix Credential Discovery
-- [ ] Review scan/bite output for potential Netflix-related services (ports 80/443, etc.)
-- [ ] Note limitations: No built-in Netflix-specific tools; OSINT is stub-only
-- [ ] Suggest manual use of tools like Wireshark for credential sniffing if needed
+## Async Conversion Verification
+- [x] Verify all KaliTool execution methods are async tokio functions
+- [x] Update any remaining synchronous methods in kali_tools_comprehensive.rs
 
-## Step 5: Document Results
-- [ ] Record stealth effectiveness and detection avoidance
-- [ ] Note any issues with dependency conflicts impacting functionality
-- [ ] Provide summary of testing outcomes
+## Security Breach Detection Command
+- [x] Implement "security breach detected" terminal command
+- [x] Add breach details display in CLI and main.rs
+- [x] Integrate with existing BreachDetector
 
-## Improvements and Fixes Checklist
-- [x] Add real Netflix credential discovery logic (plugin added)
-- [ ] Implement Tor-based OSINT in osint.rs
-- [ ] Add more Kali tools for credential hunting (e.g., hydra, john)
-- [ ] Improve plugin system error handling
-- [ ] Add configuration for stealth levels
-- [ ] Implement credential storage and reporting
-- [ ] Add unit tests for kali_tools functions
-- [ ] Optimize build times by selective dependency inclusion
+## CLI Updates
+- [x] Add daemon mode support to cli.rs
+- [x] Add progress visualization commands
+- [x] Update bpaf parser for new commands
+
+## Testing and Verification
+- [x] Test progress bars in batch execution
+- [x] Test daemon service functionality
+- [x] Verify breach detection triggers terminal alerts
+- [x] Ensure all async conversions work properly

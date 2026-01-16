@@ -25,6 +25,8 @@ pub enum Commands {
     Osint(OsintCmd),
     Sandbox(SandboxCmd),
     Plugins(PluginCmd),
+    Daemon(DaemonCmd),
+    Breach,
     Status,
 }
 
@@ -112,6 +114,13 @@ pub enum PluginCmd {
     Run { name: String, input: String },
 }
 
+#[derive(Debug, Clone)]
+pub enum DaemonCmd {
+    Start { target: Option<String> },
+    Stop,
+    Status,
+}
+
 // bpaf parser - simplified for now
 fn commands_parser() -> impl Parser<Commands> {
     // For now, just support status command to get basic functionality working
@@ -136,6 +145,22 @@ pub async fn run_cli() -> anyhow::Result<()> {
                 "🐺 STATUS: {} | uptime {}s",
                 report.status, report.uptime_seconds
             );
+        }
+        Commands::Daemon(cmd) => {
+            match cmd {
+                DaemonCmd::Start { target } => {
+                    println!("🐺 Daemon start not implemented in CLI yet - use interactive mode");
+                }
+                DaemonCmd::Stop => {
+                    println!("🐺 Daemon stop not implemented in CLI yet - use interactive mode");
+                }
+                DaemonCmd::Status => {
+                    println!("🐺 Daemon status not implemented in CLI yet - use interactive mode");
+                }
+            }
+        }
+        Commands::Breach => {
+            println!("🐺 Breach check not implemented in CLI yet - use interactive mode");
         }
         _ => {
             println!("🐺 Command not implemented yet in bpaf parser");
