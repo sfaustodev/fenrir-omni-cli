@@ -608,6 +608,26 @@ pub fn create_vuln_scan_job(target: &str) -> BatchJob {
 }
 
 pub fn create_password_attack_job(target: &str) -> BatchJob {
+    // Filter out tools that are not available on the system
+    let available_tools = vec![
+        "john".to_string(),
+        "hashcat".to_string(),
+        "hydra".to_string(),
+        "medusa".to_string(),
+        "ncrack".to_string(),
+        "patator".to_string(),
+    ]
+    .into_iter()
+    .filter(|tool_name| {
+        // Check if tool is available by looking it up in the comprehensive tools list
+        crate::kali_tools_comprehensive::get_all_kali_tools()
+            .iter()
+            .find(|t| t.name == *tool_name)
+            .map(|t| t.is_available())
+            .unwrap_or(false)
+    })
+    .collect::<Vec<String>>();
+
     BatchJob {
         job_id: format!(
             "passwd_{}_{}",
@@ -616,14 +636,7 @@ pub fn create_password_attack_job(target: &str) -> BatchJob {
         ),
         name: format!("Password Attack Suite - {}", target),
         description: "Comprehensive password cracking and analysis".to_string(),
-        tools: vec![
-            "john".to_string(),
-            "hashcat".to_string(),
-            "hydra".to_string(),
-            "medusa".to_string(),
-            "ncrack".to_string(),
-            "patator".to_string(),
-        ],
+        tools: available_tools,
         target: target.to_string(),
         config: BatchConfig {
             mode: ExecutionMode::Parallel,

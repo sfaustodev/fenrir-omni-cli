@@ -830,7 +830,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "medusa".to_string(),
             typical_args: vec!["-h".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install medusa".to_string()),
+            install_command: Some("Linux only: sudo apt install medusa (Not available on macOS)".to_string()),
             execution_time_estimate: 180,
         },
         KaliTool {
@@ -1424,7 +1424,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "patator".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install patator".to_string()),
+            install_command: Some("Linux only: sudo apt install patator (Not available on macOS)".to_string()),
             execution_time_estimate: 300,
         },
         KaliTool {
@@ -1444,7 +1444,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "ncrack".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install ncrack".to_string()),
+            install_command: Some("Linux only: sudo apt install ncrack (Not available on macOS)".to_string()),
             execution_time_estimate: 300,
         },
         KaliTool {
