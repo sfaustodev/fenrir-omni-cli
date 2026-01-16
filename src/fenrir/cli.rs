@@ -287,13 +287,13 @@ fn handle_wrapper(cmd: WrapperCmd) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn handle_bugbounty(cmd: BugBountyCmd) -> anyhow::Result<()> {
+async fn handle_bugbounty(cmd: BugBountyCmd) -> anyhow::Result<()> {
     match cmd {
         BugBountyCmd::Recon { target } => {
-            println!("{}", bugbounty::recon(&target));
+            println!("{}", bugbounty::recon(&target).await);
         }
         BugBountyCmd::Report { target } => {
-            println!("{}", bugbounty::report(&target));
+            println!("{}", bugbounty::report(&target).await);
         }
     }
     Ok(())

@@ -16,7 +16,9 @@ serde_json = { workspace = true }
 chrono = { workspace = true }
 reqwest = { workspace = true }
 url = { workspace = true }
+urlencoding = { workspace = true }
 tokio-tungstenite = { workspace = true }
+trust-dns-resolver = { workspace = true }
 bpaf = { workspace = true }
 clap = { workspace = true }
 colored = { workspace = true }
