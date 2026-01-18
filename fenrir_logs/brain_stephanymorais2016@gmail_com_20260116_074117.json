@@ -1,0 +1,84 @@
+{
+  "timestamp": "2026-01-16T07:41:17.282211Z",
+  "decision_id": "e02e17eb-66a3-4e26-85f3-90245192544f",
+  "decision_type": "tool_selection",
+  "reasoning": "Tool nmap requires root",
+  "tool_selected": "nmap",
+  "target": "stephanymorais2016@gmail.com",
+  "success": false,
+  "output_summary": "Root privileges required",
+  "execution_time_ms": 0,
+  "next_steps": [
+    "Run with sudo"
+  ]
+}
+{
+  "timestamp": "2026-01-16T07:41:17.361790Z",
+  "decision_id": "272df556-2290-4872-82cb-640b9a75fb64",
+  "decision_type": "tool_selection",
+  "reasoning": "Tool masscan requires root",
+  "tool_selected": "masscan",
+  "target": "stephanymorais2016@gmail.com",
+  "success": false,
+  "output_summary": "Root privileges required",
+  "execution_time_ms": 0,
+  "next_steps": [
+    "Run with sudo"
+  ]
+}
+{
+  "timestamp": "2026-01-16T07:41:17.432553Z",
+  "decision_id": "76e3eb7d-61e3-4239-96d9-6e3eee36d88e",
+  "decision_type": "tool_selection",
+  "reasoning": "Tool theHarvester is not installed",
+  "tool_selected": "theHarvester",
+  "target": "stephanymorais2016@gmail.com",
+  "success": false,
+  "output_summary": "Tool not found. Install: sudo apt install theharvester",
+  "execution_time_ms": 0,
+  "next_steps": [
+    "Install tool: sudo apt install theharvester"
+  ]
+}
+{
+  "timestamp": "2026-01-16T07:41:17.472230Z",
+  "decision_id": "cf98902f-7b4d-497c-a44b-cdc3f0748e33",
+  "decision_type": "tool_selection",
+  "reasoning": "Tool dnsrecon is not installed",
+  "tool_selected": "dnsrecon",
+  "target": "stephanymorais2016@gmail.com",
+  "success": false,
+  "output_summary": "Tool not found. Install: sudo apt install dnsrecon",
+  "execution_time_ms": 0,
+  "next_steps": [
+    "Install tool: sudo apt install dnsrecon"
+  ]
+}
+{
+  "timestamp": "2026-01-16T07:41:17.539135Z",
+  "decision_id": "488742ba-686e-4ec4-94d9-c94ba2d4bf47",
+  "decision_type": "tool_selection",
+  "reasoning": "Tool amass is not installed",
+  "tool_selected": "amass",
+  "target": "stephanymorais2016@gmail.com",
+  "success": false,
+  "output_summary": "Tool not found. Install: go install -v github.com/OWASP/Amass/v3/...@master",
+  "execution_time_ms": 0,
+  "next_steps": [
+    "Install tool: go install -v github.com/OWASP/Amass/v3/...@master"
+  ]
+}
+{
+  "timestamp": "2026-01-16T07:41:17.627457Z",
+  "decision_id": "66b6446e-004a-48fe-9a71-90274bd5ea6a",
+  "decision_type": "tool_selection",
+  "reasoning": "Tool subfinder is not installed",
+  "tool_selected": "subfinder",
+  "target": "stephanymorais2016@gmail.com",
+  "success": false,
+  "output_summary": "Tool not found. Install: go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest",
+  "execution_time_ms": 0,
+  "next_steps": [
+    "Install tool: go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest"
+  ]
+}

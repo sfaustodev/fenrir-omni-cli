@@ -1,8 +1,8 @@
 [package]
 name = "fenrir-cli"
-version = "0.1.0"
+version = "1.6.66"
 edition = "2021"
-description = "🐺 FENRIR CLI - Sistema de segurança avançado com God Mode"
+description = "🐺 FENRIR v1.6.66 - Smart Attack Orchestration Platform with Stealth-First Approach"
 
 [[bin]]
 name = "fenrir"
@@ -31,6 +31,7 @@ env_logger = { workspace = true }
 uuid = { workspace = true }
 regex = { workspace = true }
 dirs = { workspace = true }
+whoami = { workspace = true }
 crossterm = { workspace = true }
 console = { workspace = true }
 nu-ansi-term = { workspace = true }

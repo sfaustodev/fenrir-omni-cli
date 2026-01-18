@@ -51,6 +51,7 @@ secrecy = "0.8"
 # System information
 pnet = "0.34"
 ipnetwork = "0.20"
+whoami = "1.5"
 # System monitoring
 libc = "0.2"
 nix = { version = "0.27", features = ["resource"] }

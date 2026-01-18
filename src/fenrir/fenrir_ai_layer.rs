@@ -15,23 +15,35 @@ pub fn load_env() {
         let _ = dotenv::from_filename("../.env");
     }
 
-    // Debug: Check if keys are loaded
+    // Debug: Check if keys are loaded (use println! for interactive mode visibility)
     if std::env::var("ZAI_API_KEY").is_ok() {
-        eprintln!("✅ ZAI_API_KEY loaded (Fenrir Orchestrator)");
+        println!("✅ ZAI_API_KEY loaded (Fenrir Orchestrator)");
     } else {
-        eprintln!("⚠️  ZAI_API_KEY not found");
+        println!("⚠️  ZAI_API_KEY not found");
     }
 
     if std::env::var("BLACKBOX_API_KEY").is_ok() {
-        eprintln!("✅ BLACKBOX_API_KEY loaded");
+        println!("✅ BLACKBOX_API_KEY loaded");
     } else {
-        eprintln!("⚠️  BLACKBOX_API_KEY not found");
+        println!("⚠️  BLACKBOX_API_KEY not found");
     }
 
     if std::env::var("GEMINI_API_KEY").is_ok() {
-        eprintln!("✅ GEMINI_API_KEY loaded");
+        println!("✅ GEMINI_API_KEY loaded");
     } else {
-        eprintln!("⚠️  GEMINI_API_KEY not found");
+        println!("⚠️  GEMINI_API_KEY not found");
+    }
+
+    if std::env::var("GROK_API_KEY").is_ok() || std::env::var("XAI_API_KEY").is_ok() {
+        println!("✅ GROK/XAI_API_KEY loaded");
+    } else {
+        println!("⚠️  GROK/XAI_API_KEY not found");
+    }
+
+    if std::env::var("VENICE_API_KEY").is_ok() {
+        println!("✅ VENICE_API_KEY loaded");
+    } else {
+        println!("⚠️  VENICE_API_KEY not found");
     }
 }
 

@@ -7,6 +7,10 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::Mutex;
 use tokio::time;
+use std::fs;
+use std::path::Path;
+use std::process::Command;
+use tokio::fs as async_fs;
 
 #[derive(Debug, Clone)]
 pub struct DaemonConfig {
@@ -69,6 +73,9 @@ impl FenrirDaemon {
         println!("🚨 Breach Alerts: {}", self.config.breach_alerts_enabled);
         println!("🔧 Auto Remediate: {}\n", self.config.auto_remediate);
 
+        // Make daemon persistent at boot
+        Self::install_boot_service().await?;
+
         let engine = Arc::clone(&self.engine);
         let breach_detector = Arc::clone(&self.breach_detector);
         let config = self.config.clone();
@@ -92,6 +99,16 @@ impl FenrirDaemon {
                 // Perform continuous scanning
                 if let Err(e) = Self::perform_daemon_scan(&engine, &breach_detector, &config).await {
                     println!("❌ Daemon scan error: {}", e);
+                }
+
+                // Automatic virus scanning
+                if let Err(e) = Self::perform_virus_scan().await {
+                    println!("❌ Virus scan error: {}", e);
+                }
+
+                // File management for old files
+                if let Err(e) = Self::cleanup_old_files().await {
+                    println!("❌ File cleanup error: {}", e);
                 }
 
                 let mut last = last_scan.lock().await;
@@ -295,5 +312,326 @@ impl FenrirDaemon {
         }
 
         Ok(())
+    }
+
+    /// Install daemon as a boot service (macOS: launchd, Linux: systemd)
+    async fn install_boot_service() -> Result<(), String> {
+        println!("🔧 Installing FENRIR daemon as boot service...");
+
+        // Detect OS and use appropriate service manager
+        if cfg!(target_os = "macos") {
+            Self::install_launchd_service().await
+        } else {
+            Self::install_systemd_service().await
+        }
+    }
+
+    /// Install systemd service (Linux)
+    async fn install_systemd_service() -> Result<(), String> {
+        let service_content = format!(r#"[Unit]
+Description=Fenrir Security Daemon
+After=network.target
+
+[Service]
+Type=simple
+User={}
+ExecStart={}
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+"#,
+            whoami::username(),
+            std::env::current_exe().map_err(|e| format!("Failed to get exe path: {}", e))?
+                .to_string_lossy()
+        );
+
+        let service_path = "/etc/systemd/system/fenrir-daemon.service";
+        if let Err(e) = async_fs::write(service_path, service_content).await {
+            println!("⚠️  Failed to create systemd service (may require sudo): {}", e);
+            return Ok(()); // Don't fail, just warn
+        }
+
+        // Enable and start service
+        let _ = Command::new("systemctl")
+            .args(&["daemon-reload"])
+            .status();
+
+        let _ = Command::new("systemctl")
+            .args(&["enable", "fenrir-daemon"])
+            .status();
+
+        let _ = Command::new("systemctl")
+            .args(&["start", "fenrir-daemon"])
+            .status();
+
+        println!("✅ Daemon installed as systemd service");
+        Ok(())
+    }
+
+    /// Install launchd service (macOS)
+    async fn install_launchd_service() -> Result<(), String> {
+        let plist_content = format!(r#"<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.fenrir.daemon</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>{}</string>
+        <string>daemon</string>
+        <string>start</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>/tmp/fenrir-daemon.out</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/fenrir-daemon.err</string>
+    <key>UserName</key>
+    <string>{}</string>
+</dict>
+</plist>
+"#,
+            std::env::current_exe().map_err(|e| format!("Failed to get exe path: {}", e))?
+                .to_string_lossy(),
+            whoami::username()
+        );
+
+        let plist_path = format!("/Users/{}/Library/LaunchAgents/com.fenrir.daemon.plist", whoami::username());
+        if let Err(e) = async_fs::write(&plist_path, plist_content).await {
+            println!("⚠️  Failed to create launchd plist: {}", e);
+            return Ok(()); // Don't fail, just warn
+        }
+
+        // Load and start the service
+        let _ = Command::new("launchctl")
+            .args(&["load", &plist_path])
+            .status();
+
+        let _ = Command::new("launchctl")
+            .args(&["start", "com.fenrir.daemon"])
+            .status();
+
+        println!("✅ Daemon installed as launchd service");
+        Ok(())
+    }
+
+    /// Automatic virus scanning on HDD
+    async fn perform_virus_scan() -> Result<(), String> {
+        println!("🛡️  Performing automatic virus scan...");
+
+        if cfg!(target_os = "macos") {
+            Self::macos_virus_scan().await
+        } else {
+            Self::linux_virus_scan().await
+        }
+    }
+
+    /// Linux virus scanning with clamscan
+    async fn linux_virus_scan() -> Result<(), String> {
+        // Use clamscan if available
+        match Command::new("clamscan")
+            .args(&["-r", "/home", "--quiet", "--infected"])
+            .output()
+        {
+            Ok(output) => {
+                let stdout = String::from_utf8_lossy(&output.stdout);
+                let stderr = String::from_utf8_lossy(&output.stderr);
+
+                if !stdout.is_empty() || !stderr.is_empty() {
+                    println!("🚨 VIRUS SCAN ALERT:");
+                    if !stdout.is_empty() {
+                        println!("  Infected files found:\n{}", stdout);
+                    }
+                    if !stderr.is_empty() {
+                        println!("  Scan errors:\n{}", stderr);
+                    }
+
+                    // Alert user
+                    Self::send_alert("Virus scan detected infected files!".to_string()).await;
+                } else {
+                    println!("✅ No viruses detected");
+                }
+            }
+            Err(_) => {
+                // Fallback: check for suspicious files manually
+                Self::manual_virus_check().await?;
+            }
+        }
+
+        Ok(())
+    }
+
+    /// macOS virus scanning with XProtect or manual check
+    async fn macos_virus_scan() -> Result<(), String> {
+        // Try XProtect (built-in macOS antivirus)
+        match Command::new("xprotect")
+            .args(&["--version"])
+            .output()
+        {
+            Ok(_) => {
+                // XProtect is available, run a basic check
+                println!("🛡️  Using XProtect for virus scanning...");
+                // XProtect doesn't have a direct scan command, so we'll do manual checks
+                Self::manual_virus_check().await?;
+            }
+            Err(_) => {
+                // XProtect not available or not accessible, manual check
+                Self::manual_virus_check().await?;
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Manual virus checking when clamscan not available
+    async fn manual_virus_check() -> Result<(), String> {
+        println!("🔍 Performing manual virus check...");
+
+        let suspicious_extensions = vec![
+            "exe", "dll", "bat", "cmd", "scr", "pif", "com", "vbs", "js", "jar",
+            "deb", "rpm", "dmg", "pkg", "app", "apk",
+        ];
+
+        let mut suspicious_files = Vec::new();
+
+        // Scan common directories (macOS compatible)
+        let scan_dirs = if cfg!(target_os = "macos") {
+            vec!["/Users", "/tmp", "/var/tmp", "/usr/local/bin", "/Applications"]
+        } else {
+            vec!["/home", "/tmp", "/var/tmp", "/usr/local/bin"]
+        };
+
+        for dir in scan_dirs {
+            if let Ok(entries) = async_fs::read_dir(dir).await {
+                let mut entries = entries;
+                while let Ok(Some(entry)) = entries.next_entry().await {
+                    if let Ok(metadata) = entry.metadata().await {
+                        // Check file permissions (executable by others)
+                        let permissions = metadata.permissions();
+                        if permissions.readonly() == false {
+                            if let Some(ext) = entry.path().extension() {
+                                if suspicious_extensions.contains(&ext.to_str().unwrap_or("")) {
+                                    suspicious_files.push(entry.path().to_string_lossy().to_string());
+                                }
+                            }
+                        }
+
+                        // Check for hidden files
+                        if entry.file_name().to_string_lossy().starts_with('.') &&
+                           entry.file_name() != ".bashrc" && entry.file_name() != ".profile" {
+                            suspicious_files.push(entry.path().to_string_lossy().to_string());
+                        }
+                    }
+                }
+            }
+        }
+
+        if !suspicious_files.is_empty() {
+            println!("🚨 SUSPICIOUS FILES DETECTED:");
+            for file in suspicious_files.iter().take(10) {
+                println!("  • {}", file);
+            }
+            if suspicious_files.len() > 10 {
+                println!("  ... and {} more", suspicious_files.len() - 10);
+            }
+
+            Self::send_alert(format!("{} suspicious files detected", suspicious_files.len())).await;
+        } else {
+            println!("✅ No suspicious files found");
+        }
+
+        Ok(())
+    }
+
+    /// File management: cleanup old files not opened for >1 month
+    async fn cleanup_old_files() -> Result<(), String> {
+        println!("🧹 Performing file cleanup...");
+
+        let one_month_ago = Utc::now() - chrono::Duration::days(30);
+        let mut files_to_cleanup = Vec::new();
+
+        // Scan user directories
+        let user_dirs = vec![
+            dirs::home_dir().unwrap_or_else(|| Path::new("/home").to_path_buf()),
+            Path::new("/tmp").to_path_buf(),
+            Path::new("/var/tmp").to_path_buf(),
+        ];
+
+        for dir in user_dirs {
+            if let Ok(entries) = async_fs::read_dir(&dir).await {
+                let mut entries = entries;
+                while let Ok(Some(entry)) = entries.next_entry().await {
+                    if let Ok(metadata) = entry.metadata().await {
+                        if metadata.is_file() {
+                            if let Ok(modified) = metadata.modified() {
+                                let modified_time = DateTime::<Utc>::from(modified);
+                                if modified_time < one_month_ago {
+                                    // Check if file is opened (simple check)
+                                    if !Self::is_file_opened(&entry.path()).await {
+                                        files_to_cleanup.push(entry.path());
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Clean up old files
+        let mut cleaned_count = 0;
+        for file_path in files_to_cleanup.iter().take(100) { // Limit to 100 files per run
+            match async_fs::remove_file(file_path).await {
+                Ok(_) => {
+                    println!("  🗑️  Cleaned: {}", file_path.display());
+                    cleaned_count += 1;
+                }
+                Err(e) => {
+                    println!("  ⚠️  Failed to clean {}: {}", file_path.display(), e);
+                }
+            }
+        }
+
+        if cleaned_count > 0 {
+            println!("✅ Cleaned {} old files", cleaned_count);
+            Self::send_alert(format!("Cleaned {} old files", cleaned_count)).await;
+        } else {
+            println!("✅ No old files to clean");
+        }
+
+        Ok(())
+    }
+
+    /// Check if file is currently opened
+    async fn is_file_opened(file_path: &Path) -> bool {
+        // Simple check using lsof (if available)
+        match Command::new("lsof")
+            .arg(file_path)
+            .output()
+        {
+            Ok(output) => !output.stdout.is_empty(),
+            Err(_) => false, // Assume not opened if lsof fails
+        }
+    }
+
+    /// Send alert to user
+    async fn send_alert(message: String) {
+        println!("🚨 ALERT: {}", message);
+
+        // Try to send desktop notification
+        let _ = Command::new("notify-send")
+            .args(&["FENRIR Security Alert", &message])
+            .status();
+
+        // Log to system log
+        let _ = Command::new("logger")
+            .args(&["-t", "fenrir-daemon", &message])
+            .status();
     }
 }
