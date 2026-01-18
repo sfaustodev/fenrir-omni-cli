@@ -1,18 +1,19 @@
+// ============================================================================
+// FENRIR NLP v2.0 - FUZZY LOCAL INTERPRETATION
+// ============================================================================
+// Simple, robust, flawless interpretation without external API dependencies
+// Uses fuzzy matching and pattern recognition for target/keyword detection
+
 use chrono::Utc;
-use reqwest::Client;
-use serde::{Deserialize, Serialize};
-use serde_json::json;
-use std::fs::{self, OpenOptions};
-use std::io::{BufRead, BufReader, Write};
-use std::path::PathBuf;
-use std::process::{Command, Stdio};
-use std::sync::Arc;
-use tokio::sync::Semaphore;
-use tokio::task;
 use regex::Regex;
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::fs::{self, OpenOptions};
+use std::io::Write;
+use std::path::PathBuf;
 
 // ============================================================================
-// NEW FENRIR NLP PARADIGM - ZAI ORCHESTRATOR
+// PARSED COMMAND STRUCTURE
 // ============================================================================
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -20,689 +21,734 @@ pub struct ParsedCommand {
     pub command: String,
     pub explanation: String,
     pub source: String,
-    pub subject: Option<String>,      // Target (what to attack/scan)
-    pub context: Option<String>,      // Strategy/instructions
-    pub keywords: Vec<String>,        // Attack types/sequences to trigger
+    pub subject: Option<String>,
+    pub context: Option<String>,
+    pub keywords: Vec<String>,
     pub confidence: f32,
     pub needs_clarification: bool,
     pub clarification_questions: Vec<String>,
+    pub suggestions: Vec<String>,
 }
+
+impl ParsedCommand {
+    pub fn new() -> Self {
+        ParsedCommand {
+            command: String::new(),
+            explanation: String::new(),
+            source: "fuzzy_local".to_string(),
+            subject: None,
+            context: None,
+            keywords: Vec::new(),
+            confidence: 0.0,
+            needs_clarification: false,
+            clarification_questions: Vec::new(),
+            suggestions: Vec::new(),
+        }
+    }
+}
+
+// ============================================================================
+// KEYWORD DEFINITIONS WITH ALIASES AND TRIGGERS
+// ============================================================================
 
 #[derive(Debug, Clone)]
-struct SmartAttackSequence {
+pub struct KeywordDefinition {
     pub keyword: String,
+    pub aliases: Vec<String>,
     pub description: String,
     pub tools: Vec<String>,
-    pub stealth_first: bool,
     pub async_execution: bool,
     pub memory_limit_mb: u64,
+    pub suggested_contexts: Vec<String>,
 }
 
-// ============================================================================
-// KEYWORD-TRIGGERED AUTOMATION SEQUENCES
-// ============================================================================
-
-fn get_smart_sequences() -> Vec<SmartAttackSequence> {
+fn get_keyword_definitions() -> Vec<KeywordDefinition> {
     vec![
-        SmartAttackSequence {
+        KeywordDefinition {
             keyword: "password".to_string(),
-            description: "Complete password cracking sequence".to_string(),
-            tools: vec![
-                "cewl".to_string(),      // Generate wordlist from target
-                "crunch".to_string(),    // Generate custom wordlists
-                "hydra".to_string(),     // Online brute force
-                "hashcat".to_string(),   // GPU cracking
-                "john".to_string(),      // CPU cracking
-                "patator".to_string(),   // Multi-purpose brute forcer
-            ],
-            stealth_first: true,
+            aliases: vec![
+                "senha", "contraseña", "pass", "pwd", "crack", "brute", "bruteforce",
+                "hash", "credential", "credencial", "login", "auth", "hydra", "hashcat",
+                "john", "cracker", "dictionary", "wordlist"
+            ].iter().map(|s| s.to_string()).collect(),
+            description: "Password cracking and credential harvesting".to_string(),
+            tools: vec!["cewl", "crunch", "hydra", "hashcat", "john", "patator", "medusa", "ncrack"]
+                .iter().map(|s| s.to_string()).collect(),
             async_execution: true,
             memory_limit_mb: 666,
+            suggested_contexts: vec![
+                "stealth mode".to_string(),
+                "aggressive mode".to_string(),
+                "use rockyou wordlist".to_string(),
+                "ssh brute force".to_string(),
+                "ftp brute force".to_string(),
+            ],
         },
-        SmartAttackSequence {
+        KeywordDefinition {
             keyword: "scan".to_string(),
-            description: "Network scanning sequence".to_string(),
-            tools: vec![
-                "nmap".to_string(),      // Stealth scan first
-                "masscan".to_string(),   // Fast port scan
-                "rustscan".to_string(),  // Modern scanner
-                "nikto".to_string(),     // Web server scan
-                "nuclei".to_string(),    // Vulnerability scan
-            ],
-            stealth_first: true,
+            aliases: vec![
+                "escanear", "escaneo", "scanner", "port", "porta", "nmap", "masscan",
+                "rustscan", "enumerate", "enumerar", "discovery", "recon", "reconnaissance",
+                "fingerprint", "detect", "probe", "sweep"
+            ].iter().map(|s| s.to_string()).collect(),
+            description: "Network scanning and enumeration".to_string(),
+            tools: vec!["nmap", "masscan", "rustscan", "nikto", "nuclei"]
+                .iter().map(|s| s.to_string()).collect(),
             async_execution: true,
             memory_limit_mb: 666,
-        },
-        SmartAttackSequence {
-            keyword: "social".to_string(),
-            description: "Social engineering reconnaissance".to_string(),
-            tools: vec![
-                "theHarvester".to_string(),
-                "sherlock".to_string(),
-                "maltego".to_string(),
-                "recon-ng".to_string(),
-                "spiderfoot".to_string(),
+            suggested_contexts: vec![
+                "stealth scan".to_string(),
+                "full port scan".to_string(),
+                "service detection".to_string(),
+                "vulnerability scan".to_string(),
+                "OS detection".to_string(),
             ],
-            stealth_first: true,
-            async_execution: false,
-            memory_limit_mb: 2048,
         },
-        SmartAttackSequence {
+        KeywordDefinition {
             keyword: "web".to_string(),
-            description: "Web application testing".to_string(),
-            tools: vec![
-                "nikto".to_string(),
-                "gobuster".to_string(),
-                "ffuf".to_string(),
-                "sqlmap".to_string(),
-                "nuclei".to_string(),
-            ],
-            stealth_first: true,
+            aliases: vec![
+                "website", "sitio", "site", "http", "https", "webapp", "application",
+                "sql", "sqli", "injection", "xss", "lfi", "rfi", "directory", "dirbuster",
+                "gobuster", "ffuf", "nikto", "burp", "zap"
+            ].iter().map(|s| s.to_string()).collect(),
+            description: "Web application vulnerability testing".to_string(),
+            tools: vec!["nikto", "gobuster", "ffuf", "sqlmap", "wpscan", "xsstrike", "nuclei"]
+                .iter().map(|s| s.to_string()).collect(),
             async_execution: true,
             memory_limit_mb: 666,
+            suggested_contexts: vec![
+                "directory bruteforce".to_string(),
+                "SQL injection test".to_string(),
+                "XSS detection".to_string(),
+                "WordPress scan".to_string(),
+                "API fuzzing".to_string(),
+            ],
         },
-        SmartAttackSequence {
+        KeywordDefinition {
+            keyword: "social".to_string(),
+            aliases: vec![
+                "osint", "instagram", "facebook", "twitter", "linkedin", "tiktok",
+                "sherlock", "username", "usuario", "profile", "perfil", "email",
+                "harvester", "recon-ng", "maltego", "spiderfoot", "people", "person"
+            ].iter().map(|s| s.to_string()).collect(),
+            description: "Social engineering and OSINT reconnaissance".to_string(),
+            tools: vec!["sherlock", "theHarvester", "maltego", "recon-ng", "spiderfoot", "holehe"]
+                .iter().map(|s| s.to_string()).collect(),
+            async_execution: false,
+            memory_limit_mb: 2048,
+            suggested_contexts: vec![
+                "find all profiles".to_string(),
+                "email enumeration".to_string(),
+                "username search".to_string(),
+                "company recon".to_string(),
+            ],
+        },
+        KeywordDefinition {
             keyword: "wireless".to_string(),
-            description: "Wireless network attacks".to_string(),
-            tools: vec![
-                "aircrack-ng".to_string(),
-                "wifite".to_string(),
-                "reaver".to_string(),
-                "bully".to_string(),
-                "kismet".to_string(),
-            ],
-            stealth_first: true,
+            aliases: vec![
+                "wifi", "wlan", "aircrack", "wifite", "wireless", "802.11", "wpa",
+                "wpa2", "wep", "handshake", "deauth", "pmkid", "reaver", "bully"
+            ].iter().map(|s| s.to_string()).collect(),
+            description: "Wireless network attacks and auditing".to_string(),
+            tools: vec!["aircrack-ng", "wifite", "reaver", "bully", "kismet"]
+                .iter().map(|s| s.to_string()).collect(),
             async_execution: false,
             memory_limit_mb: 2048,
+            suggested_contexts: vec![
+                "capture handshake".to_string(),
+                "WPS attack".to_string(),
+                "deauth attack".to_string(),
+                "PMKID capture".to_string(),
+            ],
         },
-        SmartAttackSequence {
+        KeywordDefinition {
             keyword: "oauth".to_string(),
-            description: "OAuth2 security testing".to_string(),
-            tools: vec![
-                "burpsuite".to_string(),
-                "oauth2-tool".to_string(),
-                "evilginx2".to_string(),
-                "modlishka".to_string(),
-            ],
-            stealth_first: true,
+            aliases: vec![
+                "oauth2", "authentication", "autenticacao", "token", "jwt", "bearer",
+                "sso", "saml", "openid", "oidc", "authorization", "redirect", "callback"
+            ].iter().map(|s| s.to_string()).collect(),
+            description: "OAuth2 and authentication security testing".to_string(),
+            tools: vec!["burpsuite", "evilginx2", "modlishka", "mitmproxy"]
+                .iter().map(|s| s.to_string()).collect(),
             async_execution: false,
             memory_limit_mb: 2048,
-        },
-        SmartAttackSequence {
-            keyword: "database".to_string(),
-            description: "Database exploitation".to_string(),
-            tools: vec![
-                "sqlmap".to_string(),
-                "odat".to_string(),
-                "mssqlclient".to_string(),
-                "tnscmd10g".to_string(),
+            suggested_contexts: vec![
+                "token analysis".to_string(),
+                "redirect URI test".to_string(),
+                "state parameter check".to_string(),
+                "scope enumeration".to_string(),
             ],
-            stealth_first: true,
+        },
+        KeywordDefinition {
+            keyword: "database".to_string(),
+            aliases: vec![
+                "db", "mysql", "postgres", "postgresql", "mssql", "oracle", "mongodb",
+                "redis", "sql", "nosql", "dump", "exfiltrate", "odat"
+            ].iter().map(|s| s.to_string()).collect(),
+            description: "Database exploitation and enumeration".to_string(),
+            tools: vec!["sqlmap", "odat", "mssqlclient.py", "mongoaudit"]
+                .iter().map(|s| s.to_string()).collect(),
             async_execution: true,
             memory_limit_mb: 666,
-        },
-        SmartAttackSequence {
-            keyword: "forensic".to_string(),
-            description: "Digital forensics analysis".to_string(),
-            tools: vec![
-                "autopsy".to_string(),
-                "volatility".to_string(),
-                "binwalk".to_string(),
-                "foremost".to_string(),
-                "bulk_extractor".to_string(),
+            suggested_contexts: vec![
+                "dump all tables".to_string(),
+                "enumerate databases".to_string(),
+                "privilege escalation".to_string(),
+                "data exfiltration".to_string(),
             ],
-            stealth_first: false, // Forensics doesn't need stealth
+        },
+        KeywordDefinition {
+            keyword: "forensic".to_string(),
+            aliases: vec![
+                "forensics", "forense", "memory", "memoria", "disk", "disco", "image",
+                "autopsy", "volatility", "binwalk", "carve", "recover", "analysis"
+            ].iter().map(|s| s.to_string()).collect(),
+            description: "Digital forensics and analysis".to_string(),
+            tools: vec!["autopsy", "volatility", "binwalk", "foremost", "bulk_extractor"]
+                .iter().map(|s| s.to_string()).collect(),
             async_execution: false,
             memory_limit_mb: 2048,
+            suggested_contexts: vec![
+                "memory analysis".to_string(),
+                "file carving".to_string(),
+                "timeline analysis".to_string(),
+                "artifact extraction".to_string(),
+            ],
+        },
+        KeywordDefinition {
+            keyword: "exploit".to_string(),
+            aliases: vec![
+                "explotar", "metasploit", "msf", "msfconsole", "payload", "shellcode",
+                "vulnerability", "vulnerabilidad", "cve", "poc", "rce", "lpe"
+            ].iter().map(|s| s.to_string()).collect(),
+            description: "Exploitation and payload delivery".to_string(),
+            tools: vec!["msfconsole", "searchsploit", "msfvenom"]
+                .iter().map(|s| s.to_string()).collect(),
+            async_execution: false,
+            memory_limit_mb: 2048,
+            suggested_contexts: vec![
+                "search exploits".to_string(),
+                "generate payload".to_string(),
+                "reverse shell".to_string(),
+                "post exploitation".to_string(),
+            ],
+        },
+        KeywordDefinition {
+            keyword: "privesc".to_string(),
+            aliases: vec![
+                "privilege", "escalation", "escalacao", "root", "admin", "sudo",
+                "linpeas", "winpeas", "pspy", "suid", "capabilities"
+            ].iter().map(|s| s.to_string()).collect(),
+            description: "Privilege escalation techniques".to_string(),
+            tools: vec!["linpeas.sh", "winpeas.exe", "pspy", "linux-exploit-suggester.sh"]
+                .iter().map(|s| s.to_string()).collect(),
+            async_execution: false,
+            memory_limit_mb: 2048,
+            suggested_contexts: vec![
+                "SUID binaries".to_string(),
+                "kernel exploits".to_string(),
+                "misconfigurations".to_string(),
+                "cron jobs".to_string(),
+            ],
+        },
+        KeywordDefinition {
+            keyword: "shell".to_string(),
+            aliases: vec![
+                "reverse", "bind", "netcat", "nc", "socat", "listener", "c2",
+                "command", "control", "backdoor", "pwncat"
+            ].iter().map(|s| s.to_string()).collect(),
+            description: "Reverse shell and C2 operations".to_string(),
+            tools: vec!["nc", "socat", "pwncat"]
+                .iter().map(|s| s.to_string()).collect(),
+            async_execution: false,
+            memory_limit_mb: 2048,
+            suggested_contexts: vec![
+                "start listener".to_string(),
+                "reverse shell".to_string(),
+                "bind shell".to_string(),
+                "encrypted channel".to_string(),
+            ],
+        },
+        KeywordDefinition {
+            keyword: "sniff".to_string(),
+            aliases: vec![
+                "capture", "captura", "wireshark", "tcpdump", "packet", "pacote",
+                "mitm", "arp", "spoof", "ettercap", "bettercap", "responder"
+            ].iter().map(|s| s.to_string()).collect(),
+            description: "Network sniffing and MITM attacks".to_string(),
+            tools: vec!["wireshark", "tcpdump", "ettercap", "bettercap", "responder"]
+                .iter().map(|s| s.to_string()).collect(),
+            async_execution: false,
+            memory_limit_mb: 2048,
+            suggested_contexts: vec![
+                "capture traffic".to_string(),
+                "ARP spoofing".to_string(),
+                "credential sniffing".to_string(),
+                "LLMNR poisoning".to_string(),
+            ],
+        },
+        KeywordDefinition {
+            keyword: "recon".to_string(),
+            aliases: vec![
+                "reconnaissance", "reconhecimento", "information", "gathering",
+                "subdomain", "subdominio", "dns", "whois", "amass", "subfinder"
+            ].iter().map(|s| s.to_string()).collect(),
+            description: "Information gathering and reconnaissance".to_string(),
+            tools: vec!["theHarvester", "amass", "subfinder", "dnsrecon", "whois"]
+                .iter().map(|s| s.to_string()).collect(),
+            async_execution: true,
+            memory_limit_mb: 666,
+            suggested_contexts: vec![
+                "subdomain enumeration".to_string(),
+                "DNS records".to_string(),
+                "WHOIS lookup".to_string(),
+                "certificate transparency".to_string(),
+            ],
         },
     ]
 }
 
 // ============================================================================
-// TRANSLATION LAYER - GEMINI FOR NON-ENGLISH
+// TARGET DETECTION PATTERNS
 // ============================================================================
 
-async fn translate_to_english(client: &Client, text: &str) -> Result<String, String> {
-    // Check if already English (simple heuristic)
-    let english_chars = text.chars()
-        .filter(|c| c.is_ascii_alphabetic())
-        .count();
-    let total_chars = text.chars().count();
+#[derive(Debug, Clone)]
+pub struct DetectedTarget {
+    pub value: String,
+    pub target_type: TargetType,
+    pub confidence: f32,
+}
 
-    if total_chars > 0 && (english_chars as f32 / total_chars as f32) > 0.8 {
-        return Ok(text.to_string());
-    }
+#[derive(Debug, Clone, PartialEq)]
+pub enum TargetType {
+    IPv4,
+    IPv6,
+    Domain,
+    URL,
+    Email,
+    Username,
+    CIDR,
+    PhoneNumber,
+    Unknown,
+}
 
-    // Use Gemini for translation
-    let api_key = std::env::var("GEMINI_API_KEY")
-        .map_err(|_| "GEMINI_API_KEY not set for translation".to_string())?;
-
-    let url = format!(
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={}",
-        api_key
-    );
-
-    let payload = json!({
-        "contents": [{
-            "parts": [{
-                "text": format!("Translate this security testing request to English. Keep technical terms accurate. Only return the English translation, nothing else:\n\n{}", text)
-            }]
-        }]
-    });
-
-    let response = client
-        .post(&url)
-        .json(&payload)
-        .timeout(std::time::Duration::from_secs(30))
-        .send()
-        .await
-        .map_err(|e| format!("Translation request failed: {}", e))?;
-
-    let json: serde_json::Value = response
-        .json()
-        .await
-        .map_err(|e| format!("Failed to parse translation response: {}", e))?;
-
-    if let Some(translated) = json["candidates"][0]["content"]["parts"][0]["text"].as_str() {
-        Ok(translated.trim().to_string())
-    } else {
-        Err("Invalid translation response format".to_string())
+impl TargetType {
+    pub fn as_str(&self) -> &str {
+        match self {
+            TargetType::IPv4 => "IPv4 Address",
+            TargetType::IPv6 => "IPv6 Address",
+            TargetType::Domain => "Domain",
+            TargetType::URL => "URL",
+            TargetType::Email => "Email",
+            TargetType::Username => "Username",
+            TargetType::CIDR => "CIDR Range",
+            TargetType::PhoneNumber => "Phone Number",
+            TargetType::Unknown => "Unknown",
+        }
     }
 }
 
-// ============================================================================
-// ZAI ORCHESTRATOR - MAIN NLP BRAIN
-// ============================================================================
-
-pub async fn parse_command(client: &Client, user_input: &str) -> Result<ParsedCommand, String> {
-    // Step 1: Translate to English if needed
-    let english_input = translate_to_english(client, user_input).await
-        .unwrap_or_else(|_| user_input.to_string());
-
-    // Step 2: Extract components using ZAI (Grok API)
-    let parsed = interpret_with_zai(client, &english_input).await?;
-
-    // Step 3: Validate completeness
-    let (needs_clarification, questions) = validate_input_completeness(&parsed);
-
-    if needs_clarification {
-        return Ok(ParsedCommand {
-            command: "clarify".to_string(),
-            explanation: "Input needs clarification".to_string(),
-            source: "validation".to_string(),
-            subject: parsed.subject,
-            context: parsed.context,
-            keywords: parsed.keywords,
-            confidence: parsed.confidence,
-            needs_clarification: true,
-            clarification_questions: questions,
+fn detect_targets(input: &str) -> Vec<DetectedTarget> {
+    let mut targets = Vec::new();
+    
+    // IPv4 pattern
+    let ipv4_regex = Regex::new(r"\b(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\b").unwrap();
+    for cap in ipv4_regex.captures_iter(input) {
+        let ip = cap.get(1).unwrap().as_str();
+        // Validate IP octets
+        let valid = ip.split('.').all(|octet| {
+            octet.parse::<u8>().is_ok()
+        });
+        if valid {
+            targets.push(DetectedTarget {
+                value: ip.to_string(),
+                target_type: TargetType::IPv4,
+                confidence: 1.0,
+            });
+        }
+    }
+    
+    // CIDR pattern
+    let cidr_regex = Regex::new(r"\b(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/\d{1,2})\b").unwrap();
+    for cap in cidr_regex.captures_iter(input) {
+        targets.push(DetectedTarget {
+            value: cap.get(1).unwrap().as_str().to_string(),
+            target_type: TargetType::CIDR,
+            confidence: 1.0,
         });
     }
-
-    // Step 4: Generate smart command sequence
-    let final_command = generate_smart_sequence(&parsed);
-
-    // Step 5: Log for audit
-    log_interaction(user_input, &english_input, &parsed, &final_command);
-
-    Ok(ParsedCommand {
-        command: final_command,
-        explanation: format!("Smart attack sequence triggered by keywords: {}", parsed.keywords.join(", ")),
-        source: "zai_orchestrator".to_string(),
-        subject: parsed.subject,
-        context: parsed.context,
-        keywords: parsed.keywords,
-        confidence: parsed.confidence,
-        needs_clarification: false,
-        clarification_questions: vec![],
-    })
+    
+    // URL pattern
+    let url_regex = Regex::new(r"(https?://[^\s]+)").unwrap();
+    for cap in url_regex.captures_iter(input) {
+        targets.push(DetectedTarget {
+            value: cap.get(1).unwrap().as_str().to_string(),
+            target_type: TargetType::URL,
+            confidence: 1.0,
+        });
+    }
+    
+    // Email pattern
+    let email_regex = Regex::new(r"\b([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\b").unwrap();
+    for cap in email_regex.captures_iter(input) {
+        targets.push(DetectedTarget {
+            value: cap.get(1).unwrap().as_str().to_string(),
+            target_type: TargetType::Email,
+            confidence: 1.0,
+        });
+    }
+    
+    // Domain pattern (after URL and email to avoid duplicates)
+    let domain_regex = Regex::new(r"\b([a-zA-Z0-9][-a-zA-Z0-9]*\.)+[a-zA-Z]{2,}\b").unwrap();
+    for cap in domain_regex.captures_iter(input) {
+        let domain = cap.get(0).unwrap().as_str();
+        // Skip if already captured as URL or email
+        if !targets.iter().any(|t| t.value.contains(domain)) {
+            targets.push(DetectedTarget {
+                value: domain.to_string(),
+                target_type: TargetType::Domain,
+                confidence: 0.9,
+            });
+        }
+    }
+    
+    // Username pattern (@username)
+    let username_regex = Regex::new(r"@([a-zA-Z0-9_]{3,})").unwrap();
+    for cap in username_regex.captures_iter(input) {
+        targets.push(DetectedTarget {
+            value: cap.get(1).unwrap().as_str().to_string(),
+            target_type: TargetType::Username,
+            confidence: 0.9,
+        });
+    }
+    
+    // Phone number pattern
+    let phone_regex = Regex::new(r"\+?\d{10,15}").unwrap();
+    for cap in phone_regex.captures_iter(input) {
+        targets.push(DetectedTarget {
+            value: cap.get(0).unwrap().as_str().to_string(),
+            target_type: TargetType::PhoneNumber,
+            confidence: 0.7,
+        });
+    }
+    
+    targets
 }
 
 // ============================================================================
-// ZAI INTERPRETATION
+// FUZZY KEYWORD MATCHING
 // ============================================================================
 
-#[derive(Debug, Deserialize)]
-struct ZaiInterpretation {
-    subject: Option<String>,
-    context: Option<String>,
-    keywords: Vec<String>,
-    confidence: f32,
-    reasoning: String,
+fn fuzzy_match(input: &str, pattern: &str) -> f32 {
+    let input_lower = input.to_lowercase();
+    let pattern_lower = pattern.to_lowercase();
+    
+    // Exact match
+    if input_lower == pattern_lower {
+        return 1.0;
+    }
+    
+    // Contains match
+    if input_lower.contains(&pattern_lower) {
+        return 0.9;
+    }
+    
+    // Levenshtein-like similarity for short strings
+    if input_lower.len() <= 3 || pattern_lower.len() <= 3 {
+        return 0.0;
+    }
+    
+    // Check if pattern is a prefix
+    if input_lower.starts_with(&pattern_lower) || pattern_lower.starts_with(&input_lower) {
+        return 0.8;
+    }
+    
+    // Simple character overlap ratio
+    let input_chars: std::collections::HashSet<char> = input_lower.chars().collect();
+    let pattern_chars: std::collections::HashSet<char> = pattern_lower.chars().collect();
+    let intersection = input_chars.intersection(&pattern_chars).count();
+    let union = input_chars.union(&pattern_chars).count();
+    
+    if union > 0 {
+        let jaccard = intersection as f32 / union as f32;
+        if jaccard > 0.6 {
+            return jaccard * 0.7;
+        }
+    }
+    
+    0.0
 }
 
-/// Main ZAI interpretation function - tries ZAI_API_KEY first, then falls back to Grok
-async fn interpret_with_zai(client: &Client, input: &str) -> Result<ZaiInterpretation, String> {
-    // Try ZAI_API_KEY first
-    if let Ok(api_key) = std::env::var("ZAI_API_KEY") {
-        match interpret_with_zai_api(client, input, &api_key).await {
-            Ok(result) => return Ok(result),
-            Err(e) => {
-                println!("⚠️  ZAI API failed: {}, falling back to Grok", e);
+fn detect_keywords(input: &str) -> Vec<(String, f32)> {
+    let definitions = get_keyword_definitions();
+    let mut detected: HashMap<String, f32> = HashMap::new();
+    let input_lower = input.to_lowercase();
+    let words: Vec<&str> = input_lower.split_whitespace().collect();
+    
+    for def in &definitions {
+        let mut max_score: f32 = 0.0;
+        
+        // Check main keyword
+        for word in &words {
+            let score = fuzzy_match(word, &def.keyword);
+            if score > max_score {
+                max_score = score;
             }
         }
-    }
-
-    // Fallback to Grok
-    interpret_with_grok(client, input).await
-}
-
-/// ZAI API interpretation
-async fn interpret_with_zai_api(client: &Client, input: &str, api_key: &str) -> Result<ZaiInterpretation, String> {
-    let system_prompt = r#"You are ZAI, the Fenrir Security Orchestrator. Analyze security testing requests and extract:
-
-1. subject: The target (IP, domain, email, username, etc.)
-2. context: Strategy or instructions (stealth, aggressive, specific techniques)
-3. keywords: Attack types or tool categories to trigger
-
-Available keyword sequences:
-- password: hydra, hashcat, john, cewl, crunch, patator, medusa, ncrack
-- scan: nmap, masscan, rustscan, nikto, nuclei
-- recon: theHarvester, amass, subfinder, dnsrecon, whois
-- social: sherlock, maltego, recon-ng, spiderfoot, holehe
-- web: nikto, gobuster, ffuf, sqlmap, wpscan, xsstrike
-- wireless: aircrack-ng, wifite, reaver, bully, kismet
-- oauth: burpsuite, evilginx2, modlishka, mitmproxy
-- database: sqlmap, odat, mssqlclient, mongoaudit
-- forensic: autopsy, volatility, binwalk, foremost, bulk_extractor
-- exploit: metasploit, searchsploit, msfvenom
-- privesc: linpeas, winpeas, pspy, linux-exploit-suggester
-- shell: netcat, socat, pwncat
-- sniff: wireshark, tcpdump, ettercap, bettercap, responder
-
-Return ONLY valid JSON with: subject, context, keywords (array), confidence (0-1), reasoning"#;
-
-    // Try Venice AI endpoint (ZAI)
-    let url = "https://api.venice.ai/api/v1/chat/completions";
-
-    let payload = json!({
-        "model": "llama-3.3-70b",
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": format!("Analyze this security request and extract subject, keywords, and context: {}", input)}
-        ],
-        "max_tokens": 1000,
-        "temperature": 0.3
-    });
-
-    let response = client
-        .post(url)
-        .header("Authorization", format!("Bearer {}", api_key))
-        .header("Content-Type", "application/json")
-        .json(&payload)
-        .timeout(std::time::Duration::from_secs(30))
-        .send()
-        .await
-        .map_err(|e| format!("ZAI request failed: {}", e))?;
-
-    if !response.status().is_success() {
-        return Err(format!("ZAI API error: {}", response.status()));
-    }
-
-    let json: serde_json::Value = response
-        .json()
-        .await
-        .map_err(|e| format!("Failed to parse ZAI response: {}", e))?;
-
-    let content = json["choices"][0]["message"]["content"]
-        .as_str()
-        .ok_or("No content in ZAI response")?;
-
-    // Extract JSON from response
-    let json_start = content.find('{').unwrap_or(0);
-    let json_end = content.rfind('}').unwrap_or(content.len());
-    let json_str = &content[json_start..=json_end];
-
-    let interpretation: ZaiInterpretation = serde_json::from_str(json_str)
-        .map_err(|e| format!("Failed to parse ZAI interpretation: {}", e))?;
-
-    Ok(interpretation)
-}
-
-async fn interpret_with_grok(client: &Client, input: &str) -> Result<ZaiInterpretation, String> {
-    let api_key = std::env::var("GROK_API_KEY")
-        .or_else(|_| std::env::var("XAI_API_KEY"))
-        .map_err(|_| "GROK_API_KEY or XAI_API_KEY not set".to_string())?;
-
-    let system_prompt = r#"You are GROK, the Fenrir Orchestrator. Analyze security testing requests and extract:
-
-1. subject: The target (IP, domain, email, username, etc.)
-2. context: Strategy or instructions (stealth, aggressive, specific techniques)
-3. keywords: Attack types or tool categories to trigger
-
-Available keyword sequences:
-- password: hydra, hashcat, john, cewl, crunch, patator
-- scan: nmap, masscan, rustscan, nikto, nuclei
-- social: theHarvester, sherlock, maltego, recon-ng
-- web: nikto, gobuster, ffuf, sqlmap, nuclei
-- wireless: aircrack-ng, wifite, reaver, bully
-- oauth: burpsuite, evilginx2, modlishka
-- database: sqlmap, odat, mssqlclient
-- forensic: autopsy, volatility, binwalk
-- exploit: metasploit, armitage, cobaltstrike
-- reverse-shell: netcat, socat, powershell-empire
-- privilege-escalation: linpeas, winpeas, pspy, linux-exploit-suggester
-
-Return ONLY valid JSON with: subject, context, keywords (array), confidence (0-1), reasoning"#;
-
-    let url = "https://api.x.ai/v1/chat/completions";
-
-    let payload = json!({
-        "model": "grok-code-fast-1:free",
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": format!("Analyze this security request: {}", input)}
-        ],
-        "max_tokens": 1000,
-        "temperature": 0.3
-    });
-
-    let response = client
-        .post(url)
-        .header("Authorization", format!("Bearer {}", api_key))
-        .json(&payload)
-        .timeout(std::time::Duration::from_secs(30))
-        .send()
-        .await
-        .map_err(|e| format!("Grok request failed: {}", e))?;
-
-    let json: serde_json::Value = response
-        .json()
-        .await
-        .map_err(|e| format!("Failed to parse Grok response: {}", e))?;
-
-    let content = json["choices"][0]["message"]["content"]
-        .as_str()
-        .ok_or("No content in Grok response")?;
-
-    // Extract JSON from response (Grok might add extra text)
-    let json_start = content.find('{').unwrap_or(0);
-    let json_end = content.rfind('}').unwrap_or(content.len());
-    let json_str = &content[json_start..=json_end];
-
-    let interpretation: ZaiInterpretation = serde_json::from_str(json_str)
-        .map_err(|e| format!("Failed to parse Grok interpretation: {}", e))?;
-
-    Ok(interpretation)
-}
-
-// ============================================================================
-// INPUT VALIDATION
-// ============================================================================
-
-fn validate_input_completeness(parsed: &ZaiInterpretation) -> (bool, Vec<String>) {
-    let mut needs_clarification = false;
-    let mut questions = Vec::new();
-
-    if parsed.subject.is_none() {
-        needs_clarification = true;
-        questions.push("What is the target? (IP, domain, email, username, etc.)".to_string());
-    }
-
-    if parsed.keywords.is_empty() {
-        needs_clarification = true;
-        questions.push("What type of security testing? (password, scan, social, web, wireless, oauth, database, forensic)".to_string());
-    }
-
-    if parsed.confidence < 0.7 {
-        needs_clarification = true;
-        questions.push("Please clarify your request - I'm not confident I understood correctly.".to_string());
-    }
-
-    (needs_clarification, questions)
-}
-
-// ============================================================================
-// SMART ATTACK EXECUTOR
-// ============================================================================
-
-#[derive(Debug)]
-struct SmartAttackExecutor {
-    semaphore: Arc<Semaphore>,
-    memory_monitor: Arc<tokio::sync::Mutex<std::collections::HashMap<u32, u64>>>,
-}
-
-impl SmartAttackExecutor {
-    fn new() -> Self {
-        Self {
-            semaphore: Arc::new(Semaphore::new(10)), // Max 10 concurrent tasks
-            memory_monitor: Arc::new(tokio::sync::Mutex::new(std::collections::HashMap::new())),
-        }
-    }
-
-    async fn execute_smart_sequence(&self, parsed: &ZaiInterpretation) -> String {
-        let sequences = get_smart_sequences();
-        let mut results = Vec::new();
-
-        // Phase 1: Stealth Scan (always first)
-        if parsed.keywords.iter().any(|k| k != "forensic" && k != "zero-day") {
-            results.push("🐺 FENRIR STEALTH SCAN PHASE".to_string());
-            let stealth_result = self.execute_stealth_scan(parsed.subject.as_deref()).await;
-            let stealth_failed = stealth_result.contains("failed") || stealth_result.contains("error");
-            results.push(stealth_result);
-
-            // If stealth scan fails, fallback to aggressive
-            if stealth_failed {
-                results.push("⚠️  Stealth scan failed, switching to aggressive mode".to_string());
-                let aggressive_result = self.execute_aggressive_scan(parsed.subject.as_deref()).await;
-                results.push(aggressive_result);
+        
+        // Check aliases
+        for alias in &def.aliases {
+            for word in &words {
+                let score = fuzzy_match(word, alias);
+                if score > max_score {
+                    max_score = score;
+                }
             }
-        }
-
-        // Phase 2: Execute triggered sequences
-        let mut async_tasks = Vec::new();
-        let mut sequential_tasks = Vec::new();
-
-        for keyword in &parsed.keywords {
-            if let Some(sequence) = sequences.iter().find(|s| s.keyword == *keyword) {
-                results.push(format!("🐺 FENRIR {} SEQUENCE", sequence.keyword.to_uppercase()));
-
-                if sequence.async_execution {
-                    let task = self.execute_async_sequence(sequence.clone(), parsed.subject.clone());
-                    async_tasks.push(task);
-                } else {
-                    let task = self.execute_sequential_sequence(sequence.clone(), parsed.subject.clone());
-                    sequential_tasks.push(task);
+            
+            // Also check if alias is contained in input
+            if input_lower.contains(&alias.to_lowercase()) {
+                let score = 0.85;
+                if score > max_score {
+                    max_score = score;
                 }
             }
         }
-
-        // Execute async tasks concurrently
-        if !async_tasks.is_empty() {
-            results.push("🚀 Launching async attack sequences...".to_string());
-            let async_results = futures::future::join_all(async_tasks).await;
-            for result in async_results {
-                results.push(result);
-            }
-        }
-
-        // Execute sequential tasks one by one
-        if !sequential_tasks.is_empty() {
-            results.push("🔄 Executing sequential attack sequences...".to_string());
-            for task in sequential_tasks {
-                let result = task.await;
-                results.push(result);
-            }
-        }
-
-        // If no keywords matched, fallback
-        if results.len() <= 2 {
-            results.push("❌ No specific sequence triggered - use natural language or keywords".to_string());
-        }
-
-        results.join("\n")
-    }
-
-    async fn execute_stealth_scan(&self, target: Option<&str>) -> String {
-        let target_owned = target.unwrap_or("localhost").to_string();
-        let permit = self.semaphore.acquire().await.unwrap();
-
-        let result = task::spawn_blocking(move || {
-            let output = Command::new("nmap")
-                .args(&["-sS", "-T2", "-Pn", "--script", "vuln", "--max-retries", "1", &target_owned])
-                .stdout(Stdio::piped())
-                .stderr(Stdio::piped())
-                .output();
-
-            match output {
-                Ok(out) => {
-                    if out.status.success() {
-                        format!("✅ Stealth scan completed for {}", target_owned)
-                    } else {
-                        format!("❌ Stealth scan failed for {}: {}", target_owned, String::from_utf8_lossy(&out.stderr))
-                    }
-                }
-                Err(e) => format!("❌ Stealth scan error for {}: {}", target_owned, e),
-            }
-        }).await.unwrap();
-
-        drop(permit);
-        result
-    }
-
-    async fn execute_aggressive_scan(&self, target: Option<&str>) -> String {
-        let target_owned = target.unwrap_or("localhost").to_string();
-        let permit = self.semaphore.acquire().await.unwrap();
-
-        let result = task::spawn_blocking(move || {
-            let output = Command::new("nmap")
-                .args(&["-sV", "-T4", "-A", "-p-", &target_owned])
-                .stdout(Stdio::piped())
-                .stderr(Stdio::piped())
-                .output();
-
-            match output {
-                Ok(out) => {
-                    if out.status.success() {
-                        format!("✅ Aggressive scan completed for {}", target_owned)
-                    } else {
-                        format!("❌ Aggressive scan failed for {}: {}", target_owned, String::from_utf8_lossy(&out.stderr))
-                    }
-                }
-                Err(e) => format!("❌ Aggressive scan error for {}: {}", target_owned, e),
-            }
-        }).await.unwrap();
-
-        drop(permit);
-        result
-    }
-
-    async fn execute_async_sequence(&self, sequence: SmartAttackSequence, subject: Option<String>) -> String {
-        let permit = self.semaphore.acquire().await.unwrap();
-        let memory_limit = sequence.memory_limit_mb;
-
-        let result = task::spawn(async move {
-            let mut results = Vec::new();
-
-            if sequence.stealth_first {
-                results.push(format!("   Phase 1: Stealth Mode ({}MB limit)", memory_limit));
-            }
-
-            for tool in sequence.tools {
-                // Memory monitoring would go here in production
-                let tool_check = Command::new(&tool)
-                    .arg("--help")
-                    .stdout(Stdio::null())
-                    .stderr(Stdio::null())
-                    .status();
-
-                match tool_check {
-                    Ok(status) if status.success() => {
-                        results.push(format!("   ✅ {} available", tool));
-                    }
-                    _ => {
-                        results.push(format!("   ❌ {} not available", tool));
-                    }
+        
+        // Check if any tool name is mentioned
+        for tool in &def.tools {
+            if input_lower.contains(&tool.to_lowercase()) {
+                let score = 0.95;
+                if score > max_score {
+                    max_score = score;
                 }
             }
-
-            results.push(format!("   ✅ {} sequence completed", sequence.keyword));
-            results.join("\n")
-        }).await.unwrap();
-
-        drop(permit);
-        result
+        }
+        
+        if max_score >= 0.5 {
+            detected.insert(def.keyword.clone(), max_score);
+        }
     }
+    
+    let mut result: Vec<(String, f32)> = detected.into_iter().collect();
+    result.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
+    result
+}
 
-    async fn execute_sequential_sequence(&self, sequence: SmartAttackSequence, subject: Option<String>) -> String {
-        let mut results = Vec::new();
+// ============================================================================
+// CONTEXT DETECTION
+// ============================================================================
 
-        results.push(format!("   Sequential {} execution ({}MB limit)", sequence.keyword, sequence.memory_limit_mb));
+fn detect_context(input: &str) -> Option<String> {
+    let input_lower = input.to_lowercase();
+    
+    // Stealth indicators
+    let stealth_words = ["stealth", "quiet", "slow", "careful", "silencioso", "furtivo", "lento"];
+    for word in stealth_words {
+        if input_lower.contains(word) {
+            return Some("stealth mode".to_string());
+        }
+    }
+    
+    // Aggressive indicators
+    let aggressive_words = ["aggressive", "fast", "quick", "full", "complete", "all", "rapido", "completo", "todo"];
+    for word in aggressive_words {
+        if input_lower.contains(word) {
+            return Some("aggressive mode".to_string());
+        }
+    }
+    
+    // Specific technique mentions
+    if input_lower.contains("wordlist") || input_lower.contains("dictionary") {
+        return Some("dictionary attack".to_string());
+    }
+    
+    if input_lower.contains("brute") {
+        return Some("brute force".to_string());
+    }
+    
+    None
+}
 
-        for tool in sequence.tools {
-            // Sequential execution - one at a time
-            let tool_check = Command::new(&tool)
-                .arg("--help")
-                .stdout(Stdio::null())
-                .stderr(Stdio::null())
-                .status();
+// ============================================================================
+// SUGGESTION GENERATOR
+// ============================================================================
 
-            match tool_check {
-                Ok(status) if status.success() => {
-                    results.push(format!("   ✅ {} available", tool));
+fn generate_suggestions(targets: &[DetectedTarget], keywords: &[(String, f32)]) -> Vec<String> {
+    let mut suggestions = Vec::new();
+    let definitions = get_keyword_definitions();
+    
+    // If no target detected, suggest providing one
+    if targets.is_empty() {
+        suggestions.push("💡 Provide a target: IP (192.168.1.1), domain (example.com), email (user@domain.com), or @username".to_string());
+    }
+    
+    // If no keywords detected, suggest based on target type
+    if keywords.is_empty() {
+        if let Some(target) = targets.first() {
+            match target.target_type {
+                TargetType::IPv4 | TargetType::CIDR => {
+                    suggestions.push("💡 Try: scan, exploit, sniff".to_string());
+                }
+                TargetType::Domain | TargetType::URL => {
+                    suggestions.push("💡 Try: web, scan, recon, oauth".to_string());
+                }
+                TargetType::Email => {
+                    suggestions.push("💡 Try: social, password, recon".to_string());
+                }
+                TargetType::Username => {
+                    suggestions.push("💡 Try: social, password".to_string());
                 }
                 _ => {
-                    results.push(format!("   ❌ {} not available", tool));
+                    suggestions.push("💡 Try keywords: scan, web, password, social, exploit".to_string());
+                }
+            }
+        } else {
+            suggestions.push("💡 Available keywords: password, scan, web, social, wireless, oauth, database, forensic, exploit, privesc, shell, sniff, recon".to_string());
+        }
+    } else {
+        // Suggest contexts based on detected keywords
+        for (keyword, _score) in keywords.iter().take(2) {
+            if let Some(def) = definitions.iter().find(|d| d.keyword == *keyword) {
+                if !def.suggested_contexts.is_empty() {
+                    let ctx = &def.suggested_contexts[0];
+                    suggestions.push(format!("💡 For {}: try adding '{}'", keyword, ctx));
                 }
             }
         }
-
-        results.push(format!("   ✅ {} sequence completed", sequence.keyword));
-        results.join("\n")
     }
+    
+    // Suggest combining keywords if only one detected
+    if keywords.len() == 1 {
+        let keyword = &keywords[0].0;
+        match keyword.as_str() {
+            "scan" => suggestions.push("💡 Combine with: web, exploit, or password".to_string()),
+            "web" => suggestions.push("💡 Combine with: scan, database, or oauth".to_string()),
+            "password" => suggestions.push("💡 Combine with: social, or scan".to_string()),
+            "social" => suggestions.push("💡 Combine with: password, or recon".to_string()),
+            _ => {}
+        }
+    }
+    
+    suggestions
 }
 
 // ============================================================================
-// SMART SEQUENCE GENERATION (LEGACY COMPATIBILITY)
+// MAIN PARSE FUNCTION - SIMPLE AND ROBUST
 // ============================================================================
 
-fn generate_smart_sequence(parsed: &ZaiInterpretation) -> String {
-    let executor = SmartAttackExecutor::new();
-    // Note: This is synchronous wrapper for async executor
-    // In production, this should be called from async context
-    tokio::runtime::Runtime::new()
-        .unwrap()
-        .block_on(executor.execute_smart_sequence(parsed))
+pub async fn parse_command(_client: &reqwest::Client, user_input: &str) -> Result<ParsedCommand, String> {
+    let mut parsed = ParsedCommand::new();
+    parsed.source = "fuzzy_local".to_string();
+    
+    // Step 1: Detect targets
+    let targets = detect_targets(user_input);
+    if let Some(target) = targets.first() {
+        parsed.subject = Some(target.value.clone());
+    }
+    
+    // Step 2: Detect keywords using fuzzy matching
+    let keywords = detect_keywords(user_input);
+    parsed.keywords = keywords.iter().map(|(k, _)| k.clone()).collect();
+    
+    // Step 3: Detect context
+    parsed.context = detect_context(user_input);
+    
+    // Step 4: Calculate confidence
+    let target_confidence = if parsed.subject.is_some() { 0.5 } else { 0.0 };
+    let keyword_confidence = if !parsed.keywords.is_empty() {
+        keywords.iter().map(|(_, s)| s).sum::<f32>() / keywords.len() as f32 * 0.5
+    } else {
+        0.0
+    };
+    parsed.confidence = target_confidence + keyword_confidence;
+    
+    // Step 5: Generate suggestions
+    parsed.suggestions = generate_suggestions(&targets, &keywords);
+    
+    // Step 6: Check if clarification needed
+    if parsed.subject.is_none() {
+        parsed.needs_clarification = true;
+        parsed.clarification_questions.push("What is the target? (IP, domain, email, or @username)".to_string());
+    }
+    
+    if parsed.keywords.is_empty() {
+        parsed.needs_clarification = true;
+        parsed.clarification_questions.push("What type of attack? (password, scan, web, social, exploit, etc.)".to_string());
+    }
+    
+    // Step 7: Generate explanation
+    if !parsed.keywords.is_empty() {
+        let definitions = get_keyword_definitions();
+        let mut tools_list = Vec::new();
+        for keyword in &parsed.keywords {
+            if let Some(def) = definitions.iter().find(|d| d.keyword == *keyword) {
+                tools_list.extend(def.tools.iter().take(3).cloned());
+            }
+        }
+        parsed.explanation = format!(
+            "Attack sequence: {} → Tools: {}",
+            parsed.keywords.join(" + "),
+            tools_list.join(", ")
+        );
+    } else {
+        parsed.explanation = "No attack sequence detected".to_string();
+    }
+    
+    // Step 8: Generate command summary
+    parsed.command = format!(
+        "fenrir_attack --target {} --keywords {} {}",
+        parsed.subject.as_deref().unwrap_or("?"),
+        parsed.keywords.join(","),
+        parsed.context.as_deref().unwrap_or("")
+    ).trim().to_string();
+    
+    // Step 9: Log interaction
+    log_interaction(user_input, &parsed);
+    
+    Ok(parsed)
 }
 
 // ============================================================================
-// USER DOUBLE-CHECK
+// HELPER FUNCTIONS
 // ============================================================================
 
-pub async fn confirm_interpretation(client: &Client, parsed: &ParsedCommand) -> Result<bool, String> {
-    println!("\n🤖 ZAI Interpretation:");
-    println!("   Subject: {}", parsed.subject.as_ref().unwrap_or(&"None".to_string()));
-    println!("   Context: {}", parsed.context.as_ref().unwrap_or(&"None".to_string()));
-    println!("   Keywords: {}", parsed.keywords.join(", "));
-    println!("   Confidence: {:.1}%", parsed.confidence * 100.0);
-    println!("   Plan: {}", parsed.explanation);
-    println!("\n❓ Is this interpretation correct? (yes/no): ");
+pub fn get_keyword_info(keyword: &str) -> Option<(String, Vec<String>, bool, u64)> {
+    let definitions = get_keyword_definitions();
+    definitions.iter()
+        .find(|d| d.keyword == keyword)
+        .map(|d| (d.description.clone(), d.tools.clone(), d.async_execution, d.memory_limit_mb))
+}
 
-    // In interactive mode, we'd read user input here
-    // For now, assume confirmation if confidence > 0.8
-    Ok(parsed.confidence > 0.8)
+pub fn get_all_keywords() -> Vec<String> {
+    get_keyword_definitions().iter().map(|d| d.keyword.clone()).collect()
+}
+
+pub fn get_keyword_tools(keyword: &str) -> Vec<String> {
+    let definitions = get_keyword_definitions();
+    definitions.iter()
+        .find(|d| d.keyword == keyword)
+        .map(|d| d.tools.clone())
+        .unwrap_or_default()
 }
 
 // ============================================================================
 // LOGGING
 // ============================================================================
 
-fn log_interaction(original: &str, translated: &str, parsed: &ZaiInterpretation, command: &str) {
+fn log_interaction(input: &str, parsed: &ParsedCommand) {
     let path = history_path();
     if let Some(parent) = path.parent() {
         let _ = fs::create_dir_all(parent);
     }
 
-    let entry = json!({
+    let entry = serde_json::json!({
         "timestamp": Utc::now().to_rfc3339(),
-        "original_input": original,
-        "translated_input": translated,
+        "input": input,
         "subject": parsed.subject,
-        "context": parsed.context,
         "keywords": parsed.keywords,
+        "context": parsed.context,
         "confidence": parsed.confidence,
-        "generated_command": command,
-        "reasoning": parsed.reasoning
+        "suggestions": parsed.suggestions,
     });
 
     if let Ok(mut file) = OpenOptions::new().create(true).append(true).open(path) {
@@ -712,77 +758,63 @@ fn log_interaction(original: &str, translated: &str, parsed: &ZaiInterpretation,
 
 fn history_path() -> PathBuf {
     let base = dirs::config_dir().unwrap_or_else(|| PathBuf::from("."));
-    base.join("fenrir").join("zai_interactions.jsonl")
+    base.join("fenrir").join("nlp_history.jsonl")
 }
 
 // ============================================================================
-// LEGACY COMPATIBILITY
+// TESTS
 // ============================================================================
 
-// Keep old functions for backward compatibility during transition
-pub async fn parse_command_legacy(client: &Client, user_input: &str) -> Result<ParsedCommand, String> {
-    // Fallback to old NLP if ZAI fails
-    translate_with_ai(client, user_input).await.map(|cmd| ParsedCommand {
-        command: cmd.command,
-        explanation: cmd.explanation,
-        source: cmd.source,
-        subject: None,
-        context: None,
-        keywords: vec![],
-        confidence: 0.5,
-        needs_clarification: false,
-        clarification_questions: vec![],
-    })
-}
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-async fn translate_with_ai(client: &Client, user_input: &str) -> Result<ParsedCommand, String> {
-    // Keep old implementation as fallback
-    let api_key = std::env::var("GROK_API_KEY")
-        .or_else(|_| std::env::var("XAI_API_KEY"))
-        .map_err(|_| "GROK_API_KEY or XAI_API_KEY not set".to_string())?;
-
-    let system_prompt = r#"Convert natural language to bash command. Return JSON: {"command": "cmd", "explanation": "desc"}"#;
-
-    let response = client
-        .post("https://api.x.ai/v1/chat/completions")
-        .header("Authorization", format!("Bearer {}", api_key))
-        .header("Content-Type", "application/json")
-        .json(&json!({
-            "model": "grok-3",
-            "messages": [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_input}
-            ],
-            "max_tokens": 500,
-            "temperature": 0.3
-        }))
-        .send()
-        .await
-        .map_err(|e| format!("Request failed: {}", e))?;
-
-    if !response.status().is_success() {
-        return Err(format!("API error: {}", response.status()));
+    #[test]
+    fn test_detect_ipv4() {
+        let targets = detect_targets("scan 192.168.1.1 for vulnerabilities");
+        assert!(!targets.is_empty());
+        assert_eq!(targets[0].target_type, TargetType::IPv4);
+        assert_eq!(targets[0].value, "192.168.1.1");
     }
 
-    let json_response: serde_json::Value = response.json().await
-        .map_err(|e| format!("Parse error: {}", e))?;
+    #[test]
+    fn test_detect_domain() {
+        let targets = detect_targets("scan example.com");
+        assert!(!targets.is_empty());
+        assert_eq!(targets[0].target_type, TargetType::Domain);
+    }
 
-    let content = json_response["choices"][0]["message"]["content"]
-        .as_str()
-        .ok_or("No content")?;
+    #[test]
+    fn test_detect_email() {
+        let targets = detect_targets("crack password for user@example.com");
+        assert!(!targets.is_empty());
+        assert_eq!(targets[0].target_type, TargetType::Email);
+    }
 
-    let parsed: serde_json::Value = serde_json::from_str(content)
-        .map_err(|_| format!("Invalid JSON: {}", content))?;
+    #[test]
+    fn test_detect_keywords() {
+        let keywords = detect_keywords("scan for vulnerabilities and crack passwords");
+        assert!(keywords.iter().any(|(k, _)| k == "scan"));
+        assert!(keywords.iter().any(|(k, _)| k == "password"));
+    }
 
-    Ok(ParsedCommand {
-        command: parsed["command"].as_str().unwrap_or("echo 'error'").to_string(),
-        explanation: parsed["explanation"].as_str().unwrap_or("Error").to_string(),
-        source: "legacy".to_string(),
-        subject: None,
-        context: None,
-        keywords: vec![],
-        confidence: 0.5,
-        needs_clarification: false,
-        clarification_questions: vec![],
-    })
+    #[test]
+    fn test_detect_keywords_portuguese() {
+        let keywords = detect_keywords("escanear e quebrar senha");
+        assert!(keywords.iter().any(|(k, _)| k == "scan"));
+        assert!(keywords.iter().any(|(k, _)| k == "password"));
+    }
+
+    #[test]
+    fn test_fuzzy_match() {
+        assert!(fuzzy_match("password", "password") == 1.0);
+        assert!(fuzzy_match("passwords", "password") > 0.5);
+        assert!(fuzzy_match("xyz", "password") < 0.5);
+    }
+
+    #[test]
+    fn test_context_detection() {
+        assert_eq!(detect_context("scan stealth mode"), Some("stealth mode".to_string()));
+        assert_eq!(detect_context("aggressive full scan"), Some("aggressive mode".to_string()));
+    }
 }
