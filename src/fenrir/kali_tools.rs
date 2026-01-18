@@ -2,10 +2,8 @@
 // Penetration testing and security assessment tools
 // For authorized bug bounty and security auditing purposes
 
-use std::process::Command;
-use std::path::Path;
 use serde::{Deserialize, Serialize};
-use std::os::unix::process::CommandExt;
+use std::process::Command;
 
 // ============================================================================
 // KALI TOOL CATEGORIES
@@ -70,33 +68,45 @@ impl KaliTool {
 
     pub fn execute(&self, args: &[String]) -> Result<String, String> {
         if !self.is_available() {
-            return Err(format!("Tool '{}' is not installed. Install with: {}",
+            return Err(format!(
+                "Tool '{}' is not installed. Install with: {}",
                 self.name,
-                self.install_command.as_ref().unwrap_or(&format!("sudo apt install {}", self.name))
+                self.install_command
+                    .as_ref()
+                    .unwrap_or(&format!("brew install {}", self.name))
             ));
         }
 
         // Check if running as root on Unix-like systems
-        if self.requires_root {
+        let use_sudo = if self.requires_root {
             #[cfg(unix)]
             {
                 use std::process::Command;
-                let uid_check = Command::new("id")
-                    .arg("-u")
-                    .output();
+                let uid_check = Command::new("id").arg("-u").output();
 
                 if let Ok(output) = uid_check {
                     let uid_str = String::from_utf8_lossy(&output.stdout).trim().to_string();
-                    if uid_str != "0" {
-                        return Err(format!("Tool '{}' requires root privileges. Run with sudo.", self.name));
-                    }
+                    uid_str != "0"
+                } else {
+                    false
                 }
             }
-        }
+            #[cfg(not(unix))]
+            {
+                false
+            }
+        } else {
+            false
+        };
 
-        let output = Command::new(&self.command)
-            .args(args)
-            .output();
+        let output = if use_sudo {
+            // Run with sudo
+            let mut sudo_args = vec!["-S".to_string(), self.command.clone()];
+            sudo_args.extend(args.iter().cloned());
+            Command::new("sudo").args(&sudo_args).output()
+        } else {
+            Command::new(&self.command).args(args).output()
+        };
 
         match output {
             Ok(result) => {
@@ -107,7 +117,7 @@ impl KaliTool {
                     Err(format!("Command failed: {}", stderr))
                 }
             }
-            Err(e) => Err(format!("Failed to execute {}: {}", self.name, e))
+            Err(e) => Err(format!("Failed to execute {}: {}", self.name, e)),
         }
     }
 }
@@ -126,7 +136,7 @@ pub fn get_kali_tools() -> Vec<KaliTool> {
             command: "nmap".to_string(),
             typical_args: vec!["-sV".to_string(), "-sC".to_string()],
             requires_root: true,
-            install_command: Some("sudo apt install nmap".to_string()),
+            install_command: Some("brew install nmap".to_string()),
         },
         KaliTool {
             name: "netdiscover".to_string(),
@@ -135,7 +145,7 @@ pub fn get_kali_tools() -> Vec<KaliTool> {
             command: "netdiscover".to_string(),
             typical_args: vec!["-r".to_string()],
             requires_root: true,
-            install_command: Some("sudo apt install netdiscover".to_string()),
+            install_command: Some("brew install netdiscover".to_string()),
         },
         KaliTool {
             name: "theHarvester".to_string(),
@@ -144,9 +154,8 @@ pub fn get_kali_tools() -> Vec<KaliTool> {
             command: "theHarvester".to_string(),
             typical_args: vec!["-d".to_string(), "-b".to_string(), "google".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install theharvester".to_string()),
+            install_command: Some("brew install theharvester".to_string()),
         },
-
         // SCANNING
         KaliTool {
             name: "nikto".to_string(),
@@ -155,7 +164,7 @@ pub fn get_kali_tools() -> Vec<KaliTool> {
             command: "nikto".to_string(),
             typical_args: vec!["-h".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install nikto".to_string()),
+            install_command: Some("brew install nikto".to_string()),
         },
         KaliTool {
             name: "masscan".to_string(),
@@ -164,9 +173,8 @@ pub fn get_kali_tools() -> Vec<KaliTool> {
             command: "masscan".to_string(),
             typical_args: vec!["-p80,8000-8100".to_string()],
             requires_root: true,
-            install_command: Some("sudo apt install masscan".to_string()),
+            install_command: Some("brew install masscan".to_string()),
         },
-
         // EXPLOITATION
         KaliTool {
             name: "metasploit-framework".to_string(),
@@ -175,7 +183,7 @@ pub fn get_kali_tools() -> Vec<KaliTool> {
             command: "msfconsole".to_string(),
             typical_args: vec!["-q".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install metasploit-framework".to_string()),
+            install_command: Some("brew install metasploit-framework".to_string()),
         },
         KaliTool {
             name: "sqlmap".to_string(),
@@ -184,7 +192,7 @@ pub fn get_kali_tools() -> Vec<KaliTool> {
             command: "sqlmap".to_string(),
             typical_args: vec!["-u".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install sqlmap".to_string()),
+            install_command: Some("brew install sqlmap".to_string()),
         },
         KaliTool {
             name: "exploitdb".to_string(),
@@ -193,9 +201,8 @@ pub fn get_kali_tools() -> Vec<KaliTool> {
             command: "searchsploit".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install exploitdb".to_string()),
+            install_command: Some("brew install exploitdb".to_string()),
         },
-
         // PASSWORD ATTACKS
         KaliTool {
             name: "john".to_string(),
@@ -204,7 +211,7 @@ pub fn get_kali_tools() -> Vec<KaliTool> {
             command: "john".to_string(),
             typical_args: vec!["--wordlist".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install john".to_string()),
+            install_command: Some("brew install john".to_string()),
         },
         KaliTool {
             name: "hashcat".to_string(),
@@ -213,7 +220,7 @@ pub fn get_kali_tools() -> Vec<KaliTool> {
             command: "hashcat".to_string(),
             typical_args: vec!["-m".to_string(), "0".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install hashcat".to_string()),
+            install_command: Some("brew install hashcat".to_string()),
         },
         KaliTool {
             name: "hydra".to_string(),
@@ -222,9 +229,8 @@ pub fn get_kali_tools() -> Vec<KaliTool> {
             command: "hydra".to_string(),
             typical_args: vec!["-l".to_string(), "user".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install hydra".to_string()),
+            install_command: Some("brew install hydra".to_string()),
         },
-
         // WEB APPLICATIONS
         KaliTool {
             name: "burpsuite".to_string(),
@@ -233,7 +239,7 @@ pub fn get_kali_tools() -> Vec<KaliTool> {
             command: "burpsuite".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install burpsuite".to_string()),
+            install_command: Some("brew install burpsuite".to_string()),
         },
         KaliTool {
             name: "owasp-zap".to_string(),
@@ -242,9 +248,8 @@ pub fn get_kali_tools() -> Vec<KaliTool> {
             command: "zap-cli".to_string(),
             typical_args: vec!["quick-scan".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install zaproxy".to_string()),
+            install_command: Some("brew install zaproxy".to_string()),
         },
-
         // WIRELESS ATTACKS
         KaliTool {
             name: "aircrack-ng".to_string(),
@@ -253,7 +258,7 @@ pub fn get_kali_tools() -> Vec<KaliTool> {
             command: "aircrack-ng".to_string(),
             typical_args: vec!["-w".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install aircrack-ng".to_string()),
+            install_command: Some("brew install aircrack-ng".to_string()),
         },
         KaliTool {
             name: "wifite".to_string(),
@@ -262,9 +267,8 @@ pub fn get_kali_tools() -> Vec<KaliTool> {
             command: "wifite".to_string(),
             typical_args: vec!["--all".to_string()],
             requires_root: true,
-            install_command: Some("sudo apt install wifite".to_string()),
+            install_command: Some("brew install wifite".to_string()),
         },
-
         // SNIFFING/SPOOFING
         KaliTool {
             name: "wireshark".to_string(),
@@ -273,7 +277,7 @@ pub fn get_kali_tools() -> Vec<KaliTool> {
             command: "wireshark".to_string(),
             typical_args: vec!["-i".to_string(), "eth0".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install wireshark".to_string()),
+            install_command: Some("brew install wireshark".to_string()),
         },
         KaliTool {
             name: "ettercap".to_string(),
@@ -282,9 +286,8 @@ pub fn get_kali_tools() -> Vec<KaliTool> {
             command: "ettercap".to_string(),
             typical_args: vec!["-T".to_string(), "-M".to_string(), "arp".to_string()],
             requires_root: true,
-            install_command: Some("sudo apt install ettercap-text-only".to_string()),
+            install_command: Some("brew install ettercap-text-only".to_string()),
         },
-
         // REVERSE ENGINEERING
         KaliTool {
             name: "ghidra".to_string(),
@@ -293,7 +296,7 @@ pub fn get_kali_tools() -> Vec<KaliTool> {
             command: "ghidraRun".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install ghidra".to_string()),
+            install_command: Some("brew install ghidra".to_string()),
         },
         KaliTool {
             name: "radare2".to_string(),
@@ -302,7 +305,7 @@ pub fn get_kali_tools() -> Vec<KaliTool> {
             command: "r2".to_string(),
             typical_args: vec!["-A".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install radare2".to_string()),
+            install_command: Some("brew install radare2".to_string()),
         },
         KaliTool {
             name: "objdump".to_string(),
@@ -311,7 +314,7 @@ pub fn get_kali_tools() -> Vec<KaliTool> {
             command: "objdump".to_string(),
             typical_args: vec!["-d".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install binutils".to_string()),
+            install_command: Some("brew install binutils".to_string()),
         },
         KaliTool {
             name: "strings".to_string(),
@@ -320,9 +323,8 @@ pub fn get_kali_tools() -> Vec<KaliTool> {
             command: "strings".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install binutils".to_string()),
+            install_command: Some("brew install binutils".to_string()),
         },
-
         // FORENSICS
         KaliTool {
             name: "autopsy".to_string(),
@@ -331,7 +333,7 @@ pub fn get_kali_tools() -> Vec<KaliTool> {
             command: "autopsy".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install autopsy".to_string()),
+            install_command: Some("brew install autopsy".to_string()),
         },
         KaliTool {
             name: "binwalk".to_string(),
@@ -340,7 +342,7 @@ pub fn get_kali_tools() -> Vec<KaliTool> {
             command: "binwalk".to_string(),
             typical_args: vec!["-e".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install binwalk".to_string()),
+            install_command: Some("brew install binwalk".to_string()),
         },
         KaliTool {
             name: "volatility".to_string(),
@@ -349,7 +351,7 @@ pub fn get_kali_tools() -> Vec<KaliTool> {
             command: "vol".to_string(),
             typical_args: vec!["-f".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install volatility".to_string()),
+            install_command: Some("brew install volatility".to_string()),
         },
     ]
 }
@@ -395,13 +397,13 @@ pub struct BiteConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum BiteIntensity {
     #[serde(rename = "passive")]
-    Passive,        // Recon only, no active scanning
+    Passive, // Recon only, no active scanning
     #[serde(rename = "cautious")]
-    Cautious,       // Light scanning, stealthy
+    Cautious, // Light scanning, stealthy
     #[serde(rename = "aggressive")]
-    Aggressive,     // Full penetration test
+    Aggressive, // Full penetration test
     #[serde(rename = "godmode")]
-    GodMode,        // All tools, maximum aggression (with authorization)
+    GodMode, // All tools, maximum aggression (with authorization)
 }
 
 pub struct BiteResult {
@@ -427,13 +429,24 @@ pub async fn bite(target: &str, config: BiteConfig) -> Result<BiteResult, String
     let mut exploited = Vec::new();
 
     // Phase 1: Reconnaissance
-    if matches!(config.intensity, BiteIntensity::Passive | BiteIntensity::Cautious | BiteIntensity::Aggressive | BiteIntensity::GodMode) {
+    if matches!(
+        config.intensity,
+        BiteIntensity::Passive
+            | BiteIntensity::Cautious
+            | BiteIntensity::Aggressive
+            | BiteIntensity::GodMode
+    ) {
         println!("\n🔍 Phase 1: Reconnaissance");
 
         if let Some(nmap) = find_tool("nmap") {
             if nmap.is_available() {
                 println!("  📡 Running nmap reconnaissance...");
-                match nmap.execute(&["-sV".to_string(), "-sC".to_string(), "-T4".to_string(), target.to_string()]) {
+                match nmap.execute(&[
+                    "-sV".to_string(),
+                    "-sC".to_string(),
+                    "-T4".to_string(),
+                    target.to_string(),
+                ]) {
                     Ok(output) => {
                         findings.push(format!("NMAP RECON:\n{}", output));
                         println!("  ✅ Nmap complete");
@@ -445,7 +458,10 @@ pub async fn bite(target: &str, config: BiteConfig) -> Result<BiteResult, String
     }
 
     // Phase 2: Vulnerability Scanning
-    if matches!(config.intensity, BiteIntensity::Cautious | BiteIntensity::Aggressive | BiteIntensity::GodMode) {
+    if matches!(
+        config.intensity,
+        BiteIntensity::Cautious | BiteIntensity::Aggressive | BiteIntensity::GodMode
+    ) {
         println!("\n🔎 Phase 2: Vulnerability Scanning");
 
         for category in &config.categories {
@@ -470,13 +486,18 @@ pub async fn bite(target: &str, config: BiteConfig) -> Result<BiteResult, String
     }
 
     // Phase 3: Exploitation (ONLY with explicit authorization for bug bounty/legal testing)
-    if matches!(config.intensity, BiteIntensity::Aggressive | BiteIntensity::GodMode) && config.auto_exploit {
+    if matches!(
+        config.intensity,
+        BiteIntensity::Aggressive | BiteIntensity::GodMode
+    ) && config.auto_exploit
+    {
         println!("\n💀 Phase 3: Exploitation (AUTHORIZED SECURITY TESTING ONLY)");
 
         if let Some(sqlmap) = find_tool("sqlmap") {
             if sqlmap.is_available() {
                 println!("  ⚠️  Running SQL injection test...");
-                match sqlmap.execute(&["-u".to_string(), target.to_string(), "--batch".to_string()]) {
+                match sqlmap.execute(&["-u".to_string(), target.to_string(), "--batch".to_string()])
+                {
                     Ok(output) => {
                         if output.contains("injectable") {
                             exploited.push(format!("SQL INJECTION FOUND:\n{}", output));
@@ -519,7 +540,10 @@ pub async fn bite(target: &str, config: BiteConfig) -> Result<BiteResult, String
         execution_time: start.elapsed(),
     };
 
-    println!("\n✅ BITE COMPLETE - Time: {:.2}s", result.execution_time.as_secs_f64());
+    println!(
+        "\n✅ BITE COMPLETE - Time: {:.2}s",
+        result.execution_time.as_secs_f64()
+    );
 
     // Save report if path provided
     if let Some(path) = &config.report_path {
@@ -531,7 +555,12 @@ pub async fn bite(target: &str, config: BiteConfig) -> Result<BiteResult, String
     Ok(result)
 }
 
-fn generate_bite_report(findings: &[String], vulnerabilities: &[String], exploited: &[String], target: &str) -> String {
+fn generate_bite_report(
+    findings: &[String],
+    vulnerabilities: &[String],
+    exploited: &[String],
+    target: &str,
+) -> String {
     let mut report = format!(
         "🐺 FENRIR BITE REPORT - {}\n\
          ════════════════════════════\n\n\
@@ -587,23 +616,23 @@ pub struct ScanConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ScanType {
     #[serde(rename = "quick")]
-    Quick,           // Fast scan for open ports and services
+    Quick, // Fast scan for open ports and services
     #[serde(rename = "comprehensive")]
-    Comprehensive,   // Full security assessment
+    Comprehensive, // Full security assessment
     #[serde(rename = "stealth")]
-    Stealth,         // Quiet scan to avoid detection
+    Stealth, // Quiet scan to avoid detection
     #[serde(rename = "compliance")]
-    Compliance,      // Compliance-focused scan (PCI-DSS, HIPAA, etc.)
+    Compliance, // Compliance-focused scan (PCI-DSS, HIPAA, etc.)
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ScanDepth {
     #[serde(rename = "surface")]
-    Surface,         // Top-level only
+    Surface, // Top-level only
     #[serde(rename = "deep")]
-    Deep,            // Thorough analysis
+    Deep, // Thorough analysis
     #[serde(rename = "exhaustive")]
-    Exhaustive,      // Complete assessment
+    Exhaustive, // Complete assessment
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -664,7 +693,12 @@ pub async fn scan(target: &str, config: ScanConfig) -> Result<ScanResult, String
                 ScanType::Quick => vec!["-T4".to_string(), "-F".to_string(), target.to_string()],
                 ScanType::Stealth => vec!["-sS".to_string(), "-T1".to_string(), target.to_string()],
                 ScanType::Comprehensive | ScanType::Compliance => {
-                    vec!["-p-".to_string(), "-sV".to_string(), "-sC".to_string(), target.to_string()]
+                    vec![
+                        "-p-".to_string(),
+                        "-sV".to_string(),
+                        "-sC".to_string(),
+                        target.to_string(),
+                    ]
                 }
             };
 
@@ -769,7 +803,11 @@ fn parse_nmap_ports(output: &str) -> Vec<PortInfo> {
                             port: port_num,
                             protocol: port_protocol[1].to_string(),
                             state: parts[1].to_string(),
-                            service: if parts.len() > 2 { Some(parts[2].to_string()) } else { None },
+                            service: if parts.len() > 2 {
+                                Some(parts[2].to_string())
+                            } else {
+                                None
+                            },
                         });
                     }
                 }
@@ -792,7 +830,11 @@ fn parse_nmap_services(output: &str) -> Vec<ServiceInfo> {
                 if parts.len() >= 3 {
                     services.push(ServiceInfo {
                         name: parts[2].to_string(),
-                        version: if parts.len() > 3 { Some(parts[3..].join(" ")) } else { None },
+                        version: if parts.len() > 3 {
+                            Some(parts[3..].join(" "))
+                        } else {
+                            None
+                        },
                         vulnerabilities: Vec::new(),
                     });
                 }
@@ -812,10 +854,10 @@ fn calculate_risk_score(ports: &[PortInfo], _services: &[ServiceInfo]) -> u8 {
     // Extra risk for high-risk ports
     for port in ports {
         match port.port {
-            21 | 23 | 135 | 139 | 445 => score += 10,  // FTP, Telnet, SMB
-            22 | 3389 => score += 5,                      // SSH, RDP
-            80 | 443 => score += 3,                       // HTTP, HTTPS
-            3306 | 5432 | 1433 => score += 7,            // Databases
+            21 | 23 | 135 | 139 | 445 => score += 10, // FTP, Telnet, SMB
+            22 | 3389 => score += 5,                  // SSH, RDP
+            80 | 443 => score += 3,                   // HTTP, HTTPS
+            3306 | 5432 | 1433 => score += 7,         // Databases
             _ => {}
         }
     }

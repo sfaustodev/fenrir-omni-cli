@@ -12,6 +12,33 @@ pub trait FenrirPlugin: Send + Sync {
     fn run(&self, input: &str) -> anyhow::Result<String>;
 }
 
+/// Plugin para descoberta stealthy de credenciais Netflix.
+pub struct NetflixCredentialHunter;
+
+impl NetflixCredentialHunter {
+    pub fn new() -> Self {
+        Self
+    }
+}
+
+impl FenrirPlugin for NetflixCredentialHunter {
+    fn name(&self) -> &str {
+        "netflix-credential-hunter"
+    }
+
+    fn description(&self) -> &str {
+        "Stealthy discovery of Netflix credentials on networks using OSINT and passive scanning"
+    }
+
+    fn run(&self, input: &str) -> anyhow::Result<String> {
+        // TODO: Implement actual Netflix credential hunting logic
+        Ok(format!(
+            "Netflix credential hunter plugin executed with input: {}",
+            input
+        ))
+    }
+}
+
 type PluginCreate = unsafe fn() -> *mut dyn FenrirPlugin;
 
 /// Registry simples de plugins.
@@ -40,8 +67,7 @@ impl PluginRegistry {
         let constructor: libloading::Symbol<PluginCreate> = lib.get(b"fenrir_plugin_create")?;
         let boxed_raw = constructor();
         let plugin = Box::from_raw(boxed_raw);
-        self.plugins
-            .insert(plugin.name().to_string(), plugin);
+        self.plugins.insert(plugin.name().to_string(), plugin);
         self._libs.push(lib);
         Ok(())
     }

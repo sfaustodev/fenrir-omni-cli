@@ -3,11 +3,9 @@
 // Coordinates all AI operations
 
 use crate::fenrir_ai_layer::{
-    FenrirTask, TaskType, AIProvider, ExecutionMode, TaskStatus,
-    AIRequest, AIResponse, call_ai
+    call_ai, AIProvider, AIRequest, ExecutionMode, FenrirTask, TaskStatus, TaskType,
 };
 use std::time::Instant;
-use tokio::join;
 
 // ============================================================================
 // ORCHESTRATOR - THE BRAIN
@@ -20,9 +18,8 @@ pub struct FenrirOrchestrator {
 
 impl FenrirOrchestrator {
     pub fn new() -> Self {
-        let god_mode = std::env::var("FENRIR_MODE")
-            .unwrap_or_else(|_| String::from("normal"))
-            == "godmode";
+        let god_mode =
+            std::env::var("FENRIR_MODE").unwrap_or_else(|_| String::from("normal")) == "godmode";
 
         FenrirOrchestrator {
             god_mode,
@@ -41,7 +38,10 @@ impl FenrirOrchestrator {
         // Step 0: Read FENRIR_MCP.md as system prompt
         let system_prompt = match std::fs::read_to_string("FENRIR_MCP.md") {
             Ok(content) => {
-                println!("📚 FENRIR_MCP.md loaded ({:.1} KB)", content.len() as f64 / 1024.0);
+                println!(
+                    "📚 FENRIR_MCP.md loaded ({:.1} KB)",
+                    content.len() as f64 / 1024.0
+                );
                 content
             }
             Err(e) => {
@@ -52,7 +52,9 @@ impl FenrirOrchestrator {
 
         // Step 1: Call Gemini for translation
         println!("🔄 Calling Gemini for translation...");
-        let translated = self.translate_input_with_context(user_input.clone(), &system_prompt).await;
+        let translated = self
+            .translate_input_with_context(user_input.clone(), &system_prompt)
+            .await;
         println!("✅ Gemini: {}", translated);
 
         // Step 2: Create task structure
@@ -97,12 +99,13 @@ impl FenrirOrchestrator {
 
         match call_ai(request).await {
             response if response.success => response.content,
-            _ => String::from("Translation failed - using local fallback")
+            _ => String::from("Translation failed - using local fallback"),
         }
     }
 
     async fn translate_input(&self, input: String) -> String {
-        self.translate_input_with_context(input, "Default context").await
+        self.translate_input_with_context(input, "Default context")
+            .await
     }
 
     // ------------------------------------------------------------------------
@@ -148,9 +151,13 @@ impl FenrirOrchestrator {
         }
 
         // Check for Kali tool usage
-        if cmd_lower.contains("nmap") || cmd_lower.contains("nikto") ||
-           cmd_lower.contains("sqlmap") || cmd_lower.contains("metasploit") ||
-           cmd_lower.contains("john") || cmd_lower.contains("hashcat") {
+        if cmd_lower.contains("nmap")
+            || cmd_lower.contains("nikto")
+            || cmd_lower.contains("sqlmap")
+            || cmd_lower.contains("metasploit")
+            || cmd_lower.contains("john")
+            || cmd_lower.contains("hashcat")
+        {
             return TaskType::Pentest;
         }
 
@@ -172,7 +179,7 @@ impl FenrirOrchestrator {
 
     fn assign_ai(&self, task_type: &TaskType) -> AIProvider {
         match task_type {
-            TaskType::ExecuteCommand => AIProvider::GLM_Orchestrator,  // Execute directly
+            TaskType::ExecuteCommand => AIProvider::GLM_Orchestrator, // Execute directly
             TaskType::GenerateCode => AIProvider::Grok,
             TaskType::Pentest => {
                 // For pentesting, use Venice Red Team for aggressive operations
@@ -184,12 +191,12 @@ impl FenrirOrchestrator {
                     AIProvider::Grok
                 }
             }
-            TaskType::MalwareAnalysis => AIProvider::VeniceRedTeam,  // Red team for malware
+            TaskType::MalwareAnalysis => AIProvider::VeniceRedTeam, // Red team for malware
             TaskType::SecurityScan => {
                 if self.god_mode {
                     AIProvider::VeniceRedTeam
                 } else {
-                    AIProvider::Grok  // Grok can do security scanning with guardrails
+                    AIProvider::Grok // Grok can do security scanning with guardrails
                 }
             }
             TaskType::NetworkRecon => AIProvider::Grok,
@@ -234,7 +241,8 @@ impl FenrirOrchestrator {
     async fn split_into_subtasks(&self, mut task: FenrirTask) -> FenrirTask {
         println!("✂️  Splitting complex task into subtasks...");
 
-        let commands: Vec<&str> = task.translated_command
+        let commands: Vec<&str> = task
+            .translated_command
             .split("&&")
             .map(|s| s.trim())
             .collect();
@@ -285,24 +293,22 @@ impl FenrirOrchestrator {
 
         // Execute based on assigned AI
         let result = match updated_task.assigned_ai {
-            AIProvider::GLM_Orchestrator => {
-                self.execute_directly(&updated_task).await
-            }
+            AIProvider::GLM_Orchestrator => self.execute_directly(&updated_task).await,
             AIProvider::Grok => {
-                self.delegate_to_ai(updated_task.clone(), AIProvider::Grok).await
+                self.delegate_to_ai(updated_task.clone(), AIProvider::Grok)
+                    .await
             }
             AIProvider::VeniceRedTeam => {
-                self.delegate_to_ai(updated_task.clone(), AIProvider::VeniceRedTeam).await
+                self.delegate_to_ai(updated_task.clone(), AIProvider::VeniceRedTeam)
+                    .await
             }
-            _ => {
-                crate::fenrir_ai_layer::AIResponse {
-                    success: false,
-                    content: String::from("Invalid AI provider"),
-                    error: Some(String::from("Cannot execute with Gemini")),
-                    provider: AIProvider::GeminiTranslator,
-                    execution_time_ms: 0,
-                }
-            }
+            _ => crate::fenrir_ai_layer::AIResponse {
+                success: false,
+                content: String::from("Invalid AI provider"),
+                error: Some(String::from("Cannot execute with Gemini")),
+                provider: AIProvider::GeminiTranslator,
+                execution_time_ms: 0,
+            },
         };
 
         updated_task.result = Some(crate::fenrir_ai_layer::TaskResult {
@@ -330,14 +336,11 @@ impl FenrirOrchestrator {
             subtask.status = TaskStatus::InProgress;
 
             let result = match subtask.assigned_ai {
-                AIProvider::GLM_Orchestrator => {
-                    self.execute_directly(&subtask).await
-                }
-                AIProvider::Grok => {
-                    self.delegate_to_ai(subtask.clone(), AIProvider::Grok).await
-                }
+                AIProvider::GLM_Orchestrator => self.execute_directly(&subtask).await,
+                AIProvider::Grok => self.delegate_to_ai(subtask.clone(), AIProvider::Grok).await,
                 AIProvider::VeniceRedTeam => {
-                    self.delegate_to_ai(subtask.clone(), AIProvider::VeniceRedTeam).await
+                    self.delegate_to_ai(subtask.clone(), AIProvider::VeniceRedTeam)
+                        .await
                 }
                 _ => continue,
             };
@@ -359,10 +362,14 @@ impl FenrirOrchestrator {
             results.push(result.content);
         }
 
-        task.subtasks = task.subtasks.into_iter().map(|mut t| {
-            // Update status from results
-            t
-        }).collect();
+        task.subtasks = task
+            .subtasks
+            .into_iter()
+            .map(|t| {
+                // Update status from results
+                t
+            })
+            .collect();
 
         // Aggregate results
         let aggregated_output = results.join("\n\n");
@@ -423,11 +430,15 @@ impl FenrirOrchestrator {
                 error: Some(format!("Failed to execute: {}", e)),
                 provider: AIProvider::GLM_Orchestrator,
                 execution_time_ms: 0,
-            }
+            },
         }
     }
 
-    async fn delegate_to_ai(&self, task: FenrirTask, provider: AIProvider) -> crate::fenrir_ai_layer::AIResponse {
+    async fn delegate_to_ai(
+        &self,
+        task: FenrirTask,
+        provider: AIProvider,
+    ) -> crate::fenrir_ai_layer::AIResponse {
         let prompt = format!(
             "Execute this task:\n\nDescription: {}\nCommand: {}\n\nProvide detailed output.",
             task.description, task.translated_command
@@ -435,11 +446,14 @@ impl FenrirOrchestrator {
 
         let request = AIRequest {
             provider: provider.clone(),
-            system_prompt: format!("You are Fenrir's {}. Execute the task.", match provider {
-                AIProvider::Grok => "general AI assistant",
-                AIProvider::VeniceRedTeam => "red team operator",
-                _ => "AI assistant",
-            }),
+            system_prompt: format!(
+                "You are Fenrir's {}. Execute the task.",
+                match provider {
+                    AIProvider::Grok => "general AI assistant",
+                    AIProvider::VeniceRedTeam => "red team operator",
+                    _ => "AI assistant",
+                }
+            ),
             user_message: prompt,
             max_tokens: Some(4096),
             temperature: Some(0.7),

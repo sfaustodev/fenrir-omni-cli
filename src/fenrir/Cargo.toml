@@ -1,8 +1,8 @@
 [package]
 name = "fenrir-cli"
-version = "0.1.0"
+version = "1.6.66"
 edition = "2021"
-description = "🐺 FENRIR CLI - Sistema de segurança avançado com God Mode"
+description = "🐺 FENRIR v1.6.66 - Smart Attack Orchestration Platform with Stealth-First Approach"
 
 [[bin]]
 name = "fenrir"
@@ -16,7 +16,10 @@ serde_json = { workspace = true }
 chrono = { workspace = true }
 reqwest = { workspace = true }
 url = { workspace = true }
+urlencoding = { workspace = true }
 tokio-tungstenite = { workspace = true }
+trust-dns-resolver = { workspace = true }
+bpaf = { workspace = true }
 clap = { workspace = true }
 colored = { workspace = true }
 indicatif = { workspace = true }
@@ -28,6 +31,7 @@ env_logger = { workspace = true }
 uuid = { workspace = true }
 regex = { workspace = true }
 dirs = { workspace = true }
+whoami = { workspace = true }
 crossterm = { workspace = true }
 console = { workspace = true }
 nu-ansi-term = { workspace = true }
@@ -53,18 +57,10 @@ prometheus = { workspace = true }
 axum = { workspace = true }
 tower = { workspace = true }
 libloading = { workspace = true }
-nix.workspace = true
-futures.workspace = true
-walkdir = { workspace = true }
-urlencoding = "2.1.3"
-md5 = "0.8.0"
-# Temporarily disabled due to dependency conflicts
-# solana-sdk = { workspace = true, optional = true }
-# solana-client = { workspace = true, optional = true }
-# zcash_primitives = { workspace = true, optional = true }
-# zcash_client_backend = { workspace = true, optional = true }
-# zcash_address = { workspace = true, optional = true }
-
-[features]
-default = []
-# crypto = ["solana-sdk", "solana-client", "zcash_primitives", "zcash_client_backend", "zcash_address"]
+nix = { workspace = true }
+futures = { workspace = true }
+# solana-sdk = { workspace = true }
+# solana-client = { workspace = true }
+# zcash_primitives = { workspace = true }
+# zcash_client_backend = { workspace = true }
+# zcash_address = { workspace = true }

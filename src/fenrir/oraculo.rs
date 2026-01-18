@@ -31,7 +31,9 @@ pub struct Candidate {
 }
 
 // Função principal do Oráculo - chama Gemini com timeout
-pub async fn chamar_gemini_com_timeout(consulta: &str) -> Result<FenrirTask, Box<dyn std::error::Error>> {
+pub async fn chamar_gemini_com_timeout(
+    consulta: &str,
+) -> Result<FenrirTask, Box<dyn std::error::Error>> {
     // Simulação - implementação real conectaria com API Gemini
     let task = analisar_comando_local(consulta).await?;
     Ok(task)
@@ -62,7 +64,9 @@ async fn analisar_comando_local(consulta: &str) -> Result<FenrirTask, Box<dyn st
         });
     }
 
-    if consulta_lower.contains("abrir") && (consulta_lower.contains("vscode") || consulta_lower.contains("code")) {
+    if consulta_lower.contains("abrir")
+        && (consulta_lower.contains("vscode") || consulta_lower.contains("code"))
+    {
         return Ok(FenrirTask {
             ia_explanation: "Abrir VS Code no diretório atual".to_string(),
             task_type: "execute_command".to_string(),

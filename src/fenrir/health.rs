@@ -7,8 +7,8 @@ use crate::metrics;
 /// Relatório de saúde.
 #[derive(Serialize)]
 pub struct HealthReport {
-    status: String,
-    uptime_seconds: u64,
+    pub status: String,
+    pub uptime_seconds: u64,
 }
 
 static START: once_cell::sync::Lazy<std::time::Instant> =

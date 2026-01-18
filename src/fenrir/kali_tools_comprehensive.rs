@@ -2,13 +2,11 @@
 // 100+ Kali tools with async orchestration and detailed logging
 // For authorized security testing only
 
-use std::process::Command;
-use std::collections::HashMap;
-use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
+use std::process::Command;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use std::path::Path;
 
 // ============================================================================
 // COMPREHENSIVE TOOL CATEGORIES
@@ -130,7 +128,11 @@ impl DecisionLogger {
         std::fs::create_dir_all(log_dir).unwrap();
 
         let timestamp = Utc::now().format("%Y%m%d_%H%M%S");
-        let log_file = format!("fenrir_logs/brain_{}_{}.json", target.replace(".", "_"), timestamp);
+        let log_file = format!(
+            "fenrir_logs/brain_{}_{}.json",
+            target.replace(".", "_"),
+            timestamp
+        );
 
         DecisionLogger {
             log_file,
@@ -159,18 +161,31 @@ impl DecisionLogger {
         let mut report = format!("# 🧠 FENRIR BRAIN DECISION LOG\n\n");
         report.push_str(&format!("**Target**: {}\n", target));
         report.push_str(&format!("**Total Decisions**: {}\n", decisions.len()));
-        report.push_str(&format!("**Generated**: {}\n\n", Utc::now().format("%Y-%m-%d %H:%M:%S UTC")));
+        report.push_str(&format!(
+            "**Generated**: {}\n\n",
+            Utc::now().format("%Y-%m-%d %H:%M:%S UTC")
+        ));
 
         report.push_str("---\n\n");
 
         for (idx, decision) in decisions.iter().enumerate() {
-            report.push_str(&format!("## Decision {}: {:?}\n\n", idx + 1, decision.decision_type));
-            report.push_str(&format!("**Time**: {}\n", decision.timestamp.format("%H:%M:%S")));
+            report.push_str(&format!(
+                "## Decision {}: {:?}\n\n",
+                idx + 1,
+                decision.decision_type
+            ));
+            report.push_str(&format!(
+                "**Time**: {}\n",
+                decision.timestamp.format("%H:%M:%S")
+            ));
             report.push_str(&format!("**Tool**: {}\n", decision.tool_selected));
             report.push_str(&format!("**Target**: {}\n", decision.target));
             report.push_str(&format!("**Success**: {}\n\n", decision.success));
             report.push_str(&format!("**Reasoning**:\n{}\n\n", decision.reasoning));
-            report.push_str(&format!("**Output**:\n```\n{}\n```\n\n", decision.output_summary));
+            report.push_str(&format!(
+                "**Output**:\n```\n{}\n```\n\n",
+                decision.output_summary
+            ));
             if !decision.next_steps.is_empty() {
                 report.push_str("**Next Steps**:\n");
                 for step in &decision.next_steps {
@@ -204,13 +219,13 @@ pub struct Breach {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum BreachSeverity {
     #[serde(rename = "critical")]
-    Critical,  // Immediate action required
+    Critical, // Immediate action required
     #[serde(rename = "high")]
-    High,      // Urgent attention needed
+    High, // Urgent attention needed
     #[serde(rename = "medium")]
-    Medium,    // Should be addressed
+    Medium, // Should be addressed
     #[serde(rename = "low")]
-    Low,       // Informational
+    Low, // Informational
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -291,15 +306,19 @@ impl BreachDetector {
 
     pub fn analyze_output(&mut self, tool_output: &str, tool_name: &str) {
         // SQL Injection Detection
-        if tool_output.to_lowercase().contains("sql") &&
-           (tool_output.to_lowercase().contains("inject") ||
-            tool_output.to_lowercase().contains("syntax error") ||
-            tool_output.to_lowercase().contains("mysql")) {
+        if tool_output.to_lowercase().contains("sql")
+            && (tool_output.to_lowercase().contains("inject")
+                || tool_output.to_lowercase().contains("syntax error")
+                || tool_output.to_lowercase().contains("mysql"))
+        {
             self.detected_breaches.push(Breach {
                 breach_id: uuid::Uuid::new_v4().to_string(),
                 severity: BreachSeverity::Critical,
                 breach_type: BreachType::SQLInjection,
-                description: format!("Potential SQL injection vulnerability detected by {}", tool_name),
+                description: format!(
+                    "Potential SQL injection vulnerability detected by {}",
+                    tool_name
+                ),
                 evidence: vec![tool_output.lines().take(5).collect::<Vec<_>>().join("\n")],
                 affected_systems: vec![],
                 recommendations: vec![
@@ -312,14 +331,18 @@ impl BreachDetector {
         }
 
         // XSS Detection
-        if tool_output.to_lowercase().contains("xss") ||
-           tool_output.to_lowercase().contains("cross-site") ||
-           tool_output.contains("<script>") {
+        if tool_output.to_lowercase().contains("xss")
+            || tool_output.to_lowercase().contains("cross-site")
+            || tool_output.contains("<script>")
+        {
             self.detected_breaches.push(Breach {
                 breach_id: uuid::Uuid::new_v4().to_string(),
                 severity: BreachSeverity::High,
                 breach_type: BreachType::XSS,
-                description: format!("Cross-site scripting vulnerability detected by {}", tool_name),
+                description: format!(
+                    "Cross-site scripting vulnerability detected by {}",
+                    tool_name
+                ),
                 evidence: vec![tool_output.lines().take(5).collect::<Vec<_>>().join("\n")],
                 affected_systems: vec![],
                 recommendations: vec![
@@ -332,10 +355,11 @@ impl BreachDetector {
         }
 
         // Authentication Bypass
-        if tool_output.to_lowercase().contains("admin") &&
-           (tool_output.to_lowercase().contains("bypass") ||
-            tool_output.to_lowercase().contains("unauthorized") ||
-            tool_output.to_lowercase().contains("authentication")) {
+        if tool_output.to_lowercase().contains("admin")
+            && (tool_output.to_lowercase().contains("bypass")
+                || tool_output.to_lowercase().contains("unauthorized")
+                || tool_output.to_lowercase().contains("authentication"))
+        {
             self.detected_breaches.push(Breach {
                 breach_id: uuid::Uuid::new_v4().to_string(),
                 severity: BreachSeverity::Critical,
@@ -353,7 +377,8 @@ impl BreachDetector {
         }
 
         // Sensitive Data Detection (Emails)
-        let email_regex = regex::Regex::new(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}").unwrap();
+        let email_regex =
+            regex::Regex::new(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}").unwrap();
         for email in email_regex.find_iter(tool_output) {
             self.sensitive_data.push(SensitiveData {
                 data_id: uuid::Uuid::new_v4().to_string(),
@@ -397,8 +422,11 @@ impl BreachDetector {
         }
 
         // API Key Detection
-        if tool_output.contains("api_key") || tool_output.contains("apikey") ||
-           tool_output.contains("API_KEY") || tool_output.contains("secret") {
+        if tool_output.contains("api_key")
+            || tool_output.contains("apikey")
+            || tool_output.contains("API_KEY")
+            || tool_output.contains("secret")
+        {
             self.sensitive_data.push(SensitiveData {
                 data_id: uuid::Uuid::new_v4().to_string(),
                 data_type: SensitiveDataType::APIKey,
@@ -426,8 +454,16 @@ impl BreachDetector {
 
             // Check for images
             if let Some(ext) = path.extension() {
-                if matches!(ext.to_str(), Some("jpg") | Some("jpeg") | Some("png") |
-                    Some("gif") | Some("bmp") | Some("svg") | Some("webp")) {
+                if matches!(
+                    ext.to_str(),
+                    Some("jpg")
+                        | Some("jpeg")
+                        | Some("png")
+                        | Some("gif")
+                        | Some("bmp")
+                        | Some("svg")
+                        | Some("webp")
+                ) {
                     self.images_found.push(path_str.clone());
                     self.sensitive_data.push(SensitiveData {
                         data_id: uuid::Uuid::new_v4().to_string(),
@@ -444,8 +480,16 @@ impl BreachDetector {
 
             // Check for documents
             if let Some(ext) = path.extension() {
-                if matches!(ext.to_str(), Some("pdf") | Some("doc") | Some("docx") |
-                    Some("txt") | Some("xls") | Some("xlsx") | Some("ppt")) {
+                if matches!(
+                    ext.to_str(),
+                    Some("pdf")
+                        | Some("doc")
+                        | Some("docx")
+                        | Some("txt")
+                        | Some("xls")
+                        | Some("xlsx")
+                        | Some("ppt")
+                ) {
                     self.files_analyzed.push(path_str.clone());
                     self.sensitive_data.push(SensitiveData {
                         data_id: uuid::Uuid::new_v4().to_string(),
@@ -472,15 +516,32 @@ impl BreachDetector {
     pub fn get_summary(&self) -> String {
         let mut summary = String::from("## 🔍 BREACH & SENSITIVE DATA SUMMARY\n\n");
 
-        summary.push_str(&format!("**Breaches Detected**: {}\n", self.detected_breaches.len()));
-        summary.push_str(&format!("**Sensitive Data Items**: {}\n", self.sensitive_data.len()));
-        summary.push_str(&format!("**Files Analyzed**: {}\n", self.files_analyzed.len()));
-        summary.push_str(&format!("**Images Found**: {}\n\n", self.images_found.len()));
+        summary.push_str(&format!(
+            "**Breaches Detected**: {}\n",
+            self.detected_breaches.len()
+        ));
+        summary.push_str(&format!(
+            "**Sensitive Data Items**: {}\n",
+            self.sensitive_data.len()
+        ));
+        summary.push_str(&format!(
+            "**Files Analyzed**: {}\n",
+            self.files_analyzed.len()
+        ));
+        summary.push_str(&format!(
+            "**Images Found**: {}\n\n",
+            self.images_found.len()
+        ));
 
         if !self.detected_breaches.is_empty() {
             summary.push_str("### 🚨 DETECTED BREACHES\n\n");
             for (idx, breach) in self.detected_breaches.iter().enumerate() {
-                summary.push_str(&format!("#### {}. {:?} - {:?}\n\n", idx + 1, breach.breach_type, breach.severity));
+                summary.push_str(&format!(
+                    "#### {}. {:?} - {:?}\n\n",
+                    idx + 1,
+                    breach.breach_type,
+                    breach.severity
+                ));
                 summary.push_str(&format!("**Description**: {}\n\n", breach.description));
                 if !breach.evidence.is_empty() {
                     summary.push_str("**Evidence**:\n```\n");
@@ -769,7 +830,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "medusa".to_string(),
             typical_args: vec!["-h".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install medusa".to_string()),
+            install_command: Some("Linux only: sudo apt install medusa (Not available on macOS)".to_string()),
             execution_time_estimate: 180,
         },
         KaliTool {
@@ -1107,7 +1168,2167 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             execution_time_estimate: 0,
         },
 
-        // Keep existing tools and add more...
+        // ========== ADDITIONAL INFORMATION GATHERING ==========
+        KaliTool {
+            name: "amass".to_string(),
+            category: KaliToolCategory::OSInt,
+            description: "In-depth subdomain enumeration".to_string(),
+            command: "amass".to_string(),
+            typical_args: vec!["enum".to_string(), "-d".to_string()],
+            requires_root: false,
+            install_command: Some("go install -v github.com/OWASP/Amass/v3/...@master".to_string()),
+            execution_time_estimate: 300,
+        },
+        KaliTool {
+            name: "subfinder".to_string(),
+            category: KaliToolCategory::DnsEnumeration,
+            description: "Subdomain discovery tool".to_string(),
+            command: "subfinder".to_string(),
+            typical_args: vec!["-d".to_string()],
+            requires_root: false,
+            install_command: Some("go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest".to_string()),
+            execution_time_estimate: 120,
+        },
+        KaliTool {
+            name: "assetfinder".to_string(),
+            category: KaliToolCategory::DnsEnumeration,
+            description: "Find domains and subdomains".to_string(),
+            command: "assetfinder".to_string(),
+            typical_args: vec!["--subs-only".to_string()],
+            requires_root: false,
+            install_command: Some("go install github.com/tomnomnom/assetfinder@latest".to_string()),
+            execution_time_estimate: 90,
+        },
+        KaliTool {
+            name: "fierce".to_string(),
+            category: KaliToolCategory::DnsEnumeration,
+            description: "DNS reconnaissance tool".to_string(),
+            command: "fierce".to_string(),
+            typical_args: vec!["-dns".to_string()],
+            requires_root: false,
+            install_command: Some("sudo apt install fierce".to_string()),
+            execution_time_estimate: 180,
+        },
+        KaliTool {
+            name: "dnsrecon".to_string(),
+            category: KaliToolCategory::DnsEnumeration,
+            description: "DNS enumeration script".to_string(),
+            command: "dnsrecon".to_string(),
+            typical_args: vec!["-d".to_string()],
+            requires_root: false,
+            install_command: Some("sudo apt install dnsrecon".to_string()),
+            execution_time_estimate: 120,
+        },
+        KaliTool {
+            name: "recon-ng".to_string(),
+            category: KaliToolCategory::OSInt,
+            description: "Web reconnaissance framework".to_string(),
+            command: "recon-ng".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install recon-ng".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "spiderfoot".to_string(),
+            category: KaliToolCategory::OSInt,
+            description: "OSINT automation tool".to_string(),
+            command: "spiderfoot".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install spiderfoot".to_string()),
+            execution_time_estimate: 0,
+        },
+
+        // ========== ADDITIONAL VULNERABILITY ANALYSIS ==========
+        KaliTool {
+            name: "qualys".to_string(),
+            category: KaliToolCategory::VulnerabilityAnalysis,
+            description: "Vulnerability management platform".to_string(),
+            command: "qualys".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install qualys".to_string()),
+            execution_time_estimate: 600,
+        },
+        KaliTool {
+            name: "rapid7".to_string(),
+            category: KaliToolCategory::VulnerabilityAnalysis,
+            description: "Vulnerability scanner".to_string(),
+            command: "rapid7".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install rapid7".to_string()),
+            execution_time_estimate: 600,
+        },
+        KaliTool {
+            name: "acunetix".to_string(),
+            category: KaliToolCategory::WebApplicationAnalysis,
+            description: "Web vulnerability scanner".to_string(),
+            command: "acunetix".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install acunetix".to_string()),
+            execution_time_estimate: 600,
+        },
+
+        // ========== ADDITIONAL WEB APPLICATION TOOLS ==========
+        KaliTool {
+            name: "dirbuster".to_string(),
+            category: KaliToolCategory::WebApplicationAnalysis,
+            description: "Web content scanner".to_string(),
+            command: "dirbuster".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install dirbuster".to_string()),
+            execution_time_estimate: 300,
+        },
+        KaliTool {
+            name: "dirsearch".to_string(),
+            category: KaliToolCategory::WebApplicationAnalysis,
+            description: "Web path scanner".to_string(),
+            command: "dirsearch".to_string(),
+            typical_args: vec!["-u".to_string()],
+            requires_root: false,
+            install_command: Some("pip3 install dirsearch".to_string()),
+            execution_time_estimate: 180,
+        },
+        KaliTool {
+            name: "wfuzz".to_string(),
+            category: KaliToolCategory::WebApplicationAnalysis,
+            description: "Web application brute forcer".to_string(),
+            command: "wfuzz".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install wfuzz".to_string()),
+            execution_time_estimate: 120,
+        },
+        KaliTool {
+            name: "sqlninja".to_string(),
+            category: KaliToolCategory::DatabaseExploitation,
+            description: "SQL injection tool".to_string(),
+            command: "sqlninja".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install sqlninja".to_string()),
+            execution_time_estimate: 180,
+        },
+        KaliTool {
+            name: "commix".to_string(),
+            category: KaliToolCategory::ExploitationTools,
+            description: "Command injection exploiter".to_string(),
+            command: "commix".to_string(),
+            typical_args: vec!["--url".to_string()],
+            requires_root: false,
+            install_command: Some("sudo apt install commix".to_string()),
+            execution_time_estimate: 120,
+        },
+        KaliTool {
+            name: "joomlavs".to_string(),
+            category: KaliToolCategory::WebApplicationAnalysis,
+            description: "Joomla vulnerability scanner".to_string(),
+            command: "joomlavs".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install joomlavs".to_string()),
+            execution_time_estimate: 120,
+        },
+        KaliTool {
+            name: "wpscan".to_string(),
+            category: KaliToolCategory::WebApplicationAnalysis,
+            description: "WordPress vulnerability scanner".to_string(),
+            command: "wpscan".to_string(),
+            typical_args: vec!["--url".to_string()],
+            requires_root: false,
+            install_command: Some("sudo apt install wpscan".to_string()),
+            execution_time_estimate: 180,
+        },
+        KaliTool {
+            name: "droopescan".to_string(),
+            category: KaliToolCategory::WebApplicationAnalysis,
+            description: "CMS vulnerability scanner".to_string(),
+            command: "droopescan".to_string(),
+            typical_args: vec!["scan".to_string(), "drupal".to_string()],
+            requires_root: false,
+            install_command: Some("sudo apt install droopescan".to_string()),
+            execution_time_estimate: 120,
+        },
+        KaliTool {
+            name: "cmsmap".to_string(),
+            category: KaliToolCategory::WebApplicationAnalysis,
+            description: "CMS scanner".to_string(),
+            command: "cmsmap".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install cmsmap".to_string()),
+            execution_time_estimate: 90,
+        },
+
+        // ========== ADDITIONAL WIRELESS TOOLS ==========
+        KaliTool {
+            name: "fluxion".to_string(),
+            category: KaliToolCategory::WirelessAttacks,
+            description: "WiFi attack framework".to_string(),
+            command: "fluxion".to_string(),
+            typical_args: vec![],
+            requires_root: true,
+            install_command: Some("git clone https://github.com/FluxionNetwork/fluxion.git".to_string()),
+            execution_time_estimate: 600,
+        },
+        KaliTool {
+            name: "pixiewps".to_string(),
+            category: KaliToolCategory::WirelessAttacks,
+            description: "WPS PIN attack tool".to_string(),
+            command: "pixiewps".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install pixiewps".to_string()),
+            execution_time_estimate: 300,
+        },
+        KaliTool {
+            name: "fern-wifi-cracker".to_string(),
+            category: KaliToolCategory::WirelessAttacks,
+            description: "Wireless security auditing tool".to_string(),
+            command: "fern-wifi-cracker".to_string(),
+            typical_args: vec![],
+            requires_root: true,
+            install_command: Some("sudo apt install fern-wifi-cracker".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "ghost-phisher".to_string(),
+            category: KaliToolCategory::WirelessAttacks,
+            description: "Wireless and Ethernet security auditing".to_string(),
+            command: "ghost-phisher".to_string(),
+            typical_args: vec![],
+            requires_root: true,
+            install_command: Some("sudo apt install ghost-phisher".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "airgeddon".to_string(),
+            category: KaliToolCategory::WirelessAttacks,
+            description: "Wireless attack script".to_string(),
+            command: "airgeddon".to_string(),
+            typical_args: vec![],
+            requires_root: true,
+            install_command: Some("git clone https://github.com/v1s1t0r1sh3r3/airgeddon.git".to_string()),
+            execution_time_estimate: 0,
+        },
+
+        // ========== ADDITIONAL PASSWORD ATTACK TOOLS ==========
+        KaliTool {
+            name: "patator".to_string(),
+            category: KaliToolCategory::PasswordAttacks,
+            description: "Multi-purpose brute-forcer".to_string(),
+            command: "patator".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("Linux only: sudo apt install patator (Not available on macOS)".to_string()),
+            execution_time_estimate: 300,
+        },
+        KaliTool {
+            name: "thc-hydra".to_string(),
+            category: KaliToolCategory::PasswordAttacks,
+            description: "Network login cracker".to_string(),
+            command: "hydra".to_string(),
+            typical_args: vec!["-l".to_string(), "user".to_string()],
+            requires_root: false,
+            install_command: Some("sudo apt install hydra".to_string()),
+            execution_time_estimate: 300,
+        },
+        KaliTool {
+            name: "ncrack".to_string(),
+            category: KaliToolCategory::PasswordAttacks,
+            description: "Network authentication cracking tool".to_string(),
+            command: "ncrack".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("Linux only: sudo apt install ncrack (Not available on macOS)".to_string()),
+            execution_time_estimate: 300,
+        },
+        KaliTool {
+            name: "crowbar".to_string(),
+            category: KaliToolCategory::PasswordAttacks,
+            description: "Brute force tool for various protocols".to_string(),
+            command: "crowbar".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install crowbar".to_string()),
+            execution_time_estimate: 300,
+        },
+        KaliTool {
+            name: "rsmangler".to_string(),
+            category: KaliToolCategory::PasswordAttacks,
+            description: "Wordlist mangling tool".to_string(),
+            command: "rsmangler".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install rsmangler".to_string()),
+            execution_time_estimate: 60,
+        },
+        KaliTool {
+            name: "cupp".to_string(),
+            category: KaliToolCategory::PasswordAttacks,
+            description: "Common User Passwords Profiler".to_string(),
+            command: "cupp".to_string(),
+            typical_args: vec!["-i".to_string()],
+            requires_root: false,
+            install_command: Some("sudo apt install cupp".to_string()),
+            execution_time_estimate: 30,
+        },
+
+        // ========== ADDITIONAL EXPLOITATION TOOLS ==========
+        KaliTool {
+            name: "armitage".to_string(),
+            category: KaliToolCategory::ExploitationTools,
+            description: "Metasploit GUI".to_string(),
+            command: "armitage".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install armitage".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "cobalt-strike".to_string(),
+            category: KaliToolCategory::ExploitationTools,
+            description: "Advanced threat emulation".to_string(),
+            command: "cobalt-strike".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("Commercial tool - requires license".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "veil-evasion".to_string(),
+            category: KaliToolCategory::ExploitDevelopment,
+            description: "Payload generator".to_string(),
+            command: "veil-evasion".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install veil".to_string()),
+            execution_time_estimate: 60,
+        },
+        KaliTool {
+            name: "unicorn".to_string(),
+            category: KaliToolCategory::ExploitDevelopment,
+            description: "Shellcode generator".to_string(),
+            command: "unicorn".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("pip3 install unicorn".to_string()),
+            execution_time_estimate: 30,
+        },
+        KaliTool {
+            name: "msfvenom".to_string(),
+            category: KaliToolCategory::ExploitDevelopment,
+            description: "Payload generator".to_string(),
+            command: "msfvenom".to_string(),
+            typical_args: vec!["-p".to_string(), "windows/meterpreter/reverse_tcp".to_string()],
+            requires_root: false,
+            install_command: Some("sudo apt install metasploit-framework".to_string()),
+            execution_time_estimate: 30,
+        },
+        KaliTool {
+            name: "ysoserial".to_string(),
+            category: KaliToolCategory::ExploitDevelopment,
+            description: "Java deserialization exploit".to_string(),
+            command: "ysoserial".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install ysoserial".to_string()),
+            execution_time_estimate: 30,
+        },
+
+        // ========== ADDITIONAL FORENSICS TOOLS ==========
+        KaliTool {
+            name: "guymager".to_string(),
+            category: KaliToolCategory::Forensics,
+            description: "Forensic imager".to_string(),
+            command: "guymager".to_string(),
+            typical_args: vec![],
+            requires_root: true,
+            install_command: Some("sudo apt install guymager".to_string()),
+            execution_time_estimate: 1800,
+        },
+        KaliTool {
+            name: "dc3dd".to_string(),
+            category: KaliToolCategory::Forensics,
+            description: "Enhanced dd for forensics".to_string(),
+            command: "dc3dd".to_string(),
+            typical_args: vec![],
+            requires_root: true,
+            install_command: Some("sudo apt install dc3dd".to_string()),
+            execution_time_estimate: 1800,
+        },
+        KaliTool {
+            name: "extundelete".to_string(),
+            category: KaliToolCategory::FileForensics,
+            description: "Ext filesystem undelete tool".to_string(),
+            command: "extundelete".to_string(),
+            typical_args: vec![],
+            requires_root: true,
+            install_command: Some("sudo apt install extundelete".to_string()),
+            execution_time_estimate: 300,
+        },
+        KaliTool {
+            name: "scalpel".to_string(),
+            category: KaliToolCategory::FileForensics,
+            description: "File carver".to_string(),
+            command: "scalpel".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install scalpel".to_string()),
+            execution_time_estimate: 600,
+        },
+        KaliTool {
+            name: "testdisk".to_string(),
+            category: KaliToolCategory::FileForensics,
+            description: "Data recovery tool".to_string(),
+            command: "testdisk".to_string(),
+            typical_args: vec![],
+            requires_root: true,
+            install_command: Some("sudo apt install testdisk".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "photorec".to_string(),
+            category: KaliToolCategory::FileForensics,
+            description: "File recovery tool".to_string(),
+            command: "photorec".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install testdisk".to_string()),
+            execution_time_estimate: 600,
+        },
+        KaliTool {
+            name: "bulk_extractor".to_string(),
+            category: KaliToolCategory::FileForensics,
+            description: "Feature extraction tool".to_string(),
+            command: "bulk_extractor".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install bulk-extractor".to_string()),
+            execution_time_estimate: 600,
+        },
+
+        // ========== ADDITIONAL SOCIAL ENGINEERING TOOLS ==========
+        KaliTool {
+            name: "setoolkit".to_string(),
+            category: KaliToolCategory::SocialEngineering,
+            description: "Social engineering toolkit".to_string(),
+            command: "setoolkit".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install set".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "king-phisher".to_string(),
+            category: KaliToolCategory::SocialEngineering,
+            description: "Phishing campaign toolkit".to_string(),
+            command: "king-phisher".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install king-phisher".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "gophish".to_string(),
+            category: KaliToolCategory::SocialEngineering,
+            description: "Open-source phishing toolkit".to_string(),
+            command: "gophish".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("Download from https://getgophish.com/".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "evilginx2".to_string(),
+            category: KaliToolCategory::SocialEngineering,
+            description: "Man-in-the-middle attack framework".to_string(),
+            command: "evilginx2".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("git clone https://github.com/kgretzky/evilginx2.git".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "blackeye".to_string(),
+            category: KaliToolCategory::SocialEngineering,
+            description: "Phishing pages generator".to_string(),
+            command: "blackeye".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("git clone https://github.com/An0nUD4Y/blackeye.git".to_string()),
+            execution_time_estimate: 0,
+        },
+
+        // ========== ADDITIONAL FUZZING TOOLS ==========
+        KaliTool {
+            name: "honggfuzz".to_string(),
+            category: KaliToolCategory::Fuzzing,
+            description: "Security-oriented fuzzer".to_string(),
+            command: "honggfuzz".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install honggfuzz".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "libfuzzer".to_string(),
+            category: KaliToolCategory::Fuzzing,
+            description: "Library for coverage-guided fuzzing".to_string(),
+            command: "libfuzzer".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("Included with clang".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "radamsa".to_string(),
+            category: KaliToolCategory::Fuzzing,
+            description: "General purpose fuzzer".to_string(),
+            command: "radamsa".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install radamsa".to_string()),
+            execution_time_estimate: 0,
+        },
+
+        // ========== ADDITIONAL REPORTING TOOLS ==========
+        KaliTool {
+            name: "dradis".to_string(),
+            category: KaliToolCategory::Reporting,
+            description: "Collaboration framework for security teams".to_string(),
+            command: "dradis".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install dradis".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "faraday".to_string(),
+            category: KaliToolCategory::Reporting,
+            description: "Multiuser penetration test IDE".to_string(),
+            command: "faraday".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install faraday".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "pipal".to_string(),
+            category: KaliToolCategory::Reporting,
+            description: "Password analysis tool".to_string(),
+            command: "pipal".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install pipal".to_string()),
+            execution_time_estimate: 60,
+        },
+
+        // ========== ADDITIONAL NETWORK FORENSICS ==========
+        KaliTool {
+            name: "chaosreader".to_string(),
+            category: KaliToolCategory::NetworkForensics,
+            description: "Network session extractor".to_string(),
+            command: "chaosreader".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install chaosreader".to_string()),
+            execution_time_estimate: 120,
+        },
+        KaliTool {
+            name: "tcpflow".to_string(),
+            category: KaliToolCategory::NetworkForensics,
+            description: "TCP flow recorder".to_string(),
+            command: "tcpflow".to_string(),
+            typical_args: vec![],
+            requires_root: true,
+            install_command: Some("sudo apt install tcpflow".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "bro".to_string(),
+            category: KaliToolCategory::NetworkForensics,
+            description: "Network analysis framework".to_string(),
+            command: "bro".to_string(),
+            typical_args: vec![],
+            requires_root: true,
+            install_command: Some("sudo apt install bro".to_string()),
+            execution_time_estimate: 0,
+        },
+
+        // ========== ADDITIONAL PRIVILEGE ESCALATION ==========
+        KaliTool {
+            name: "beroot".to_string(),
+            category: KaliToolCategory::PrivilegeEscalation,
+            description: "Privilege escalation detection".to_string(),
+            command: "beroot".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("pip3 install beRoot".to_string()),
+            execution_time_estimate: 60,
+        },
+        KaliTool {
+            name: "peas".to_string(),
+            category: KaliToolCategory::PrivilegeEscalation,
+            description: "Privilege escalation awesome scripts".to_string(),
+            command: "peas".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("git clone https://github.com/carlospolop/PEASS-ng.git".to_string()),
+            execution_time_estimate: 180,
+        },
+        KaliTool {
+            name: "gtfobins".to_string(),
+            category: KaliToolCategory::PrivilegeEscalation,
+            description: "GTFOBins - Living off the land".to_string(),
+            command: "gtfobins".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("curl -L https://gtfobins.github.io/".to_string()),
+            execution_time_estimate: 0,
+        },
+
+        // ========== ADDITIONAL EXPLOIT DEVELOPMENT ==========
+        KaliTool {
+            name: "ropgadget".to_string(),
+            category: KaliToolCategory::ExploitDevelopment,
+            description: "ROP gadget finder".to_string(),
+            command: "ropgadget".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install ropgadget".to_string()),
+            execution_time_estimate: 30,
+        },
+        KaliTool {
+            name: "pwntools".to_string(),
+            category: KaliToolCategory::ExploitDevelopment,
+            description: "CTF framework and exploit development library".to_string(),
+            command: "python3".to_string(),
+            typical_args: vec!["-c".to_string(), "import pwn".to_string()],
+            requires_root: false,
+            install_command: Some("pip3 install pwntools".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "angr".to_string(),
+            category: KaliToolCategory::ReverseEngineering,
+            description: "Binary analysis framework".to_string(),
+            command: "python3".to_string(),
+            typical_args: vec!["-c".to_string(), "import angr".to_string()],
+            requires_root: false,
+            install_command: Some("pip3 install angr".to_string()),
+            execution_time_estimate: 0,
+        },
+
+        // ========== ADDITIONAL DOS TOOLS ==========
+        KaliTool {
+            name: "hping3".to_string(),
+            category: KaliToolCategory::DenialOfService,
+            description: "TCP/IP packet assembler/analyzer".to_string(),
+            command: "hping3".to_string(),
+            typical_args: vec!["--flood".to_string()],
+            requires_root: true,
+            install_command: Some("sudo apt install hping3".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "slowloris".to_string(),
+            category: KaliToolCategory::DenialOfService,
+            description: "Low bandwidth DoS tool".to_string(),
+            command: "slowloris".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install slowloris".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "t50".to_string(),
+            category: KaliToolCategory::DenialOfService,
+            description: "Mixed packet injector tool".to_string(),
+            command: "t50".to_string(),
+            typical_args: vec![],
+            requires_root: true,
+            install_command: Some("sudo apt install t50".to_string()),
+            execution_time_estimate: 0,
+        },
+
+        // ========== ADDITIONAL MITM TOOLS ==========
+        KaliTool {
+            name: "sslstrip".to_string(),
+            category: KaliToolCategory::ManInTheMiddle,
+            description: "SSL stripping attack".to_string(),
+            command: "sslstrip".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install sslstrip".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "sslsplit".to_string(),
+            category: KaliToolCategory::ManInTheMiddle,
+            description: "SSL/TLS interception tool".to_string(),
+            command: "sslsplit".to_string(),
+            typical_args: vec![],
+            requires_root: true,
+            install_command: Some("sudo apt install sslsplit".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "responder".to_string(),
+            category: KaliToolCategory::ManInTheMiddle,
+            description: "LLMNR, NBT-NS and MDNS poisoner".to_string(),
+            command: "responder".to_string(),
+            typical_args: vec!["-I".to_string(), "eth0".to_string()],
+            requires_root: true,
+            install_command: Some("sudo apt install responder".to_string()),
+            execution_time_estimate: 0,
+        },
+
+        // ========== ADDITIONAL SNIFFING/SPOOFING ==========
+        KaliTool {
+            name: "macchanger".to_string(),
+            category: KaliToolCategory::SniffingSpoofing,
+            description: "MAC address changer".to_string(),
+            command: "macchanger".to_string(),
+            typical_args: vec!["-r".to_string(), "eth0".to_string()],
+            requires_root: true,
+            install_command: Some("sudo apt install macchanger".to_string()),
+            execution_time_estimate: 5,
+        },
+        KaliTool {
+            name: "arpspoof".to_string(),
+            category: KaliToolCategory::SniffingSpoofing,
+            description: "ARP spoofer".to_string(),
+            command: "arpspoof".to_string(),
+            typical_args: vec![],
+            requires_root: true,
+            install_command: Some("sudo apt install dsniff".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "dnsspoof".to_string(),
+            category: KaliToolCategory::SniffingSpoofing,
+            description: "DNS spoofer".to_string(),
+            command: "dnsspoof".to_string(),
+            typical_args: vec![],
+            requires_root: true,
+            install_command: Some("sudo apt install dsniff".to_string()),
+            execution_time_estimate: 0,
+        },
+
+        // ========== ADDITIONAL POST-EXPLOITATION ==========
+        KaliTool {
+            name: "empire".to_string(),
+            category: KaliToolCategory::PostExploitation,
+            description: "Post-exploitation framework".to_string(),
+            command: "empire".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install powershell-empire".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "covenant".to_string(),
+            category: KaliToolCategory::PostExploitation,
+            description: ".NET command and control framework".to_string(),
+            command: "covenant".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("git clone https://github.com/cobbr/Covenant.git".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "silenttrinity".to_string(),
+            category: KaliToolCategory::PostExploitation,
+            description: "Post-exploitation agent".to_string(),
+            command: "silenttrinity".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("git clone https://github.com/byt3bl33d3r/SILENTTRINITY.git".to_string()),
+            execution_time_estimate: 0,
+        },
+
+        // ========== ADDITIONAL PERSISTENCE TOOLS ==========
+        KaliTool {
+            name: "metasploit-persistence".to_string(),
+            category: KaliToolCategory::PersistenceMechanisms,
+            description: "Metasploit persistence modules".to_string(),
+            command: "msfconsole".to_string(),
+            typical_args: vec!["-x".to_string(), "use exploit/windows/local/persistence".to_string()],
+            requires_root: false,
+            install_command: Some("sudo apt install metasploit-framework".to_string()),
+            execution_time_estimate: 60,
+        },
+        KaliTool {
+            name: "turla-persistence".to_string(),
+            category: KaliToolCategory::PersistenceMechanisms,
+            description: "Advanced persistence techniques".to_string(),
+            command: "turla".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("Research Turla persistence methods".to_string()),
+            execution_time_estimate: 0,
+        },
+
+        // ========== ADDITIONAL ANTI-FORENSICS ==========
+        KaliTool {
+            name: "shred".to_string(),
+            category: KaliToolCategory::AntiForensics,
+            description: "Secure file deletion".to_string(),
+            command: "shred".to_string(),
+            typical_args: vec!["-u".to_string(), "-z".to_string()],
+            requires_root: false,
+            install_command: Some("sudo apt install coreutils".to_string()),
+            execution_time_estimate: 30,
+        },
+        KaliTool {
+            name: "wipe".to_string(),
+            category: KaliToolCategory::AntiForensics,
+            description: "Secure deletion tool".to_string(),
+            command: "wipe".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install wipe".to_string()),
+            execution_time_estimate: 60,
+        },
+        KaliTool {
+            name: "srm".to_string(),
+            category: KaliToolCategory::AntiForensics,
+            description: "Secure remove".to_string(),
+            command: "srm".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install secure-delete".to_string()),
+            execution_time_estimate: 30,
+        },
+
+        // ========== COMPREHENSIVE DATABASE EXPLOITATION TOOLS ==========
+        KaliTool {
+            name: "sqlninja".to_string(),
+            category: KaliToolCategory::DatabaseExploitation,
+            description: "SQL injection tool".to_string(),
+            command: "sqlninja".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install sqlninja".to_string()),
+            execution_time_estimate: 180,
+        },
+        KaliTool {
+            name: "tnscmd10g".to_string(),
+            category: KaliToolCategory::DatabaseExploitation,
+            description: "Oracle TNS listener command tool".to_string(),
+            command: "tnscmd10g".to_string(),
+            typical_args: vec!["ping".to_string()],
+            requires_root: false,
+            install_command: Some("sudo apt install tnscmd10g".to_string()),
+            execution_time_estimate: 30,
+        },
+        KaliTool {
+            name: "odat".to_string(),
+            category: KaliToolCategory::DatabaseExploitation,
+            description: "Oracle Database Attacking Tool".to_string(),
+            command: "odat".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("pip3 install odat".to_string()),
+            execution_time_estimate: 120,
+        },
+        KaliTool {
+            name: "mssqlclient".to_string(),
+            category: KaliToolCategory::DatabaseExploitation,
+            description: "MSSQL client".to_string(),
+            command: "mssqlclient".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install impacket-scripts".to_string()),
+            execution_time_estimate: 60,
+        },
+        KaliTool {
+            name: "cassandra".to_string(),
+            category: KaliToolCategory::DatabaseExploitation,
+            description: "Cassandra database tools".to_string(),
+            command: "cassandra".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install cassandra".to_string()),
+            execution_time_estimate: 0,
+        },
+
+        // ========== COMPREHENSIVE WEB APPLICATION TOOLS ==========
+        KaliTool {
+            name: "skipfish".to_string(),
+            category: KaliToolCategory::WebApplicationAnalysis,
+            description: "Web application security scanner".to_string(),
+            command: "skipfish".to_string(),
+            typical_args: vec!["-o".to_string(), "output".to_string()],
+            requires_root: false,
+            install_command: Some("sudo apt install skipfish".to_string()),
+            execution_time_estimate: 300,
+        },
+        KaliTool {
+            name: "w3af".to_string(),
+            category: KaliToolCategory::WebApplicationAnalysis,
+            description: "Web application attack and audit framework".to_string(),
+            command: "w3af".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install w3af".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "webscarab".to_string(),
+            category: KaliToolCategory::WebApplicationAnalysis,
+            description: "Web application security testing framework".to_string(),
+            command: "webscarab".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install webscarab".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "paros".to_string(),
+            category: KaliToolCategory::WebApplicationAnalysis,
+            description: "Web application security assessment tool".to_string(),
+            command: "paros".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install paros".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "webshag".to_string(),
+            category: KaliToolCategory::WebApplicationAnalysis,
+            description: "Web server auditing tool".to_string(),
+            command: "webshag".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install webshag".to_string()),
+            execution_time_estimate: 120,
+        },
+        KaliTool {
+            name: "whatweb".to_string(),
+            category: KaliToolCategory::WebApplicationAnalysis,
+            description: "Web scanner".to_string(),
+            command: "whatweb".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install whatweb".to_string()),
+            execution_time_estimate: 60,
+        },
+        KaliTool {
+            name: "httprint".to_string(),
+            category: KaliToolCategory::WebApplicationAnalysis,
+            description: "Web server fingerprinting tool".to_string(),
+            command: "httprint".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install httprint".to_string()),
+            execution_time_estimate: 60,
+        },
+        KaliTool {
+            name: "httrack".to_string(),
+            category: KaliToolCategory::WebApplicationAnalysis,
+            description: "Website copier".to_string(),
+            command: "httrack".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install httrack".to_string()),
+            execution_time_estimate: 300,
+        },
+
+        // ========== COMPREHENSIVE WIRELESS TOOLS ==========
+        KaliTool {
+            name: "mdk3".to_string(),
+            category: KaliToolCategory::WirelessAttacks,
+            description: "WiFi testing tool".to_string(),
+            command: "mdk3".to_string(),
+            typical_args: vec![],
+            requires_root: true,
+            install_command: Some("sudo apt install mdk3".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "mdk4".to_string(),
+            category: KaliToolCategory::WirelessAttacks,
+            description: "WiFi testing tool".to_string(),
+            command: "mdk4".to_string(),
+            typical_args: vec![],
+            requires_root: true,
+            install_command: Some("sudo apt install mdk4".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "hostapd".to_string(),
+            category: KaliToolCategory::WirelessAttacks,
+            description: "User space IEEE 802.11 AP and authentication server".to_string(),
+            command: "hostapd".to_string(),
+            typical_args: vec![],
+            requires_root: true,
+            install_command: Some("sudo apt install hostapd".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "hostapd-wpe".to_string(),
+            category: KaliToolCategory::WirelessAttacks,
+            description: "Modified hostapd for wireless pentesting".to_string(),
+            command: "hostapd-wpe".to_string(),
+            typical_args: vec![],
+            requires_root: true,
+            install_command: Some("sudo apt install hostapd-wpe".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "free-radius".to_string(),
+            category: KaliToolCategory::WirelessAttacks,
+            description: "RADIUS server".to_string(),
+            command: "freeradius".to_string(),
+            typical_args: vec![],
+            requires_root: true,
+            install_command: Some("sudo apt install freeradius".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "asleap".to_string(),
+            category: KaliToolCategory::WirelessAttacks,
+            description: "LEAP dictionary cracker".to_string(),
+            command: "asleap".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install asleap".to_string()),
+            execution_time_estimate: 300,
+        },
+
+        // ========== COMPREHENSIVE SOCIAL ENGINEERING TOOLS ==========
+        KaliTool {
+            name: "msfvenom".to_string(),
+            category: KaliToolCategory::SocialEngineering,
+            description: "Payload generator".to_string(),
+            command: "msfvenom".to_string(),
+            typical_args: vec!["-p".to_string(), "windows/meterpreter/reverse_tcp".to_string()],
+            requires_root: false,
+            install_command: Some("sudo apt install metasploit-framework".to_string()),
+            execution_time_estimate: 30,
+        },
+
+        // ========== ADVANCED OAUTH2 & SOCIAL NETWORK TOOLS ==========
+        KaliTool {
+            name: "oauth2-tool".to_string(),
+            category: KaliToolCategory::WebApplicationAnalysis,
+            description: "Advanced OAuth2 security testing tool".to_string(),
+            command: "python3".to_string(),
+            typical_args: vec!["-c".to_string(), "import oauthlib".to_string()],
+            requires_root: false,
+            install_command: Some("pip3 install oauthlib requests".to_string()),
+            execution_time_estimate: 60,
+        },
+        KaliTool {
+            name: "social-engineer-toolkit".to_string(),
+            category: KaliToolCategory::SocialEngineering,
+            description: "Social engineering toolkit with OAuth bypass".to_string(),
+            command: "setoolkit".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install set".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "maltego".to_string(),
+            category: KaliToolCategory::OSInt,
+            description: "Advanced OSINT and social network analysis".to_string(),
+            command: "maltego".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install maltego".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "recon-ng".to_string(),
+            category: KaliToolCategory::OSInt,
+            description: "Web reconnaissance framework with social modules".to_string(),
+            command: "recon-ng".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install recon-ng".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "spiderfoot".to_string(),
+            category: KaliToolCategory::OSInt,
+            description: "OSINT automation tool for social networks".to_string(),
+            command: "spiderfoot".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install spiderfoot".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "theharvester".to_string(),
+            category: KaliToolCategory::OSInt,
+            description: "Email and social network harvesting".to_string(),
+            command: "theharvester".to_string(),
+            typical_args: vec!["-d".to_string(), "-b".to_string(), "all".to_string()],
+            requires_root: false,
+            install_command: Some("sudo apt install theharvester".to_string()),
+            execution_time_estimate: 120,
+        },
+        KaliTool {
+            name: "sherlock".to_string(),
+            category: KaliToolCategory::OSInt,
+            description: "Username enumeration across social networks".to_string(),
+            command: "sherlock".to_string(),
+            typical_args: vec!["--print-found".to_string()],
+            requires_root: false,
+            install_command: Some("pip3 install sherlock".to_string()),
+            execution_time_estimate: 180,
+        },
+        KaliTool {
+            name: "social-analyzer".to_string(),
+            category: KaliToolCategory::OSInt,
+            description: "Find social media profiles".to_string(),
+            command: "social-analyzer".to_string(),
+            typical_args: vec!["--username".to_string()],
+            requires_root: false,
+            install_command: Some("npm install -g social-analyzer".to_string()),
+            execution_time_estimate: 60,
+        },
+        KaliTool {
+            name: "email2phonenumber".to_string(),
+            category: KaliToolCategory::OSInt,
+            description: "OSINT tool to obtain phone numbers from emails".to_string(),
+            command: "email2phonenumber".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("pip3 install email2phonenumber".to_string()),
+            execution_time_estimate: 30,
+        },
+        KaliTool {
+            name: "holehe".to_string(),
+            category: KaliToolCategory::OSInt,
+            description: "Check if email is used on various sites".to_string(),
+            command: "holehe".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("pip3 install holehe".to_string()),
+            execution_time_estimate: 60,
+        },
+        KaliTool {
+            name: "ghunt".to_string(),
+            category: KaliToolCategory::OSInt,
+            description: "Google account OSINT tool".to_string(),
+            command: "ghunt".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("git clone https://github.com/mxrch/GHunt.git".to_string()),
+            execution_time_estimate: 90,
+        },
+        KaliTool {
+            name: "linkedin2username".to_string(),
+            category: KaliToolCategory::OSInt,
+            description: "Generate username lists from LinkedIn".to_string(),
+            command: "linkedin2username".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("pip3 install linkedin2username".to_string()),
+            execution_time_estimate: 60,
+        },
+        KaliTool {
+            name: "instagram-scraper".to_string(),
+            category: KaliToolCategory::OSInt,
+            description: "Instagram profile scraper".to_string(),
+            command: "instagram-scraper".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("pip3 install instagram-scraper".to_string()),
+            execution_time_estimate: 30,
+        },
+        KaliTool {
+            name: "tiktok-scraper".to_string(),
+            category: KaliToolCategory::OSInt,
+            description: "TikTok profile and video scraper".to_string(),
+            command: "tiktok-scraper".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("pip3 install tiktok-scraper".to_string()),
+            execution_time_estimate: 45,
+        },
+        KaliTool {
+            name: "twitter-scraper".to_string(),
+            category: KaliToolCategory::OSInt,
+            description: "Twitter/X profile scraper".to_string(),
+            command: "twitter-scraper".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("pip3 install twitter-scraper".to_string()),
+            execution_time_estimate: 45,
+        },
+        KaliTool {
+            name: "facebook-scraper".to_string(),
+            category: KaliToolCategory::OSInt,
+            description: "Facebook profile scraper".to_string(),
+            command: "facebook-scraper".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("pip3 install facebook-scraper".to_string()),
+            execution_time_estimate: 45,
+        },
+        KaliTool {
+            name: "discord-scraper".to_string(),
+            category: KaliToolCategory::OSInt,
+            description: "Discord server and user scraper".to_string(),
+            command: "discord-scraper".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("pip3 install discord-scraper".to_string()),
+            execution_time_estimate: 45,
+        },
+        KaliTool {
+            name: "snapchat-scraper".to_string(),
+            category: KaliToolCategory::OSInt,
+            description: "Snapchat profile scraper".to_string(),
+            command: "snapchat-scraper".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("pip3 install snapchat-scraper".to_string()),
+            execution_time_estimate: 45,
+        },
+
+        // ========== ADVANCED PASSWORD CRACKING TOOLS ==========
+        KaliTool {
+            name: "john-the-ripper".to_string(),
+            category: KaliToolCategory::PasswordAttacks,
+            description: "Advanced password cracker with social engineering rules".to_string(),
+            command: "john".to_string(),
+            typical_args: vec!["--wordlist=/usr/share/wordlists/rockyou.txt".to_string()],
+            requires_root: false,
+            install_command: Some("sudo apt install john".to_string()),
+            execution_time_estimate: 600,
+        },
+        KaliTool {
+            name: "hashcat".to_string(),
+            category: KaliToolCategory::PasswordAttacks,
+            description: "GPU-accelerated password cracker".to_string(),
+            command: "hashcat".to_string(),
+            typical_args: vec!["-m".to_string(), "0".to_string(), "-a".to_string(), "0".to_string()],
+            requires_root: false,
+            install_command: Some("sudo apt install hashcat".to_string()),
+            execution_time_estimate: 600,
+        },
+        KaliTool {
+            name: "hydra".to_string(),
+            category: KaliToolCategory::PasswordAttacks,
+            description: "Online password cracking for social platforms".to_string(),
+            command: "hydra".to_string(),
+            typical_args: vec!["-l".to_string(), "username".to_string(), "-P".to_string(), "wordlist.txt".to_string()],
+            requires_root: false,
+            install_command: Some("sudo apt install hydra".to_string()),
+            execution_time_estimate: 300,
+        },
+        KaliTool {
+            name: "patator".to_string(),
+            category: KaliToolCategory::PasswordAttacks,
+            description: "Multi-purpose brute-forcer for social logins".to_string(),
+            command: "patator".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install patator".to_string()),
+            execution_time_estimate: 300,
+        },
+        KaliTool {
+            name: "medusa".to_string(),
+            category: KaliToolCategory::PasswordAttacks,
+            description: "Parallel login brute-forcer".to_string(),
+            command: "medusa".to_string(),
+            typical_args: vec!["-h".to_string(), "target".to_string()],
+            requires_root: false,
+            install_command: Some("sudo apt install medusa".to_string()),
+            execution_time_estimate: 300,
+        },
+        KaliTool {
+            name: "ncrack".to_string(),
+            category: KaliToolCategory::PasswordAttacks,
+            description: "Network authentication cracking tool".to_string(),
+            command: "ncrack".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install ncrack".to_string()),
+            execution_time_estimate: 300,
+        },
+        KaliTool {
+            name: "cewl".to_string(),
+            category: KaliToolCategory::PasswordAttacks,
+            description: "Custom wordlist generator from social profiles".to_string(),
+            command: "cewl".to_string(),
+            typical_args: vec!["-d".to_string(), "2".to_string(), "-m".to_string(), "5".to_string()],
+            requires_root: false,
+            install_command: Some("sudo apt install cewl".to_string()),
+            execution_time_estimate: 120,
+        },
+        KaliTool {
+            name: "crunch".to_string(),
+            category: KaliToolCategory::PasswordAttacks,
+            description: "Wordlist generator for social engineering attacks".to_string(),
+            command: "crunch".to_string(),
+            typical_args: vec!["8".to_string(), "8".to_string(), "-t".to_string(), "@@@@%%%%".to_string()],
+            requires_root: false,
+            install_command: Some("sudo apt install crunch".to_string()),
+            execution_time_estimate: 60,
+        },
+        KaliTool {
+            name: "cupp".to_string(),
+            category: KaliToolCategory::PasswordAttacks,
+            description: "Common User Passwords Profiler".to_string(),
+            command: "cupp".to_string(),
+            typical_args: vec!["-i".to_string()],
+            requires_root: false,
+            install_command: Some("sudo apt install cupp".to_string()),
+            execution_time_estimate: 30,
+        },
+        KaliTool {
+            name: "rsmangler".to_string(),
+            category: KaliToolCategory::PasswordAttacks,
+            description: "Wordlist mangling tool for social passwords".to_string(),
+            command: "rsmangler".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install rsmangler".to_string()),
+            execution_time_estimate: 60,
+        },
+
+        // ========== ADVANCED PHISHING TOOLS ==========
+        KaliTool {
+            name: "gophish".to_string(),
+            category: KaliToolCategory::SocialEngineering,
+            description: "Open-source phishing toolkit".to_string(),
+            command: "gophish".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("Download from https://getgophish.com/".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "king-phisher".to_string(),
+            category: KaliToolCategory::SocialEngineering,
+            description: "Phishing campaign toolkit".to_string(),
+            command: "king-phisher".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install king-phisher".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "evilginx2".to_string(),
+            category: KaliToolCategory::SocialEngineering,
+            description: "Man-in-the-middle attack framework for OAuth".to_string(),
+            command: "evilginx2".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("git clone https://github.com/kgretzky/evilginx2.git".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "modlishka".to_string(),
+            category: KaliToolCategory::SocialEngineering,
+            description: "Reverse proxy for phishing".to_string(),
+            command: "modlishka".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("git clone https://github.com/drk1wi/Modlishka.git".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "blackeye".to_string(),
+            category: KaliToolCategory::SocialEngineering,
+            description: "Phishing pages generator".to_string(),
+            command: "blackeye".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("git clone https://github.com/An0nUD4Y/blackeye.git".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "hiddeneye".to_string(),
+            category: KaliToolCategory::SocialEngineering,
+            description: "Modern phishing tool with OAuth support".to_string(),
+            command: "hiddeneye".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("git clone https://github.com/DarkSecDevelopers/HiddenEye.git".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "socialfish".to_string(),
+            category: KaliToolCategory::SocialEngineering,
+            description: "Automated phishing tool".to_string(),
+            command: "socialfish".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("git clone https://github.com/UndeadSec/SocialFish.git".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "zphisher".to_string(),
+            category: KaliToolCategory::SocialEngineering,
+            description: "Automated phishing tool for social networks".to_string(),
+            command: "zphisher".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("git clone https://github.com/htr-tech/zphisher.git".to_string()),
+            execution_time_estimate: 0,
+        },
+
+        // ========== ADVANCED 2FA BYPASS TOOLS ==========
+        KaliTool {
+            name: "sms-bomber".to_string(),
+            category: KaliToolCategory::SocialEngineering,
+            description: "SMS bombing tool for 2FA bypass".to_string(),
+            command: "sms-bomber".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("pip3 install sms-bomber".to_string()),
+            execution_time_estimate: 60,
+        },
+        KaliTool {
+            name: "totp-bypass".to_string(),
+            category: KaliToolCategory::SocialEngineering,
+            description: "TOTP token manipulation tool".to_string(),
+            command: "python3".to_string(),
+            typical_args: vec!["-c".to_string(), "import pyotp".to_string()],
+            requires_root: false,
+            install_command: Some("pip3 install pyotp".to_string()),
+            execution_time_estimate: 30,
+        },
+        KaliTool {
+            name: "sim-swapper".to_string(),
+            category: KaliToolCategory::SocialEngineering,
+            description: "SIM swapping attack simulation".to_string(),
+            command: "sim-swapper".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("Research SIM swapping techniques".to_string()),
+            execution_time_estimate: 0,
+        },
+
+        // ========== ADVANCED EMAIL CRACKING TOOLS ==========
+        KaliTool {
+            name: "swaks".to_string(),
+            category: KaliToolCategory::PasswordAttacks,
+            description: "SMTP testing tool for email cracking".to_string(),
+            command: "swaks".to_string(),
+            typical_args: vec!["--to".to_string(), "target@example.com".to_string()],
+            requires_root: false,
+            install_command: Some("sudo apt install swaks".to_string()),
+            execution_time_estimate: 30,
+        },
+        KaliTool {
+            name: "smtp-user-enum".to_string(),
+            category: KaliToolCategory::PasswordAttacks,
+            description: "SMTP user enumeration tool".to_string(),
+            command: "smtp-user-enum".to_string(),
+            typical_args: vec!["-M".to_string(), "VRFY".to_string(), "-u".to_string()],
+            requires_root: false,
+            install_command: Some("sudo apt install smtp-user-enum".to_string()),
+            execution_time_estimate: 60,
+        },
+        KaliTool {
+            name: "email-harvester".to_string(),
+            category: KaliToolCategory::OSInt,
+            description: "Advanced email harvesting tool".to_string(),
+            command: "email-harvester".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("pip3 install email-harvester".to_string()),
+            execution_time_estimate: 90,
+        },
+        KaliTool {
+            name: "infoga".to_string(),
+            category: KaliToolCategory::OSInt,
+            description: "Email OSINT tool".to_string(),
+            command: "infoga".to_string(),
+            typical_args: vec!["-t".to_string()],
+            requires_root: false,
+            install_command: Some("git clone https://github.com/m4ll0k/Infoga.git".to_string()),
+            execution_time_estimate: 120,
+        },
+        KaliTool {
+            name: "veil-framework".to_string(),
+            category: KaliToolCategory::SocialEngineering,
+            description: "Payload generator".to_string(),
+            command: "veil".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install veil".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "the-backdoor-factory".to_string(),
+            category: KaliToolCategory::SocialEngineering,
+            description: "Patch PE, ELF, Mach-O binaries with shellcode".to_string(),
+            command: "backdoor-factory".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install the-backdoor-factory".to_string()),
+            execution_time_estimate: 60,
+        },
+        KaliTool {
+            name: "shellter".to_string(),
+            category: KaliToolCategory::SocialEngineering,
+            description: "Dynamic shellcode injection tool".to_string(),
+            command: "shellter".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install shellter".to_string()),
+            execution_time_estimate: 60,
+        },
+        KaliTool {
+            name: "hyperion".to_string(),
+            category: KaliToolCategory::SocialEngineering,
+            description: "Runtime encryptor for 32-bit PE files".to_string(),
+            command: "hyperion".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install hyperion".to_string()),
+            execution_time_estimate: 30,
+        },
+        KaliTool {
+            name: "upx".to_string(),
+            category: KaliToolCategory::SocialEngineering,
+            description: "Ultimate packer for executables".to_string(),
+            command: "upx".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install upx-ucl".to_string()),
+            execution_time_estimate: 30,
+        },
+
+        // ========== COMPREHENSIVE FORENSICS TOOLS ==========
+        KaliTool {
+            name: "chkrootkit".to_string(),
+            category: KaliToolCategory::Forensics,
+            description: "Rootkit detector".to_string(),
+            command: "chkrootkit".to_string(),
+            typical_args: vec![],
+            requires_root: true,
+            install_command: Some("sudo apt install chkrootkit".to_string()),
+            execution_time_estimate: 120,
+        },
+        KaliTool {
+            name: "rkhunter".to_string(),
+            category: KaliToolCategory::Forensics,
+            description: "Rootkit hunter".to_string(),
+            command: "rkhunter".to_string(),
+            typical_args: vec!["--check".to_string()],
+            requires_root: true,
+            install_command: Some("sudo apt install rkhunter".to_string()),
+            execution_time_estimate: 180,
+        },
+        KaliTool {
+            name: "clamav".to_string(),
+            category: KaliToolCategory::Forensics,
+            description: "Antivirus engine".to_string(),
+            command: "clamscan".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install clamav".to_string()),
+            execution_time_estimate: 300,
+        },
+        KaliTool {
+            name: "yara".to_string(),
+            category: KaliToolCategory::Forensics,
+            description: "Pattern matching tool for malware researchers".to_string(),
+            command: "yara".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install yara".to_string()),
+            execution_time_estimate: 60,
+        },
+        KaliTool {
+            name: "ssdeep".to_string(),
+            category: KaliToolCategory::Forensics,
+            description: "Fuzzy hashing tool".to_string(),
+            command: "ssdeep".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install ssdeep".to_string()),
+            execution_time_estimate: 30,
+        },
+        KaliTool {
+            name: "exiftool".to_string(),
+            category: KaliToolCategory::FileForensics,
+            description: "Metadata reader".to_string(),
+            command: "exiftool".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install libimage-exiftool-perl".to_string()),
+            execution_time_estimate: 30,
+        },
+        KaliTool {
+            name: "pdf-parser".to_string(),
+            category: KaliToolCategory::FileForensics,
+            description: "PDF analysis tool".to_string(),
+            command: "pdf-parser".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install pdf-parser".to_string()),
+            execution_time_estimate: 30,
+        },
+        KaliTool {
+            name: "pdfid".to_string(),
+            category: KaliToolCategory::FileForensics,
+            description: "PDF analysis tool".to_string(),
+            command: "pdfid".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install pdfid".to_string()),
+            execution_time_estimate: 30,
+        },
+        KaliTool {
+            name: "peepdf".to_string(),
+            category: KaliToolCategory::FileForensics,
+            description: "PDF analysis tool".to_string(),
+            command: "peepdf".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install peepdf".to_string()),
+            execution_time_estimate: 60,
+        },
+        KaliTool {
+            name: "oledump".to_string(),
+            category: KaliToolCategory::FileForensics,
+            description: "OLE file analysis".to_string(),
+            command: "oledump".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install oledump".to_string()),
+            execution_time_estimate: 30,
+        },
+        KaliTool {
+            name: "rtfobj".to_string(),
+            category: KaliToolCategory::FileForensics,
+            description: "RTF file analysis".to_string(),
+            command: "rtfobj".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("pip3 install oletools".to_string()),
+            execution_time_estimate: 30,
+        },
+
+        // ========== COMPREHENSIVE REVERSE ENGINEERING TOOLS ==========
+        KaliTool {
+            name: "edb-debugger".to_string(),
+            category: KaliToolCategory::ReverseEngineering,
+            description: "Multi-architecture debugger".to_string(),
+            command: "edb".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install edb-debugger".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "nemesis".to_string(),
+            category: KaliToolCategory::ReverseEngineering,
+            description: "Multi-architecture binary analysis framework".to_string(),
+            command: "nemesis".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install nemesis".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "plasma".to_string(),
+            category: KaliToolCategory::ReverseEngineering,
+            description: "Interactive disassembler".to_string(),
+            command: "plasma".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("pip3 install plasma".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "barf".to_string(),
+            category: KaliToolCategory::ReverseEngineering,
+            description: "Binary Analysis and Reverse engineering Framework".to_string(),
+            command: "barf".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("pip3 install barf".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "miasm".to_string(),
+            category: KaliToolCategory::ReverseEngineering,
+            description: "Reverse engineering framework".to_string(),
+            command: "python3".to_string(),
+            typical_args: vec!["-c".to_string(), "import miasm".to_string()],
+            requires_root: false,
+            install_command: Some("pip3 install miasm".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "capstone".to_string(),
+            category: KaliToolCategory::ReverseEngineering,
+            description: "Multi-architecture disassembly framework".to_string(),
+            command: "python3".to_string(),
+            typical_args: vec!["-c".to_string(), "import capstone".to_string()],
+            requires_root: false,
+            install_command: Some("pip3 install capstone".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "keystone".to_string(),
+            category: KaliToolCategory::ReverseEngineering,
+            description: "Assembler framework".to_string(),
+            command: "python3".to_string(),
+            typical_args: vec!["-c".to_string(), "import keystone".to_string()],
+            requires_root: false,
+            install_command: Some("pip3 install keystone-engine".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "unicorn".to_string(),
+            category: KaliToolCategory::ReverseEngineering,
+            description: "CPU emulator framework".to_string(),
+            command: "python3".to_string(),
+            typical_args: vec!["-c".to_string(), "import unicorn".to_string()],
+            requires_root: false,
+            install_command: Some("pip3 install unicorn".to_string()),
+            execution_time_estimate: 0,
+        },
+
+        // ========== COMPREHENSIVE EXPLOITATION TOOLS ==========
+        KaliTool {
+            name: "beef".to_string(),
+            category: KaliToolCategory::ExploitationTools,
+            description: "Browser Exploitation Framework".to_string(),
+            command: "beef".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install beef-xss".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "termineter".to_string(),
+            category: KaliToolCategory::ExploitationTools,
+            description: "Smart meter testing framework".to_string(),
+            command: "termineter".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install termineter".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "king-phisher".to_string(),
+            category: KaliToolCategory::ExploitationTools,
+            description: "Phishing campaign toolkit".to_string(),
+            command: "king-phisher".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install king-phisher".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "wifiphisher".to_string(),
+            category: KaliToolCategory::ExploitationTools,
+            description: "Automated victim-customized phishing attacks".to_string(),
+            command: "wifiphisher".to_string(),
+            typical_args: vec![],
+            requires_root: true,
+            install_command: Some("sudo apt install wifiphisher".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "sslstrip".to_string(),
+            category: KaliToolCategory::ExploitationTools,
+            description: "SSL stripping attack".to_string(),
+            command: "sslstrip".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install sslstrip".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "sslsplit".to_string(),
+            category: KaliToolCategory::ExploitationTools,
+            description: "SSL/TLS interception tool".to_string(),
+            command: "sslsplit".to_string(),
+            typical_args: vec![],
+            requires_root: true,
+            install_command: Some("sudo apt install sslsplit".to_string()),
+            execution_time_estimate: 0,
+        },
+
+        // ========== COMPREHENSIVE PASSWORD ATTACK TOOLS ==========
+        KaliTool {
+            name: "rainbowcrack".to_string(),
+            category: KaliToolCategory::PasswordAttacks,
+            description: "Rainbow table attack tool".to_string(),
+            command: "rcrack".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install rainbowcrack".to_string()),
+            execution_time_estimate: 300,
+        },
+        KaliTool {
+            name: "ophcrack".to_string(),
+            category: KaliToolCategory::PasswordAttacks,
+            description: "Windows password cracker".to_string(),
+            command: "ophcrack".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install ophcrack".to_string()),
+            execution_time_estimate: 300,
+        },
+        KaliTool {
+            name: "l0phtcrack".to_string(),
+            category: KaliToolCategory::PasswordAttacks,
+            description: "Password auditing and recovery".to_string(),
+            command: "lc7".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install l0phtcrack".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "fcrackzip".to_string(),
+            category: KaliToolCategory::PasswordAttacks,
+            description: "ZIP password cracker".to_string(),
+            command: "fcrackzip".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install fcrackzip".to_string()),
+            execution_time_estimate: 300,
+        },
+        KaliTool {
+            name: "rarcrack".to_string(),
+            category: KaliToolCategory::PasswordAttacks,
+            description: "RAR password cracker".to_string(),
+            command: "rarcrack".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install rarcrack".to_string()),
+            execution_time_estimate: 300,
+        },
+        KaliTool {
+            name: "pdfcrack".to_string(),
+            category: KaliToolCategory::PasswordAttacks,
+            description: "PDF password cracker".to_string(),
+            command: "pdfcrack".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install pdfcrack".to_string()),
+            execution_time_estimate: 300,
+        },
+        KaliTool {
+            name: "vnc-crack".to_string(),
+            category: KaliToolCategory::PasswordAttacks,
+            description: "VNC password cracker".to_string(),
+            command: "vnc-crack".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install vnc-crack".to_string()),
+            execution_time_estimate: 300,
+        },
+
+        // ========== COMPREHENSIVE FUZZING TOOLS ==========
+        KaliTool {
+            name: "spike".to_string(),
+            category: KaliToolCategory::Fuzzing,
+            description: "Network protocol fuzzer".to_string(),
+            command: "spike".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install spike".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "peach".to_string(),
+            category: KaliToolCategory::Fuzzing,
+            description: "Smart fuzzer".to_string(),
+            command: "peach".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install peach".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "sulley".to_string(),
+            category: KaliToolCategory::Fuzzing,
+            description: "Fuzzer development and fuzz testing framework".to_string(),
+            command: "sulley".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("pip3 install sulley".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "boofuzz".to_string(),
+            category: KaliToolCategory::Fuzzing,
+            description: "Network protocol fuzzing for humans".to_string(),
+            command: "boofuzz".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("pip3 install boofuzz".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "kitty".to_string(),
+            category: KaliToolCategory::Fuzzing,
+            description: "Fuzzer framework".to_string(),
+            command: "kitty".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("pip3 install kitty".to_string()),
+            execution_time_estimate: 0,
+        },
+
+        // ========== COMPREHENSIVE REPORTING TOOLS ==========
+        KaliTool {
+            name: "casefile".to_string(),
+            category: KaliToolCategory::Reporting,
+            description: "Mind mapping tool".to_string(),
+            command: "casefile".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install casefile".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "maltego".to_string(),
+            category: KaliToolCategory::Reporting,
+            description: "Open source intelligence and forensics".to_string(),
+            command: "maltego".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install maltego".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "recon-ng".to_string(),
+            category: KaliToolCategory::Reporting,
+            description: "Web reconnaissance framework".to_string(),
+            command: "recon-ng".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install recon-ng".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "keepnote".to_string(),
+            category: KaliToolCategory::Reporting,
+            description: "Note taking and organization".to_string(),
+            command: "keepnote".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install keepnote".to_string()),
+            execution_time_estimate: 0,
+        },
+        KaliTool {
+            name: "cherrytree".to_string(),
+            category: KaliToolCategory::Reporting,
+            description: "Hierarchical note taking application".to_string(),
+            command: "cherrytree".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install cherrytree".to_string()),
+            execution_time_estimate: 0,
+        },
+
+        // ========== COMPREHENSIVE SYSTEM TOOLS ==========
+        KaliTool {
+            name: "chkconfig".to_string(),
+            category: KaliToolCategory::Forensics,
+            description: "System service manager".to_string(),
+            command: "chkconfig".to_string(),
+            typical_args: vec![],
+            requires_root: true,
+            install_command: Some("sudo apt install chkconfig".to_string()),
+            execution_time_estimate: 30,
+        },
+        KaliTool {
+            name: "sysctl".to_string(),
+            category: KaliToolCategory::Forensics,
+            description: "Configure kernel parameters".to_string(),
+            command: "sysctl".to_string(),
+            typical_args: vec!["-a".to_string()],
+            requires_root: true,
+            install_command: Some("sudo apt install procps".to_string()),
+            execution_time_estimate: 10,
+        },
+        KaliTool {
+            name: "lsof".to_string(),
+            category: KaliToolCategory::Forensics,
+            description: "List open files".to_string(),
+            command: "lsof".to_string(),
+            typical_args: vec![],
+            requires_root: true,
+            install_command: Some("sudo apt install lsof".to_string()),
+            execution_time_estimate: 30,
+        },
+        KaliTool {
+            name: "ps".to_string(),
+            category: KaliToolCategory::Forensics,
+            description: "Process status".to_string(),
+            command: "ps".to_string(),
+            typical_args: vec!["aux".to_string()],
+            requires_root: false,
+            install_command: Some("sudo apt install procps".to_string()),
+            execution_time_estimate: 5,
+        },
+        KaliTool {
+            name: "netstat".to_string(),
+            category: KaliToolCategory::NetworkForensics,
+            description: "Network statistics".to_string(),
+            command: "netstat".to_string(),
+            typical_args: vec!["-tuln".to_string()],
+            requires_root: false,
+            install_command: Some("sudo apt install net-tools".to_string()),
+            execution_time_estimate: 10,
+        },
+        KaliTool {
+            name: "ss".to_string(),
+            category: KaliToolCategory::NetworkForensics,
+            description: "Socket statistics".to_string(),
+            command: "ss".to_string(),
+            typical_args: vec!["-tuln".to_string()],
+            requires_root: false,
+            install_command: Some("sudo apt install iproute2".to_string()),
+            execution_time_estimate: 10,
+        },
+        KaliTool {
+            name: "iptables".to_string(),
+            category: KaliToolCategory::Forensics,
+            description: "Firewall administration".to_string(),
+            command: "iptables".to_string(),
+            typical_args: vec!["-L".to_string()],
+            requires_root: true,
+            install_command: Some("sudo apt install iptables".to_string()),
+            execution_time_estimate: 10,
+        },
+        KaliTool {
+            name: "ufw".to_string(),
+            category: KaliToolCategory::Forensics,
+            description: "Uncomplicated firewall".to_string(),
+            command: "ufw".to_string(),
+            typical_args: vec!["status".to_string()],
+            requires_root: true,
+            install_command: Some("sudo apt install ufw".to_string()),
+            execution_time_estimate: 5,
+        },
+
+        // ========== ADDITIONAL INFORMATION GATHERING TOOLS ==========
+        KaliTool {
+            name: "whois".to_string(),
+            category: KaliToolCategory::OSInt,
+            description: "Domain information lookup".to_string(),
+            command: "whois".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install whois".to_string()),
+            execution_time_estimate: 10,
+        },
+        KaliTool {
+            name: "dig".to_string(),
+            category: KaliToolCategory::DnsEnumeration,
+            description: "DNS lookup utility".to_string(),
+            command: "dig".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install dnsutils".to_string()),
+            execution_time_estimate: 5,
+        },
+        KaliTool {
+            name: "nslookup".to_string(),
+            category: KaliToolCategory::DnsEnumeration,
+            description: "DNS query tool".to_string(),
+            command: "nslookup".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install dnsutils".to_string()),
+            execution_time_estimate: 5,
+        },
+        KaliTool {
+            name: "host".to_string(),
+            category: KaliToolCategory::DnsEnumeration,
+            description: "DNS lookup utility".to_string(),
+            command: "host".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install bind9-host".to_string()),
+            execution_time_estimate: 5,
+        },
+        KaliTool {
+            name: "traceroute".to_string(),
+            category: KaliToolCategory::NetworkScanning,
+            description: "Trace packet route".to_string(),
+            command: "traceroute".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install traceroute".to_string()),
+            execution_time_estimate: 30,
+        },
+        KaliTool {
+            name: "tracepath".to_string(),
+            category: KaliToolCategory::NetworkScanning,
+            description: "Trace packet path".to_string(),
+            command: "tracepath".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install iputils-tracepath".to_string()),
+            execution_time_estimate: 30,
+        },
+        KaliTool {
+            name: "mtr".to_string(),
+            category: KaliToolCategory::NetworkScanning,
+            description: "Network diagnostic tool".to_string(),
+            command: "mtr".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install mtr".to_string()),
+            execution_time_estimate: 60,
+        },
+        KaliTool {
+            name: "hping3".to_string(),
+            category: KaliToolCategory::NetworkScanning,
+            description: "TCP/IP packet assembler/analyzer".to_string(),
+            command: "hping3".to_string(),
+            typical_args: vec!["--traceroute".to_string()],
+            requires_root: true,
+            install_command: Some("sudo apt install hping3".to_string()),
+            execution_time_estimate: 60,
+        },
+        KaliTool {
+            name: "fping".to_string(),
+            category: KaliToolCategory::NetworkScanning,
+            description: "Send ICMP echo probes".to_string(),
+            command: "fping".to_string(),
+            typical_args: vec![],
+            requires_root: false,
+            install_command: Some("sudo apt install fping".to_string()),
+            execution_time_estimate: 30,
+        },
+        KaliTool {
+            name: "arping".to_string(),
+            category: KaliToolCategory::NetworkScanning,
+            description: "ARP ping utility".to_string(),
+            command: "arping".to_string(),
+            typical_args: vec![],
+            requires_root: true,
+            install_command: Some("sudo apt install arping".to_string()),
+            execution_time_estimate: 10,
+        },
+        KaliTool {
+            name: "arp-scan".to_string(),
+            category: KaliToolCategory::NetworkScanning,
+            description: "ARP scanning tool".to_string(),
+            command: "arp-scan".to_string(),
+            typical_args: vec!["--localnet".to_string()],
+            requires_root: true,
+            install_command: Some("sudo apt install arp-scan".to_string()),
+            execution_time_estimate: 15,
+        },
     ]
 }
 
@@ -1135,7 +3356,11 @@ impl FenrirOrchestrationEngine {
         }
     }
 
-    pub async fn execute_tool(&mut self, tool: &KaliTool, args: &[String]) -> Result<String, String> {
+    pub async fn execute_tool(
+        &mut self,
+        tool: &KaliTool,
+        args: &[String],
+    ) -> Result<String, String> {
         let start = std::time::Instant::now();
 
         // Check if tool is available
@@ -1148,9 +3373,17 @@ impl FenrirOrchestrationEngine {
                 tool_selected: tool.name.clone(),
                 target: self.target.clone(),
                 success: false,
-                output_summary: format!("Tool not found. Install: {}", tool.install_command.as_ref().unwrap_or(&"unknown".to_string())),
+                output_summary: format!(
+                    "Tool not found. Install: {}",
+                    tool.install_command
+                        .as_ref()
+                        .unwrap_or(&"unknown".to_string())
+                ),
                 execution_time_ms: 0,
-                next_steps: vec![format!("Install tool: {}", tool.install_command.as_ref().unwrap_or(&"".to_string()))],
+                next_steps: vec![format!(
+                    "Install tool: {}",
+                    tool.install_command.as_ref().unwrap_or(&"".to_string())
+                )],
             };
 
             self.logger.log_decision(decision).await;
@@ -1188,9 +3421,7 @@ impl FenrirOrchestrationEngine {
         // Execute tool
         println!("🔧 Executing {} on {}", tool.name, self.target);
 
-        let output = Command::new(&tool.command)
-            .args(args)
-            .output();
+        let output = Command::new(&tool.command).args(args).output();
 
         let execution_time = start.elapsed().as_millis() as u64;
 
@@ -1206,24 +3437,39 @@ impl FenrirOrchestrationEngine {
                 let decision = BrainDecision {
                     timestamp: Utc::now(),
                     decision_id: uuid::Uuid::new_v4().to_string(),
-                    decision_type: if success { DecisionType::ToolSelection } else { DecisionType::StrategyChange },
-                    reasoning: format!("Executed {} - Status: {}", tool.name, if success { "Success" } else { "Failed" }),
+                    decision_type: if success {
+                        DecisionType::ToolSelection
+                    } else {
+                        DecisionType::StrategyChange
+                    },
+                    reasoning: format!(
+                        "Executed {} - Status: {}",
+                        tool.name,
+                        if success { "Success" } else { "Failed" }
+                    ),
                     tool_selected: tool.name.clone(),
                     target: self.target.clone(),
                     success,
                     output_summary: combined_output.chars().take(500).collect(),
                     execution_time_ms: execution_time,
                     next_steps: if success {
-                        vec!["Analyze output for vulnerabilities".to_string(), "Check for sensitive data".to_string()]
+                        vec![
+                            "Analyze output for vulnerabilities".to_string(),
+                            "Check for sensitive data".to_string(),
+                        ]
                     } else {
-                        vec!["Review error logs".to_string(), "Try alternative tool".to_string()]
+                        vec![
+                            "Review error logs".to_string(),
+                            "Try alternative tool".to_string(),
+                        ]
                     },
                 };
 
                 self.logger.log_decision(decision).await;
 
                 // Analyze output for breaches
-                self.breach_detector.analyze_output(&combined_output, &tool.name);
+                self.breach_detector
+                    .analyze_output(&combined_output, &tool.name);
 
                 if success {
                     Ok(combined_output)
@@ -1242,7 +3488,10 @@ impl FenrirOrchestrationEngine {
                     success: false,
                     output_summary: format!("Error: {}", e),
                     execution_time_ms: execution_time,
-                    next_steps: vec!["Check tool installation".to_string(), "Verify permissions".to_string()],
+                    next_steps: vec![
+                        "Check tool installation".to_string(),
+                        "Verify permissions".to_string(),
+                    ],
                 };
 
                 self.logger.log_decision(decision).await;
@@ -1260,8 +3509,15 @@ impl FenrirOrchestrationEngine {
         // Phase 1: Reconnaissance
         println!("\n🔍 PHASE 1: RECONNAISSANCE");
 
-        let recon_tools: Vec<KaliTool> = self.tools.iter()
-            .filter(|t| matches!(t.category, KaliToolCategory::NetworkScanning | KaliToolCategory::DnsEnumeration))
+        let recon_tools: Vec<KaliTool> = self
+            .tools
+            .iter()
+            .filter(|t| {
+                matches!(
+                    t.category,
+                    KaliToolCategory::NetworkScanning | KaliToolCategory::DnsEnumeration
+                )
+            })
             .take(3)
             .cloned()
             .collect();
@@ -1282,8 +3538,16 @@ impl FenrirOrchestrationEngine {
         // Phase 2: Vulnerability Scanning
         println!("\n🔎 PHASE 2: VULNERABILITY SCANNING");
 
-        let vuln_tools: Vec<KaliTool> = self.tools.iter()
-            .filter(|t| matches!(t.category, KaliToolCategory::VulnerabilityAnalysis | KaliToolCategory::WebApplicationAnalysis))
+        let vuln_tools: Vec<KaliTool> = self
+            .tools
+            .iter()
+            .filter(|t| {
+                matches!(
+                    t.category,
+                    KaliToolCategory::VulnerabilityAnalysis
+                        | KaliToolCategory::WebApplicationAnalysis
+                )
+            })
             .take(3)
             .cloned()
             .collect();
@@ -1303,7 +3567,9 @@ impl FenrirOrchestrationEngine {
 
         // Phase 3: Sensitive Data Scanning
         println!("\n🔐 PHASE 3: SENSITIVE DATA SCANNING");
-        self.breach_detector.scan_files_for_sensitive_data(".").await;
+        self.breach_detector
+            .scan_files_for_sensitive_data(".")
+            .await;
 
         Ok(all_results.join("\n\n"))
     }
@@ -1365,7 +3631,9 @@ impl FenrirOrchestrationEngine {
 // Helper methods
 impl KaliTool {
     pub fn is_available(&self) -> bool {
-        Command::new("which").arg(&self.command).output()
+        Command::new("which")
+            .arg(&self.command)
+            .output()
             .map(|output| output.status.success())
             .unwrap_or(false)
     }

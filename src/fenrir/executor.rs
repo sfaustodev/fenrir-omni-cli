@@ -1,8 +1,8 @@
 // --- MÓDULO EXECUTOR ---
 // Módulo responsável por executar as tarefas definidas pelo Oráculo
 
-use std::process::Command;
 use std::io::{self, Write};
+use std::process::Command;
 
 pub struct FenrirTask {
     pub ia_explanation: String,
@@ -46,10 +46,13 @@ pub fn handle_execute_command(command: &str) {
     println!("🐺 Executando comando: {}", command);
 
     // Check if command needs shell (has operators like &&, ||, |, ;, >, <)
-    let needs_shell = command.contains("&&") || command.contains("||") ||
-                      command.contains('|') || command.contains(';') ||
-                      command.contains('>') || command.contains('<') ||
-                      command.contains("cd ");
+    let needs_shell = command.contains("&&")
+        || command.contains("||")
+        || command.contains('|')
+        || command.contains(';')
+        || command.contains('>')
+        || command.contains('<')
+        || command.contains("cd ");
 
     let output = if needs_shell {
         // Use shell for compound commands
@@ -89,7 +92,10 @@ pub fn handle_execute_command(command: &str) {
 pub fn handle_open_editor(application: &str, path: &str) {
     println!("🐺 Abrindo '{}' com aplicativo '{}'", path, application);
 
-    match Command::new("open").args(["-a", application, path]).output() {
+    match Command::new("open")
+        .args(["-a", application, path])
+        .output()
+    {
         Ok(output) => {
             if output.status.success() {
                 println!("✅ Arquivo aberto com sucesso!");

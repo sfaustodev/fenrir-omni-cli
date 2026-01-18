@@ -4,6 +4,7 @@
 // All calls are async and non-blocking
 
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::time::Duration;
 
 // Load .env file at startup
@@ -14,23 +15,35 @@ pub fn load_env() {
         let _ = dotenv::from_filename("../.env");
     }
 
-    // Debug: Check if keys are loaded
+    // Debug: Check if keys are loaded (use println! for interactive mode visibility)
     if std::env::var("ZAI_API_KEY").is_ok() {
-        eprintln!("✅ ZAI_API_KEY loaded (Fenrir Orchestrator)");
+        println!("✅ ZAI_API_KEY loaded (Fenrir Orchestrator)");
     } else {
-        eprintln!("⚠️  ZAI_API_KEY not found");
+        println!("⚠️  ZAI_API_KEY not found");
     }
-    
+
     if std::env::var("BLACKBOX_API_KEY").is_ok() {
-        eprintln!("✅ BLACKBOX_API_KEY loaded");
+        println!("✅ BLACKBOX_API_KEY loaded");
     } else {
-        eprintln!("⚠️  BLACKBOX_API_KEY not found");
+        println!("⚠️  BLACKBOX_API_KEY not found");
     }
-    
+
     if std::env::var("GEMINI_API_KEY").is_ok() {
-        eprintln!("✅ GEMINI_API_KEY loaded");
+        println!("✅ GEMINI_API_KEY loaded");
     } else {
-        eprintln!("⚠️  GEMINI_API_KEY not found");
+        println!("⚠️  GEMINI_API_KEY not found");
+    }
+
+    if std::env::var("GROK_API_KEY").is_ok() || std::env::var("XAI_API_KEY").is_ok() {
+        println!("✅ GROK/XAI_API_KEY loaded");
+    } else {
+        println!("⚠️  GROK/XAI_API_KEY not found");
+    }
+
+    if std::env::var("VENICE_API_KEY").is_ok() {
+        println!("✅ VENICE_API_KEY loaded");
+    } else {
+        println!("⚠️  VENICE_API_KEY not found");
     }
 }
 
@@ -173,22 +186,22 @@ pub enum TaskType {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum AIProvider {
     #[serde(rename = "zai_fenrir_orchestrator")]
-    ZaiFenrirOrchestrator,  // Zai - The Main Brain (Fenrir's decision maker)
+    ZaiFenrirOrchestrator, // Zai - The Main Brain (Fenrir's decision maker)
 
     #[serde(rename = "glm_orchestrator")]
-    GLM_Orchestrator,  // GLM 4.7 - Secondary orchestrator
+    GLM_Orchestrator, // GLM 4.7 - Secondary orchestrator
 
     #[serde(rename = "gemini_translator")]
-    GeminiTranslator,   // Translation only
+    GeminiTranslator, // Translation only
 
     #[serde(rename = "blackbox")]
-    Blackbox,          // General tasks (replaces Grok)
+    Blackbox, // General tasks (replaces Grok)
 
     #[serde(rename = "grok")]
-    Grok,              // Grok AI
+    Grok, // Grok AI
 
     #[serde(rename = "venice_red_team")]
-    VeniceRedTeam,     // Aggressive tasks (unguarded)
+    VeniceRedTeam, // Aggressive tasks (unguarded)
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -226,7 +239,7 @@ pub struct TaskResult {
     pub success: bool,
     pub output: String,
     pub error: Option<String>,
-    pub execution_time: u64,  // milliseconds
+    pub execution_time: u64, // milliseconds
     pub ai_provider: AIProvider,
 }
 
@@ -267,15 +280,13 @@ pub async fn call_ai(request: AIRequest) -> AIResponse {
         AIProvider::Blackbox => call_blackbox(request).await,
         AIProvider::Grok => call_grok(request).await,
         AIProvider::VeniceRedTeam => call_venice_red_team(request).await,
-        AIProvider::GLM_Orchestrator => {
-            AIResponse {
-                success: false,
-                content: String::from("GLM 4.7 is the orchestrator, not a callable AI"),
-                error: Some(String::from("Invalid AI provider")),
-                provider: AIProvider::GLM_Orchestrator,
-                execution_time_ms: 0,
-            }
-        }
+        AIProvider::GLM_Orchestrator => AIResponse {
+            success: false,
+            content: String::from("GLM 4.7 is the orchestrator, not a callable AI"),
+            error: Some(String::from("Invalid AI provider")),
+            provider: AIProvider::GLM_Orchestrator,
+            execution_time_ms: 0,
+        },
     };
 
     let execution_time = start.elapsed().as_millis() as u64;
@@ -290,8 +301,7 @@ pub async fn call_ai(request: AIRequest) -> AIResponse {
 // ============================================================================
 
 async fn call_gemini(request: AIRequest) -> AIResponse {
-    let api_key = std::env::var("GEMINI_API_KEY")
-        .unwrap_or_else(|_| String::from(""));
+    let api_key = std::env::var("GEMINI_API_KEY").unwrap_or_else(|_| String::from(""));
 
     if api_key.is_empty() {
         return AIResponse {
@@ -329,7 +339,9 @@ async fn call_gemini(request: AIRequest) -> AIResponse {
             match response.json::<serde_json::Value>().await {
                 Ok(json) => {
                     // Extract text from Gemini response
-                    if let Some(text) = json["candidates"][0]["content"]["parts"][0]["text"].as_str() {
+                    if let Some(text) =
+                        json["candidates"][0]["content"]["parts"][0]["text"].as_str()
+                    {
                         AIResponse {
                             success: true,
                             content: text.to_string(),
@@ -353,7 +365,7 @@ async fn call_gemini(request: AIRequest) -> AIResponse {
                     error: Some(format!("Failed to parse Gemini response: {}", e)),
                     provider: AIProvider::GeminiTranslator,
                     execution_time_ms: 0,
-                }
+                },
             }
         }
         Err(e) => {
@@ -374,8 +386,7 @@ async fn call_gemini(request: AIRequest) -> AIResponse {
 // ============================================================================
 
 async fn call_zai_orchestrator(request: AIRequest) -> AIResponse {
-    let api_key = std::env::var("ZAI_API_KEY")
-        .unwrap_or_else(|_| String::from(""));
+    let api_key = std::env::var("ZAI_API_KEY").unwrap_or_else(|_| String::from(""));
 
     if api_key.is_empty() {
         return AIResponse {
@@ -425,43 +436,41 @@ async fn call_zai_orchestrator(request: AIRequest) -> AIResponse {
         .send()
         .await
     {
-        Ok(response) => {
-            match response.json::<serde_json::Value>().await {
-                Ok(json) => {
-                    if let Some(content) = json["choices"][0]["message"]["content"].as_str() {
-                        AIResponse {
-                            success: true,
-                            content: content.to_string(),
-                            error: None,
-                            provider: AIProvider::ZaiFenrirOrchestrator,
-                            execution_time_ms: 0,
-                        }
-                    } else {
-                        AIResponse {
-                            success: false,
-                            content: String::from(""),
-                            error: Some(String::from("Invalid response format from Zai")),
-                            provider: AIProvider::ZaiFenrirOrchestrator,
-                            execution_time_ms: 0,
-                        }
+        Ok(response) => match response.json::<serde_json::Value>().await {
+            Ok(json) => {
+                if let Some(content) = json["choices"][0]["message"]["content"].as_str() {
+                    AIResponse {
+                        success: true,
+                        content: content.to_string(),
+                        error: None,
+                        provider: AIProvider::ZaiFenrirOrchestrator,
+                        execution_time_ms: 0,
+                    }
+                } else {
+                    AIResponse {
+                        success: false,
+                        content: String::from(""),
+                        error: Some(String::from("Invalid response format from Zai")),
+                        provider: AIProvider::ZaiFenrirOrchestrator,
+                        execution_time_ms: 0,
                     }
                 }
-                Err(e) => AIResponse {
-                    success: false,
-                    content: String::from(""),
-                    error: Some(format!("Failed to parse Zai response: {}", e)),
-                    provider: AIProvider::ZaiFenrirOrchestrator,
-                    execution_time_ms: 0,
-                }
             }
-        }
+            Err(e) => AIResponse {
+                success: false,
+                content: String::from(""),
+                error: Some(format!("Failed to parse Zai response: {}", e)),
+                provider: AIProvider::ZaiFenrirOrchestrator,
+                execution_time_ms: 0,
+            },
+        },
         Err(e) => AIResponse {
             success: false,
             content: String::from(""),
             error: Some(format!("Zai API call failed: {}", e)),
             provider: AIProvider::ZaiFenrirOrchestrator,
             execution_time_ms: 0,
-        }
+        },
     }
 }
 
@@ -470,8 +479,7 @@ async fn call_zai_orchestrator(request: AIRequest) -> AIResponse {
 // ============================================================================
 
 async fn call_blackbox(request: AIRequest) -> AIResponse {
-    let api_key = std::env::var("BLACKBOX_API_KEY")
-        .unwrap_or_else(|_| String::from(""));
+    let api_key = std::env::var("BLACKBOX_API_KEY").unwrap_or_else(|_| String::from(""));
 
     if api_key.is_empty() {
         return AIResponse {
@@ -517,43 +525,41 @@ async fn call_blackbox(request: AIRequest) -> AIResponse {
         .send()
         .await
     {
-        Ok(response) => {
-            match response.json::<serde_json::Value>().await {
-                Ok(json) => {
-                    if let Some(content) = json["choices"][0]["message"]["content"].as_str() {
-                        AIResponse {
-                            success: true,
-                            content: content.to_string(),
-                            error: None,
-                            provider: AIProvider::Blackbox,
-                            execution_time_ms: 0,
-                        }
-                    } else {
-                        AIResponse {
-                            success: false,
-                            content: String::from(""),
-                            error: Some(String::from("Invalid response format from Blackbox")),
-                            provider: AIProvider::Blackbox,
-                            execution_time_ms: 0,
-                        }
+        Ok(response) => match response.json::<serde_json::Value>().await {
+            Ok(json) => {
+                if let Some(content) = json["choices"][0]["message"]["content"].as_str() {
+                    AIResponse {
+                        success: true,
+                        content: content.to_string(),
+                        error: None,
+                        provider: AIProvider::Blackbox,
+                        execution_time_ms: 0,
+                    }
+                } else {
+                    AIResponse {
+                        success: false,
+                        content: String::from(""),
+                        error: Some(String::from("Invalid response format from Blackbox")),
+                        provider: AIProvider::Blackbox,
+                        execution_time_ms: 0,
                     }
                 }
-                Err(e) => AIResponse {
-                    success: false,
-                    content: String::from(""),
-                    error: Some(format!("Failed to parse Blackbox response: {}", e)),
-                    provider: AIProvider::Blackbox,
-                    execution_time_ms: 0,
-                }
             }
-        }
+            Err(e) => AIResponse {
+                success: false,
+                content: String::from(""),
+                error: Some(format!("Failed to parse Blackbox response: {}", e)),
+                provider: AIProvider::Blackbox,
+                execution_time_ms: 0,
+            },
+        },
         Err(e) => AIResponse {
             success: false,
             content: String::from(""),
             error: Some(format!("Blackbox API call failed: {}", e)),
             provider: AIProvider::Blackbox,
             execution_time_ms: 0,
-        }
+        },
     }
 }
 
@@ -562,8 +568,7 @@ async fn call_blackbox(request: AIRequest) -> AIResponse {
 // ============================================================================
 
 async fn call_venice_red_team(request: AIRequest) -> AIResponse {
-    let api_key = std::env::var("VENICE_API_KEY")
-        .unwrap_or_else(|_| String::from(""));
+    let api_key = std::env::var("VENICE_API_KEY").unwrap_or_else(|_| String::from(""));
 
     let api_url = std::env::var("VENICE_API_URL")
         .unwrap_or_else(|_| String::from("https://api.venice.ai/v1/chat/completions"));
@@ -610,23 +615,99 @@ async fn call_venice_red_team(request: AIRequest) -> AIResponse {
         .send()
         .await
     {
-        Ok(response) => {
-            match response.json::<serde_json::Value>().await {
-                Ok(json) => {
-                    if let Some(content) = json["choices"][0]["message"]["content"].as_str() {
-                        AIResponse {
-                            success: true,
-                            content: content.to_string(),
-                            error: None,
-                            provider: AIProvider::VeniceRedTeam,
-                            execution_time_ms: 0,
+        Ok(response) => match response.json::<serde_json::Value>().await {
+            Ok(json) => {
+                if let Some(content) = json["choices"][0]["message"]["content"].as_str() {
+                    AIResponse {
+                        success: true,
+                        content: content.to_string(),
+                        error: None,
+                        provider: AIProvider::VeniceRedTeam,
+                        execution_time_ms: 0,
+                    }
+                } else {
+                    AIResponse {
+                        success: false,
+                        content: String::from(""),
+                        error: Some(String::from("Invalid response format from Venice")),
+                        provider: AIProvider::VeniceRedTeam,
+                        execution_time_ms: 0,
+                    }
+                }
+            }
+            Err(e) => AIResponse {
+                success: false,
+                content: String::from(""),
+                error: Some(format!("Failed to parse Venice response: {}", e)),
+                provider: AIProvider::VeniceRedTeam,
+                execution_time_ms: 0,
+            },
+        },
+        Err(e) => AIResponse {
+            success: false,
+            content: String::from(""),
+            error: Some(format!("Venice API call failed: {}", e)),
+            provider: AIProvider::VeniceRedTeam,
+            execution_time_ms: 0,
+        },
+    }
+}
+
+async fn call_grok(request: AIRequest) -> AIResponse {
+    let api_key = std::env::var("GROK_API_KEY")
+        .or_else(|_| std::env::var("XAI_API_KEY"))
+        .map_err(|_| "GROK_API_KEY or XAI_API_KEY not set".to_string());
+
+    match api_key {
+        Ok(key) => {
+            let client = reqwest::Client::new();
+            let payload = serde_json::json!({
+                "model": "grok-3",
+                "messages": [{"role": "user", "content": request.user_message}],
+                "max_tokens": request.max_tokens.unwrap_or(4096)
+            });
+
+            let response = client
+                .post("https://api.x.ai/v1/chat/completions")
+                .header("Authorization", format!("Bearer {}", key))
+                .header("Content-Type", "application/json")
+                .json(&payload)
+                .send()
+                .await;
+
+            match response {
+                Ok(resp) => {
+                    if resp.status().is_success() {
+                        match resp.json::<serde_json::Value>().await {
+                            Ok(json) => {
+                                let content = json["choices"][0]["message"]["content"]
+                                    .as_str()
+                                    .unwrap_or("No content in response")
+                                    .to_string();
+                                AIResponse {
+                                    success: true,
+                                    content,
+                                    error: None,
+                                    provider: AIProvider::Grok,
+                                    execution_time_ms: 0,
+                                }
+                            }
+                            Err(e) => AIResponse {
+                                success: false,
+                                content: String::from(""),
+                                error: Some(format!("Failed to parse Grok response: {}", e)),
+                                provider: AIProvider::Grok,
+                                execution_time_ms: 0,
+                            },
                         }
                     } else {
+                        let status = resp.status();
+                        let error_text = resp.text().await.unwrap_or_default();
                         AIResponse {
                             success: false,
                             content: String::from(""),
-                            error: Some(String::from("Invalid response format from Venice")),
-                            provider: AIProvider::VeniceRedTeam,
+                            error: Some(format!("Grok API error ({}): {}", status, error_text)),
+                            provider: AIProvider::Grok,
                             execution_time_ms: 0,
                         }
                     }
@@ -634,19 +715,19 @@ async fn call_venice_red_team(request: AIRequest) -> AIResponse {
                 Err(e) => AIResponse {
                     success: false,
                     content: String::from(""),
-                    error: Some(format!("Failed to parse Venice response: {}", e)),
-                    provider: AIProvider::VeniceRedTeam,
+                    error: Some(format!("Grok request failed: {}", e)),
+                    provider: AIProvider::Grok,
                     execution_time_ms: 0,
-                }
+                },
             }
         }
         Err(e) => AIResponse {
             success: false,
             content: String::from(""),
-            error: Some(format!("Venice API call failed: {}", e)),
-            provider: AIProvider::VeniceRedTeam,
+            error: Some(e),
+            provider: AIProvider::Grok,
             execution_time_ms: 0,
-        }
+        },
     }
 }
 
@@ -687,24 +768,41 @@ impl FenrirTask {
         md.push_str(&format!("**Assigned AI**: {:?}\n\n", self.assigned_ai));
 
         md.push_str(&format!("### Description\n{}\n\n", self.description));
-        md.push_str(&format!("### User Input\n```\n{}\n```\n\n", self.user_input));
-        md.push_str(&format!("### Translated Command\n```\n{}\n```\n\n", self.translated_command));
+        md.push_str(&format!(
+            "### User Input\n```\n{}\n```\n\n",
+            self.user_input
+        ));
+        md.push_str(&format!(
+            "### Translated Command\n```\n{}\n```\n\n",
+            self.translated_command
+        ));
         md.push_str(&format!("### Task Type\n{:?}\n\n", self.task_type));
-        md.push_str(&format!("### Execution Mode\n{:?}\n\n", self.execution_mode));
+        md.push_str(&format!(
+            "### Execution Mode\n{:?}\n\n",
+            self.execution_mode
+        ));
 
         if !self.subtasks.is_empty() {
             md.push_str("### Subtasks\n\n");
             for subtask in &self.subtasks {
-                md.push_str(&format!("- {}: {} (Assigned: {:?})\n",
-                    subtask.id, subtask.description, subtask.assigned_ai));
+                md.push_str(&format!(
+                    "- {}: {} (Assigned: {:?})\n",
+                    subtask.id, subtask.description, subtask.assigned_ai
+                ));
             }
             md.push_str("\n");
         }
 
         if let Some(result) = &self.result {
-            md.push_str(&format!("### Result\n\n**Success**: {}\n\n", result.success));
+            md.push_str(&format!(
+                "### Result\n\n**Success**: {}\n\n",
+                result.success
+            ));
             md.push_str(&format!("**Provider**: {:?}\n", result.ai_provider));
-            md.push_str(&format!("**Execution Time**: {}ms\n\n", result.execution_time));
+            md.push_str(&format!(
+                "**Execution Time**: {}ms\n\n",
+                result.execution_time
+            ));
 
             if result.success {
                 md.push_str(&format!("**Output**:\n```\n{}\n```\n\n", result.output));
