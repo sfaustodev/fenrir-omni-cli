@@ -21,3 +21,11 @@ Thumbs.db
 
 # Test scripts
 test_*.rs
+
+# Non-essential files
+*.sh
+*.md
+docs/
+examples/
+fenrir_logs/
+Formula/

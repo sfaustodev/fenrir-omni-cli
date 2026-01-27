@@ -5,7 +5,7 @@
 1. **Ensure your environment variables are set:**
    ```bash
    # From your .zshrc
-   export VENICE_API_KEY="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"
+   export VENICE_API_KEY="YOUR_VENICE_API_KEY_HERE"
    export VENICE_BASE_URL="https://api.venice.ai/api/v1"
    export OPENAI_BASE_URL="https://openrouter.ai/api/v1"
    ```
@@ -257,7 +257,7 @@ The Venice AI integration reads from:
 
 Your current configuration from .zshrc:
 ```bash
-VENICE_API_KEY="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"
+VENICE_API_KEY="YOUR_VENICE_API_KEY_HERE"
 OPENAI_BASE_URL="https://openrouter.ai/api/v1"
 ```
 
