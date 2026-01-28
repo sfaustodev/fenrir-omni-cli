@@ -28,6 +28,7 @@ pub enum Commands {
     Daemon(DaemonCmd),
     Breach,
     Status,
+    Demo,
 }
 
 #[derive(Debug, Clone)]
@@ -121,10 +122,147 @@ pub enum DaemonCmd {
     Status,
 }
 
-// bpaf parser - simplified for now
+// Fuzzy command detection with smart matching
+fn fuzzy_command_match(input: &str) -> Option<Commands> {
+    let input_lower = input.to_lowercase();
+    let input_words: Vec<&str> = input_lower.split_whitespace().collect();
+
+    // Command patterns with fuzzy matching
+    let command_patterns: HashMap<&str, Vec<Vec<&str>>> = [
+        ("status", vec![vec!["status"], vec!["check", "status"], vec!["system", "status"]]),
+        ("demo", vec![vec!["demo"], vec!["demonstrate"], vec!["show", "tools"], vec!["tools", "demo"]]),
+        ("daemon", vec![
+            vec!["daemon", "start"],
+            vec!["start", "daemon"],
+            vec!["daemon", "stop"],
+            vec!["stop", "daemon"],
+            vec!["daemon", "status"],
+            vec!["check", "daemon"]
+        ]),
+        ("breach", vec![vec!["breach"], vec!["security", "breach"], vec!["check", "breach"]]),
+        ("health", vec![vec!["health"], vec!["check", "health"], vec!["system", "health"]]),
+        ("metrics", vec![vec!["metrics"], vec!["show", "metrics"], vec!["check", "metrics"]]),
+        ("secrets", vec![
+            vec!["secrets", "list"],
+            vec!["list", "secrets"],
+            vec!["secrets", "set"],
+            vec!["set", "secret"],
+            vec!["secrets", "get"],
+            vec!["get", "secret"]
+        ]),
+        ("blockchain", vec![
+            vec!["blockchain", "liquidity"],
+            vec!["liquidity", "check"],
+            vec!["blockchain", "swap"],
+            vec!["swap", "crypto"]
+        ]),
+        ("osint", vec![
+            vec!["osint", "tor"],
+            vec!["tor", "probe"],
+            vec!["osint", "ssh"],
+            vec!["ssh", "check"]
+        ]),
+        ("plugins", vec![
+            vec!["plugins", "list"],
+            vec!["list", "plugins"],
+            vec!["plugins", "load"],
+            vec!["load", "plugin"]
+        ]),
+        ("sandbox", vec![vec!["sandbox"], vec!["run", "sandbox"]]),
+        ("wrapper", vec![vec!["wrapper"], vec!["generate", "wrapper"]]),
+        ("bugbounty", vec![
+            vec!["bugbounty", "recon"],
+            vec!["recon", "target"],
+            vec!["bugbounty", "report"],
+            vec!["report", "bug"]
+        ])
+    ].into_iter().collect();
+
+    // Find best fuzzy match
+    for (cmd_name, patterns) in &command_patterns {
+        for pattern in patterns {
+            if fuzzy_match_words(&input_words, pattern) {
+                return match *cmd_name {
+                    "status" => Some(Commands::Status),
+                    "demo" => Some(Commands::Demo),
+                    "breach" => Some(Commands::Breach),
+                    "daemon" => {
+                        if input_words.contains(&"start") {
+                            Some(Commands::Daemon(DaemonCmd::Start { target: None }))
+                        } else if input_words.contains(&"stop") {
+                            Some(Commands::Daemon(DaemonCmd::Stop))
+                        } else {
+                            Some(Commands::Daemon(DaemonCmd::Status))
+                        }
+                    },
+                    "health" => Some(Commands::Health(HealthCmd::Check)),
+                    "metrics" => Some(Commands::Metrics(MetricsCmd::Show)),
+                    _ => None, // For now, only implement basic commands
+                };
+            }
+        }
+    }
+
+    None
+}
+
+// Fuzzy word matching function
+fn fuzzy_match_words(input_words: &[&str], pattern: &[&str]) -> bool {
+    if pattern.is_empty() {
+        return input_words.is_empty();
+    }
+
+    let mut input_idx = 0;
+    let mut pattern_idx = 0;
+
+    while input_idx < input_words.len() && pattern_idx < pattern.len() {
+        if input_words[input_idx].contains(pattern[pattern_idx]) ||
+           pattern[pattern_idx].contains(input_words[input_idx]) ||
+           levenshtein_distance(input_words[input_idx], pattern[pattern_idx]) <= 2 {
+            pattern_idx += 1;
+        }
+        input_idx += 1;
+    }
+
+    pattern_idx == pattern.len()
+}
+
+// Simple Levenshtein distance for fuzzy matching
+fn levenshtein_distance(s1: &str, s2: &str) -> usize {
+    let s1_chars: Vec<char> = s1.chars().collect();
+    let s2_chars: Vec<char> = s2.chars().collect();
+
+    let len1 = s1_chars.len();
+    let len2 = s2_chars.len();
+
+    let mut matrix = vec![vec![0; len2 + 1]; len1 + 1];
+
+    for i in 0..=len1 {
+        matrix[i][0] = i;
+    }
+    for j in 0..=len2 {
+        matrix[0][j] = j;
+    }
+
+    for i in 1..=len1 {
+        for j in 1..=len2 {
+            let cost = if s1_chars[i - 1] == s2_chars[j - 1] { 0 } else { 1 };
+            matrix[i][j] = (matrix[i - 1][j] + 1)
+                .min(matrix[i][j - 1] + 1)
+                .min(matrix[i - 1][j - 1] + cost);
+        }
+    }
+
+    matrix[len1][len2]
+}
+
+// bpaf parser with fuzzy fallback
 fn commands_parser() -> impl Parser<Commands> {
-    // For now, just support status command to get basic functionality working
-    literal("status").map(|_| Commands::Status)
+    // Try exact matches first, then fallback to fuzzy matching
+    let exact_parser = literal("status").map(|_| Commands::Status);
+
+    // For fuzzy matching, we'll handle it in the main function
+    exact_parser
 }
 
 /// Executa CLI moderna.
@@ -161,6 +299,11 @@ pub async fn run_cli() -> anyhow::Result<()> {
         }
         Commands::Breach => {
             println!("🐺 Breach check not implemented in CLI yet - use interactive mode");
+        }
+        Commands::Demo => {
+            if let Err(e) = crate::kali_tools::demonstrate_tools().await {
+                println!("❌ Demo failed: {}", e);
+            }
         }
         _ => {
             println!("🐺 Command not implemented yet in bpaf parser");

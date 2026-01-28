@@ -231,6 +231,51 @@ pub fn get_kali_tools() -> Vec<KaliTool> {
             requires_root: false,
             install_command: Some("brew install hydra".to_string()),
         },
+        KaliTool {
+            name: "crunch".to_string(),
+            category: KaliToolCategory::PasswordAttacks,
+            description: "Wordlist generator".to_string(),
+            command: "crunch".to_string(),
+            typical_args: vec!["1".to_string(), "1".to_string(), "a".to_string()],
+            requires_root: false,
+            install_command: Some("brew install crunch".to_string()),
+        },
+        KaliTool {
+            name: "patator".to_string(),
+            category: KaliToolCategory::PasswordAttacks,
+            description: "Multi-purpose brute-forcer".to_string(),
+            command: "patator".to_string(),
+            typical_args: vec!["--help".to_string()],
+            requires_root: false,
+            install_command: Some("brew install patator".to_string()),
+        },
+        KaliTool {
+            name: "medusa".to_string(),
+            category: KaliToolCategory::PasswordAttacks,
+            description: "Parallel login brute-forcer".to_string(),
+            command: "medusa".to_string(),
+            typical_args: vec!["-h".to_string()],
+            requires_root: false,
+            install_command: Some("brew install medusa".to_string()),
+        },
+        KaliTool {
+            name: "ncrack".to_string(),
+            category: KaliToolCategory::PasswordAttacks,
+            description: "Network authentication cracker".to_string(),
+            command: "ncrack".to_string(),
+            typical_args: vec!["--help".to_string()],
+            requires_root: false,
+            install_command: Some("brew install ncrack".to_string()),
+        },
+        KaliTool {
+            name: "cewl".to_string(),
+            category: KaliToolCategory::PasswordAttacks,
+            description: "Custom wordlist generator".to_string(),
+            command: "cewl".to_string(),
+            typical_args: vec!["--help".to_string()],
+            requires_root: false,
+            install_command: Some("brew install cewl".to_string()),
+        },
         // WEB APPLICATIONS
         KaliTool {
             name: "burpsuite".to_string(),
@@ -240,6 +285,24 @@ pub fn get_kali_tools() -> Vec<KaliTool> {
             typical_args: vec![],
             requires_root: false,
             install_command: Some("brew install burpsuite".to_string()),
+        },
+        KaliTool {
+            name: "evilginx2".to_string(),
+            category: KaliToolCategory::WebApplications,
+            description: "Man-in-the-middle attack framework".to_string(),
+            command: "evilginx".to_string(),
+            typical_args: vec!["-h".to_string()],
+            requires_root: false,
+            install_command: Some("brew install evilginx2".to_string()),
+        },
+        KaliTool {
+            name: "modlishka".to_string(),
+            category: KaliToolCategory::WebApplications,
+            description: "Reverse proxy for phishing".to_string(),
+            command: "modlishka".to_string(),
+            typical_args: vec!["-h".to_string()],
+            requires_root: false,
+            install_command: Some("brew install modlishka".to_string()),
         },
         KaliTool {
             name: "owasp-zap".to_string(),
@@ -921,4 +984,69 @@ fn generate_security_plan(
     ));
 
     plan
+}
+
+// ============================================================================
+// DEMONSTRATE TOOLS FUNCTION - SHOW RESULTS ON SCREEN
+// ============================================================================
+
+pub async fn demonstrate_tools() -> Result<(), String> {
+    println!("🐺 FENRIR - Demonstrating Kali Tools Implementation");
+    println!("═══════════════════════════════════════════════════════");
+
+    let tools_to_demo = vec![
+        "crunch", "hydra", "hashcat", "john",
+        "burpsuite", "evilginx2", "modlishka", "mitmproxy",
+        "patator", "medusa", "ncrack", "cewl"
+    ];
+
+    for tool_name in tools_to_demo {
+        if let Some(tool) = find_tool(tool_name) {
+            println!("\n🔧 {} - {}", tool.name, tool.description);
+            println!("   Status: {}", if tool.is_available() { "✅ Ready" } else { "❌ Not installed" });
+
+            if tool.is_available() {
+                // Use safe args for demonstration
+                let demo_args = match tool_name {
+                    "crunch" => vec!["1".to_string(), "1".to_string(), "a".to_string()],
+                    "hydra" => vec!["-h".to_string()],
+                    "hashcat" => vec!["--version".to_string()],
+                    "john" => vec!["--version".to_string()],
+                    "burpsuite" => vec!["--version".to_string()],
+                    "evilginx2" => vec!["-h".to_string()],
+                    "modlishka" => vec!["-h".to_string()],
+                    "mitmproxy" => vec!["--version".to_string()],
+                    "patator" => vec!["--help".to_string()],
+                    "medusa" => vec!["-h".to_string()],
+                    "ncrack" => vec!["--help".to_string()],
+                    "cewl" => vec!["--help".to_string()],
+                    _ => vec!["--help".to_string()],
+                };
+
+                match tool.execute(&demo_args) {
+                    Ok(output) => {
+                        println!("   Results:");
+                        // Show first few lines of output
+                        let lines: Vec<&str> = output.lines().take(10).collect();
+                        for line in lines {
+                            println!("   {}", line);
+                        }
+                        if output.lines().count() > 10 {
+                            println!("   ... (truncated)");
+                        }
+                    }
+                    Err(e) => println!("   Error: {}", e),
+                }
+            } else {
+                println!("   Install: {}", tool.install_command.as_ref().unwrap_or(&"Unknown".to_string()));
+            }
+        } else {
+            println!("\n❌ {} - Not found in database", tool_name);
+        }
+    }
+
+    println!("\n═══════════════════════════════════════════════════════");
+    println!("✅ Demonstration complete - Fenrir really did something!");
+
+    Ok(())
 }
