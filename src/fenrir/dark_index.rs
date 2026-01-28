@@ -390,5 +390,365 @@ pub fn create_dark_index() -> HashMap<String, Vec<String>> {
         "x parent span id injection scan", "x sampled injection scan"
     ].iter().map(|s| s.to_string()).collect());
 
+
+    // ============================================================================
+    // MISSING KALI TOOLS - ADDING FOR COMPLETE INDEX
+    // ============================================================================
+
+    // Information Gathering - Additional Tools
+    index.insert("amass".to_string(), vec![
+        "subdomain enumeration", "attack surface mapping", "dns enumeration", "asset discovery",
+        "domain reconnaissance", "passive reconnaissance", "active reconnaissance",
+        "dns record collection", "certificate transparency", "search engine discovery",
+        "graph database", "network topology", "asn discovery", "internet scanning",
+        "subdomain brute force", "alteration discovery", "cert log", "ct log"
+    ].iter().map(|s| s.to_string()).collect());
+
+    index.insert("dnsenum".to_string(), vec![
+        "dns enumeration", "subdomain brute force", "zone transfer", "dns record",
+        "dns query", "dns lookup", "name server", "mx record", "txt record",
+        "soa record", "ns record", "cname record", "dns reconnaissance",
+        "domain information", "host discovery", "network mapping"
+    ].iter().map(|s| s.to_string()).collect());
+
+    index.insert("dnsrecon".to_string(), vec![
+        "dns reconnaissance", "dns enumeration", "zone transfer", "axfr",
+        "dns record query", "srv record", "dnssec", "wildcard resolution",
+        "subdomain brute force", "google scraping", "dns dictionary",
+        "std query", "rrl query", "dns cache snooping", "host lookup",
+        "bind version", "dns chaos", "dns fingerprinting"
+    ].iter().map(|s| s.to_string()).collect());
+
+    index.insert("fierce".to_string(), vec![
+        "dns enumeration", "subdomain brute force", "zone transfer", "dns reconnaissance",
+        "locate non-contiguous ip space", "host discovery", "domain scan",
+        "dns probe", "name server lookup", "mx record lookup", "ptr lookup",
+        "recursive query", "dns shift", "permutation scan", "wordlist scan"
+    ].iter().map(|s| s.to_string()).collect());
+
+    index.insert("maltego".to_string(), vec![
+        "osint", "open source intelligence", "link analysis", "visual analysis",
+        "data mining", "reconnaissance", "information gathering", "relationship mapping",
+        "social network analysis", "entity resolution", "data visualization",
+        "transform", "machine", "pattern recognition", "threat intelligence",
+        "investigation", "forensics", "domain correlation", "email correlation"
+    ].iter().map(|s| s.to_string()).collect());
+
+    index.insert("sherlock".to_string(), vec![
+        "username search", "osint", "social media enumeration", "user investigation",
+        "username lookup", "account discovery", "platform search", "username checker",
+        "social network", "digital footprint", "user reconnaissance", "profile finder",
+        "username enumeration", "account lookup", "social platforms", "identity search"
+    ].iter().map(|s| s.to_string()).collect());
+
+    index.insert("dnsx".to_string(), vec![
+        "dns toolkit", "dns query", "dns lookup", "subdomain enumeration", "dns resolver",
+        "dns bruteforce", "dns wildcard", "dns record", "dns probe",
+        "fast dns", "multi threaded dns", "dns enumeration", "dns reconnaissance",
+        "dns validation", "dns monitoring", "dns stats", "dns output"
+    ].iter().map(|s| s.to_string()).collect());
+
+    index.insert("email2phonenumber".to_string(), vec![
+        "email to phone", "osint", "phone enumeration", "email investigation",
+        "phone lookup", "number discovery", "contact enumeration", "email reconnaissance",
+        "phone osint", "number search", "email search", "phone number finder",
+        "contact discovery", "mobile number", "phone lookup", "email to mobile"
+    ].iter().map(|s| s.to_string()).collect());
+
+    index.insert("nuclei".to_string(), vec![
+        "vulnerability scanner", "template based scanning", "yaml templates", "vuln detection",
+        "security scanner", "cve scan", "exposure scan", "misconfig detection",
+        "port scan", "web scan", "network scan", "automated scanning",
+        "vulnerability assessment", "security assessment", "bug bounty", "penetration testing",
+        "scan engine", "template engine", "headless browser", "protocol detection"
+    ].iter().map(|s| s.to_string()).collect());
+
+    index.insert("openvas".to_string(), vec![
+        "vulnerability scanner", "vulnerability assessment", "security testing",
+        "compliance scanning", "full scan", "comprehensive scan", "vuln detection",
+        "cve detection", "security audit", "penetration testing", "security assessment",
+        "network security", "web application scan", "database scan", "service detection",
+        "os detection", "vulnerability management", "scan report", "risk assessment"
+    ].iter().map(|s| s.to_string()).collect());
+
+    index.insert("wpscan".to_string(), vec![
+        "wordpress scanner", "wordpress security", "vulnerability scan", "wp plugin scan",
+        "wp theme scan", "wordpress enumeration", "wp user enumeration", "wp brute force",
+        "wordpress audit", "wp security audit", "wordpress penetration testing",
+        "wp vuln", "wordpress vulnerabilities", "plugin enumeration", "theme enumeration",
+        "timthumbs scan", "wp config backup", "wp xmlrpc", "wp login brute"
+    ].iter().map(|s| s.to_string()).collect());
+
+    // Wireless Attacks
+    index.insert("aircrack-ng".to_string(), vec![
+        "wifi audit", "wpa crack", "wep crack", "wpa2 crack", "handshake capture",
+        "wireless cracking", "wifi password", "wpa handshake", "wps crack", "wifi attack",
+        "monitor mode", "packet capture", "injection", "deauth", "airplay",
+        "wifi key", "wireless security", "wpa enterprise", "pmkid", "hcxdumptool"
+    ].iter().map(|s| s.to_string()).collect());
+
+    index.insert("airgeddon".to_string(), vec![
+        "wifi attack", "wpa attack", "wep attack", "wps attack", "evil twin",
+        "wifi phishing", "captive portal", "deauth attack", "beacon flood",
+        "wireless penetration", "wifi hacking", "wpa2 attack", "handshake capture",
+        "pmkid attack", "wps pin", "dos attack", "channel hopping", "air crack"
+    ].iter().map(|s| s.to_string()).collect());
+
+    index.insert("bully".to_string(), vec![
+        "wps crack", "wps pin", "wps brute force", "wifi attack", "wps attack",
+        "pixie dust", "wps pin recovery", "wps brute", "wireless attack",
+        "wifi password", "wps exploit", "wps vulnerability", "pin crack",
+        "wps pixie", "wps null pin", "wifi cracking", "router pin"
+    ].iter().map(|s| s.to_string()).collect());
+
+    index.insert("wifite".to_string(), vec![
+        "wifi attack", "automated wifi", "wpa attack", "wep attack", "wps attack",
+        "wifi hacking", "wireless attack", "wpa2 attack", "handshake capture",
+        "wps capture", "wifi cracking", "automated cracking", "wifi audit",
+        "wpa enterprise", "eviltwin", "wifi password", "masscan wifi", "wifi scanner"
+    ].iter().map(|s| s.to_string()).collect());
+
+    index.insert("pixiewps".to_string(), vec![
+        "wps pixie dust", "wps crack", "wps offline", "wps pin recovery",
+        "wifi attack", "wps exploit", "pixie dust attack", "wps vulnerability",
+        "wireless crack", "wps offline crack", "pin recovery", "wps brute",
+        "wifi pixie", "wps pin crack", "offline wps", "wps attack"
+    ].iter().map(|s| s.to_string()).collect());
+
+    // Web Applications - Additional Tools
+    index.insert("dirsearch".to_string(), vec![
+        "directory scanner", "dir brute force", "path discovery", "web enumeration",
+        "directory enumeration", "file enumeration", "web scanner", "hidden files",
+        "web directory", "path scan", "dir fuzzing", "web discovery",
+        "directory listing", "hidden path", "web enumeration", "url brute",
+        "extension search", "recursive scan", "multi threading"
+    ].iter().map(|s| s.to_string()).collect());
+
+    index.insert("ffuf".to_string(), vec![
+        "web fuzzer", "directory fuzzing", "parameter fuzzing", "vhost discovery",
+        "web fuzzing", "fast fuzzer", "http fuzzing", "brute force",
+        "fuzzing tool", "web discovery", "directory brute", "parameter brute",
+        "header fuzzing", "post fuzzing", "get fuzzing", "vhost enumeration",
+        "rate limit", "multi threading", "wordlist filtering"
+    ].iter().map(|s| s.to_string()).collect());
+
+    index.insert("gobuster".to_string(), vec![
+        "directory brute force", "dns brute force", "subdomain enumeration", "web scanner",
+        "dir busting", "directory enumeration", "subdomain busting", "vhost busting",
+        "web discovery", "path discovery", "url brute", "dir scanner",
+        "dns scanner", "subdomain scanner", "s3 bucket", "azure storage", "gcs bucket"
+    ].iter().map(|s| s.to_string()).collect());
+
+    index.insert("xsser".to_string(), vec![
+        "xss scanner", "cross site scripting", "xss detection", "xss exploitation",
+        "web vulnerability", "xss attack", "reflected xss", "stored xss",
+        "dom xss", "xss payload", "xss injection", "javascript injection",
+        "xss testing", "xss audit", "xss brute", "xss fuzzing", "blind xss"
+    ].iter().map(|s| s.to_string()).collect());
+
+    // Exploitation - Additional Tools
+    index.insert("msfvenom".to_string(), vec![
+        "payload generator", "metasploit payload", "shellcode", "reverse shell",
+        "bind shell", "meterpreter", "payload creation", "exe payload",
+        "dll payload", "apk payload", "macho payload", "elf payload",
+        "script payload", "web payload", "shellcode generator", "encoder",
+        "msf payload", "exploit payload", "backdoor", "trojan"
+    ].iter().map(|s| s.to_string()).collect());
+
+    // Sniffing & Spoofing - Additional Tools
+    index.insert("wireshark".to_string(), vec![
+        "packet analyzer", "network analyzer", "packet capture", "protocol analysis",
+        "network sniffer", "traffic analysis", "packet inspection", "network forensics",
+        "protocol decoder", "deep inspection", "network troubleshooting", "traffic capture",
+        "pcap", "network monitor", "protocol analyzer", "network security"
+    ].iter().map(|s| s.to_string()).collect());
+
+    index.insert("tcpdump".to_string(), vec![
+        "packet capture", "network sniffer", "packet analyzer", "command line capture",
+        "network capture", "traffic capture", "packet filtering", "bpf",
+        "network troubleshooting", "protocol analysis", "packet inspection",
+        "network monitor", "traffic analysis", "pcap", "network forensics"
+    ].iter().map(|s| s.to_string()).collect());
+
+    index.insert("ettercap".to_string(), vec![
+        "mitm", "man in the middle", "arp spoofing", "dns spoofing", "ssl strip",
+        "packet sniffer", "network injection", "arp poison", "mitm attack",
+        "network sniffing", "password sniffing", "session hijacking", "arp cache poison",
+        "dns spoof", "packet filter", "network bridging", "content filtering"
+    ].iter().map(|s| s.to_string()).collect());
+
+    index.insert("bettercap".to_string(), vec![
+        "mitm", "network attack", "wifi attack", "bluetooth attack", "hid attack",
+        "network sniffer", "proxy", "arp spoof", "dns spoof", "packet injection",
+        "wifi monitoring", "bluetooth monitoring", "network reconnaissance", "network manipulation",
+        "blueSnap", "ble module", "wifi module", "ethernet module", "http proxy"
+    ].iter().map(|s| s.to_string()).collect());
+
+    // Forensics
+    index.insert("autopsy".to_string(), vec![
+        "forensic platform", "disk analysis", "file recovery", "deleted files",
+        "digital forensics", "forensic analysis", "timeline analysis", "keyword search",
+        "web cache", "cookie analysis", "history analysis", "email extraction",
+        "exif data", "file carving", "registry analysis", "memory dump", "thumbnail cache"
+    ].iter().map(|s| s.to_string()).collect());
+
+    index.insert("sleuthkit".to_string(), vec![
+        "forensic tools", "disk analysis", "file system analysis", "digital forensics",
+        "volume analysis", "file recovery", "deleted files", "timeline",
+        "filesystem forensics", "partition analysis", "inode analysis", "data carving",
+        "file metadata", "mactime", "fls", "ils", "blkls"
+    ].iter().map(|s| s.to_string()).collect());
+
+    index.insert("volatility".to_string(), vec![
+        "memory analysis", "ram forensics", "memory dump", "process list", "network connections",
+        "memory forensics", "volatile memory", "ram analysis", "memory extraction",
+        "process memory", "kernel memory", "memory dump analysis", "malware analysis",
+        "windows memory", "linux memory", "memory image", "timeline", "dll injection"
+    ].iter().map(|s| s.to_string()).collect());
+
+    // Post-Exploitation
+    index.insert("impacket".to_string(), vec![
+        "windows exploitation", "active directory", "pass the hash", "pass the ticket",
+        "windows attack", "smb attack", "ldap attack", "kerberos attack",
+        "wmi execution", "mssql exec", "secretsdump", "golden ticket", "silver ticket",
+        "psexec", "wmiexec", "smbexec", "atexec", "mimikatz"
+    ].iter().map(|s| s.to_string()).collect());
+
+    index.insert("responder".to_string(), vec![
+        "llmnr poisoning", "nbtns poisoning", "mitm", "credential capture", "hash capture",
+        "windows network", "smb relay", "http relay", "ldap relay", "password capture",
+        "ntlm capture", "network poisoning", "wpad spoof", "nbns spoof",
+        "multi replay", "smb attack", "windows authentication", "ad attack"
+    ].iter().map(|s| s.to_string()).collect());
+
+    // Reverse Engineering
+    index.insert("ghidra".to_string(), vec![
+        "reverse engineering", "decompiler", "disassembler", "binary analysis", "malware analysis",
+        "code analysis", "binary reverse", "patch analysis", "firmware analysis",
+        "disassembly", "decompilation", "assembly code", "machine code",
+        "function graph", "control flow", "data flow", "symbolic execution"
+    ].iter().map(|s| s.to_string()).collect());
+
+    index.insert("radare2".to_string(), vec![
+        "reverse engineering", "disassembler", "debugger", "hex editor", "binary analysis",
+        "malware analysis", "code analysis", "binary patching", "shellcode analysis",
+        "disassembly", "assembly", "debugging", "hexdump", "binary exploitation",
+        "scriptable", "r2 pipe", "visual mode", "graph view"
+    ].iter().map(|s| s.to_string()).collect());
+
+    // Hardware
+    index.insert("proxmark3".to_string(), vec![
+        "rfid", "nfc", "rfid cloning", "contactless", "rfid sniffing",
+        "card cloning", "mifare", "hf tag", "lf tag", "rfid attack",
+        "nfc relay", "rfid emulation", "card reader", "rfid write", "rfid read",
+        "proxmark", "rfid tool", "nfc tool", "access control", "hardware hack"
+    ].iter().map(|s| s.to_string()).collect());
+
+    index.insert("hackrf".to_string(), vec![
+        "sdr", "software defined radio", "rf", "radio", "frequency", "spectrum",
+        "rf capture", "rf transmit", "signal analysis", "frequency scanner",
+        "gsm", "lte", "rfid", "gps", "fm radio", "digital radio", "amateur radio",
+        "antenna", "rf hack", "sdr tool", "signal intelligence"
+    ].iter().map(|s| s.to_string()).collect());
+
+    // ============================================================================
+    // ADDITIONAL ESSENTIAL KALI TOOLS
+    // ============================================================================
+
+    // Network Utilities
+    index.insert("netcat".to_string(), vec![
+        "netcat", "nc", "network connector", "port listener", "reverse shell",
+        "bind shell", "port scanner", "file transfer", "backdoor",
+        "network utility", "tcp udp", "network connection", "banner grab",
+        "port forwarding", "chat server", "network debugging", "socket"
+    ].iter().map(|s| s.to_string()).collect());
+
+    index.insert("socat".to_string(), vec![
+        "socat", "network relay", "port forward", "bidirectional", "data transfer",
+        "reverse shell", "bind shell", "proxy", "network bridge",
+        "encrypt tunnel", "ssl tunnel", "socket relay", "protocol converter",
+        "serial port", "pty", "network pipe", "data interceptor"
+    ].iter().map(|s| s.to_string()).collect());
+
+    // Privilege Escalation
+    index.insert("linpeas".to_string(), vec![
+        "privilege escalation", "linux privesc", "enumeration", "misconfiguration",
+        "linux audit", "security audit", "vulnerability scan", "suid scan",
+        "cron jobs", "path hijack", "kernel exploit", "permission check",
+        "linux post-exploitation", "reconnaissance", "information gathering", "privesc"
+    ].iter().map(|s| s.to_string()).collect());
+
+    index.insert("winpeas".to_string(), vec![
+        "privilege escalation", "windows privesc", "enumeration", "misconfiguration",
+        "windows audit", "security audit", "vulnerability scan", "registry scan",
+        "services", "permissions", "kernel exploit", "post exploitation",
+        "windows enumeration", "information gathering", "privesc", "active directory"
+    ].iter().map(|s| s.to_string()).collect());
+
+    index.insert("pspy".to_string(), vec![
+        "process monitoring", "linux monitoring", "cron monitoring", "uid less",
+        "privilege escalation", "process enumeration", "silent monitoring", "forensics",
+        "background process", "automation", "cron jobs", "systemd timer",
+        "linux security", "process sniffing", "no root required"
+    ].iter().map(|s| s.to_string()).collect());
+
+    index.insert("enum4linux".to_string(), vec![
+        "smb enumeration", "windows enumeration", "samba", "active directory",
+        "network share", "smb audit", "windows recon", "share enumeration",
+        "user enumeration", "group enumeration", "password policy", "smb vulnerability",
+        "linux smb", "windows network", "network reconnaissance"
+    ].iter().map(|s| s.to_string()).collect());
+
+    index.insert("linux-exploit-suggester".to_string(), vec![
+        "linux exploit", "kernel exploit", "privilege escalation", "vulnerability suggest",
+        "exploit recommendation", "linux privesc", "kernel version", "security advisory",
+        "cve exploit", "privilege escalation suggester", "exploit database", "linux kernel"
+    ].iter().map(|s| s.to_string()).collect());
+
+    // Exploitation Tools
+    index.insert("searchsploit".to_string(), vec![
+        "exploit search", "exploit database", "edb", "cve search", "vulnerability search",
+        "exploit code", "poc", "proof of concept", "shellcode", "exploit download",
+        "security exploit", "vulnerability exploit", "0day", "privilege escalation",
+        "remote exploit", "local exploit", "shellcode database"
+    ].iter().map(|s| s.to_string()).collect());
+
+    index.insert("mimikatz".to_string(), vec![
+        "password extraction", "windows credential", "pass the hash", "golden ticket",
+        "silver ticket", "lsass", "credential dump", "windows security", "kerberos",
+        "ntlm hash", "plaintext password", "memory dump", "windows authentication",
+        "active directory", "lsa", "sam database", "wdigest"
+    ].iter().map(|s| s.to_string()).collect());
+
+    // Web Analysis
+    index.insert("whatweb".to_string(), vec![
+        "web scanner", "web fingerprint", "technology detection", "cms detection",
+        "framework detection", "web enumeration", "website analysis", "plugin detection",
+        "server version", "web tech stack", "web reconnaissance", "cms identification",
+        "javascript library", "analytics", "tracking", "web server identification"
+    ].iter().map(|s| s.to_string()).collect());
+
+    index.insert("dotdotpwn".to_string(), vec![
+        "path traversal", "directory traversal", "lfi", "rfi", "file inclusion",
+        "web vulnerability", "fuzzer", "traversal fuzzing", "dot dot slash",
+        "directory traversal scanner", "path traversal exploitation", "file disclosure",
+        "lfi scanner", "rfi scanner", "web fuzzing"
+    ].iter().map(|s| s.to_string()).collect());
+
+    // Archive Tools
+    index.insert("fcrackzip".to_string(), vec![
+        "zip crack", "password recovery", "archive crack", "zip password",
+        "brute force", "dictionary attack", "zip encryption", "file recovery",
+        "password unlock", "archive unlock", "zip file", "password recovery tool"
+    ].iter().map(|s| s.to_string()).collect());
+
+    // Password/Wordlist Tools
+    index.insert("keys.txt".to_string(), vec![
+        "wordlist", "password list", "dictionary", "credential wordlist",
+        "brute force wordlist", "password dictionary", "common passwords",
+        "rockyou", "password file", "wordlist collection", "default passwords",
+        "leaked passwords", "credential list", "password database"
+    ].iter().map(|s| s.to_string()).collect());
+
     index
 }
