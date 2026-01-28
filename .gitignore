@@ -15,17 +15,25 @@ Thumbs.db
 # Claude Code
 .claude/
 
-# Documentation (keep in repo, but ignore drafts)
+# Documentation drafts only
 *_DRAFT.md
 *_TODO.md
 
 # Test scripts
 test_*.rs
 
-# Non-essential files
-*.sh
-*.md
-docs/
-examples/
+# Log files
 fenrir_logs/
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~
+
+# Build artifacts
+Cargo.lock
+
+# Ignore specific directories
 Formula/
+Ai/
