@@ -10,6 +10,7 @@ use crate::sandbox;
 use crate::secrets::SecretStore;
 use crate::wrapper;
 use bpaf::*;
+use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::path::PathBuf;
 
@@ -285,15 +286,87 @@ pub async fn run_cli() -> anyhow::Result<()> {
             );
         }
         Commands::Daemon(cmd) => {
+            use crate::daemon::{FenrirDaemon, DaemonConfig};
+
             match cmd {
                 DaemonCmd::Start { target } => {
-                    println!("🐺 Daemon start not implemented in CLI yet - use interactive mode");
+                    // Handle optional target parameter
+                    let target_value = match target {
+                        Some(t) => t,
+                        None => {
+                            println!("⚠️  No target specified");
+                            println!("💡 Usage: fenrir daemon start <target>");
+                            println!("📝 Example: fenrir daemon start 192.168.1.0/24");
+                            return Ok(());
+                        }
+                    };
+
+                    // Check if daemon is already running
+                    let daemon_guard = crate::DAEMON.lock().await;
+                    if daemon_guard.is_some() {
+                        println!("⚠️  Daemon is already running");
+                        println!("💡 Use 'fenrir daemon stop' first to stop the current instance");
+                        drop(daemon_guard);
+
+                        // Show status of existing daemon
+                        let daemon_guard = crate::DAEMON.lock().await;
+                        if let Some(daemon) = daemon_guard.as_ref() {
+                            let status = daemon.status().await;
+                            println!("{}", status);
+                        }
+                    } else {
+                        drop(daemon_guard);
+
+                        // Create new daemon instance
+                        let config = DaemonConfig::default();
+                        let daemon = FenrirDaemon::new(target_value.clone(), config);
+
+                        // Start the daemon
+                        match daemon.start().await {
+                            Ok(_) => {
+                                // Store daemon in global state
+                                let mut daemon_guard = crate::DAEMON.lock().await;
+                                *daemon_guard = Some(daemon);
+                                drop(daemon_guard);
+
+                                println!("✅ Daemon started successfully");
+                                println!("🌐 Target: {}", target_value);
+                                println!("💡 Use 'fenrir daemon status' to check status");
+                                println!("💡 Use 'fenrir daemon stop' to stop the daemon");
+                            }
+                            Err(e) => {
+                                eprintln!("❌ Failed to start daemon: {}", e);
+                            }
+                        }
+                    }
                 }
                 DaemonCmd::Stop => {
-                    println!("🐺 Daemon stop not implemented in CLI yet - use interactive mode");
+                    let mut daemon_guard = crate::DAEMON.lock().await;
+                    if let Some(daemon) = daemon_guard.as_ref() {
+                        match daemon.stop().await {
+                            Ok(_) => {
+                                *daemon_guard = None;
+                                println!("✅ Daemon stopped successfully");
+                            }
+                            Err(e) => {
+                                eprintln!("❌ Failed to stop daemon: {}", e);
+                            }
+                        }
+                    } else {
+                        println!("⚠️  Daemon is not running");
+                        println!("💡 Use 'fenrir daemon start <target>' to start the daemon");
+                    }
                 }
                 DaemonCmd::Status => {
-                    println!("🐺 Daemon status not implemented in CLI yet - use interactive mode");
+                    let daemon_guard = crate::DAEMON.lock().await;
+                    if let Some(daemon) = daemon_guard.as_ref() {
+                        let status = daemon.status().await;
+                        println!("{}", status);
+                    } else {
+                        println!("🐺 FENRIR DAEMON STATUS");
+                        println!("Running: No");
+                        println!("\n💡 Use 'fenrir daemon start <target>' to start the daemon");
+                    }
                 }
             }
         }
