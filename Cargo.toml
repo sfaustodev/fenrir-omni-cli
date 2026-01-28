@@ -35,6 +35,7 @@ env_logger = "0.10"
 # Utilities
 uuid = { version = "1.0", features = ["v4", "serde"] }
 regex = "1.0"
+lazy-regex = "3.0"
 dirs = "5.0"
 # Terminal utilities
 crossterm = "0.28"

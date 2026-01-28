@@ -30,6 +30,7 @@ log = { workspace = true }
 env_logger = { workspace = true }
 uuid = { workspace = true }
 regex = { workspace = true }
+lazy-regex = { workspace = true }
 dirs = { workspace = true }
 whoami = { workspace = true }
 crossterm = { workspace = true }
