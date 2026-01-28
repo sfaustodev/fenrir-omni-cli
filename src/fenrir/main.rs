@@ -41,7 +41,7 @@ use tokio::sync::Mutex;
 use lazy_static::lazy_static;
 
 lazy_static! {
-    static ref DAEMON: Arc<Mutex<Option<daemon::FenrirDaemon>>> = Arc::new(Mutex::new(None));
+    pub static ref DAEMON: Arc<Mutex<Option<daemon::FenrirDaemon>>> = Arc::new(Mutex::new(None));
 }
 
 #[tokio::main]
