@@ -1,0 +1,55 @@
+# Fenrir Clippy Configuration
+# Strict linting rules to catch placeholders and problematic code
+
+# Disallow common placeholder patterns
+disallowed-methods = [
+    # Catch println!/print! stubs (should use proper logging)
+    "std::println",
+    "std::print",
+]
+
+# Disallow TODO/FIXME comments in production code
+# These should be tracked in issues, not code comments
+# cognitive-complexity = "too_high"
+
+# Absolutely no unwrap() in production code
+panic = "deny"
+
+# Deny unsafe code without explicit justification
+unsafe_code = "forbid"
+
+# Deny missing documentation
+missing_docs = "warn"
+
+# Deny unused results (important for security)
+unused_result = "deny"
+
+# Strict numeric operations
+integer_arithmetic = "deny"
+float_arithmetic = "deny"
+
+# String operations
+string_add = "deny"
+string_to_string = "deny"
+
+# Pattern matching
+wildcard_enum_match_arm = "deny"
+
+# Error handling
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+
+# Complexity
+too_many_arguments = "warn"
+too_many_lines = "warn"
+
+# Performance
+large_enum_variant = "warn"
+large_stack_arrays = "warn"
+boxed_local = "warn"
+
+# Style
+semicolon_if_nothing_returned = "warn"
+else_if_without_else = "warn"
+bool_comparison = "warn"
