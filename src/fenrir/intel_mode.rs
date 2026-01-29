@@ -13,6 +13,7 @@ use anyhow::Result;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::io::Write;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -74,7 +75,7 @@ impl IntelMode {
             config,
             reports: Arc::new(RwLock::new(Vec::new())),
             osint_engine: OSINTEngine::new(),
-            csi_analyzer: CSIAnalyzer::new(),
+            csi_analyzer: CSIAnalyzer::new()?,
         })
     }
 
@@ -87,7 +88,8 @@ impl IntelMode {
 
         // Phase 1: OSINT Collection
         println!("📡 Phase 1: OSINT Collection...");
-        let osint_result = self.osint_engine.gather_intelligence(&osint_target).await?;
+        let osint_result = self.osint_engine.gather_intelligence(&osint_target).await
+            .map_err(|e| anyhow::anyhow!("OSINT collection failed: {}", e))?;
 
         println!("  ✅ Found {} data points", osint_result.findings.len());
         println!("  📊 Confidence: {:.1}%", osint_result.confidence_score * 100.0);
@@ -257,7 +259,7 @@ impl IntelMode {
 
     /// Export report to file
     pub async fn export_report(&self, report_id: &str, format: &str) -> Result<PathBuf> {
-        let report = self.get_report(report_id)
+        let report = self.get_report(report_id).await
             .ok_or_else(|| anyhow::anyhow!("Report not found: {}", report_id))?;
 
         let filename = format!("{}_report.{}", report.target, format);

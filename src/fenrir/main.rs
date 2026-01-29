@@ -36,6 +36,7 @@ mod csi_analyzer;
 mod forensics_engine;
 mod intel_dashboard;
 mod intel_workflow;
+mod intel_mode;
 mod plugins;
 mod sandbox;
 mod wrapper;

@@ -9,6 +9,11 @@ use crate::plugins::PluginRegistry;
 use crate::sandbox;
 use crate::secrets::SecretStore;
 use crate::wrapper;
+use crate::intel_mode;
+use crate::osint_engine::{OSINTEngine, OSINTTarget, OSINTTargetType};
+use crate::csi_analyzer::analyze_osint_threats;
+use crate::intel_workflow::WorkflowTemplates;
+use crate::intel_dashboard::display_quick_summary;
 use bpaf::*;
 use std::collections::HashMap;
 use std::net::SocketAddr;
@@ -27,6 +32,7 @@ pub enum Commands {
     Sandbox(SandboxCmd),
     Plugins(PluginCmd),
     Daemon(DaemonCmd),
+    Intel(IntelCmd),
     Breach,
     Status,
     Demo,
@@ -123,6 +129,13 @@ pub enum DaemonCmd {
     Status,
 }
 
+#[derive(Debug, Clone)]
+pub enum IntelCmd {
+    Test { target: String },
+    Scan { target: String },
+    Analyze { target: String },
+}
+
 // Fuzzy command detection with smart matching
 fn fuzzy_command_match(input: &str) -> Option<Commands> {
     let input_lower = input.to_lowercase();
@@ -176,6 +189,12 @@ fn fuzzy_command_match(input: &str) -> Option<Commands> {
             vec!["recon", "target"],
             vec!["bugbounty", "report"],
             vec!["report", "bug"]
+        ]),
+        ("intel", vec![
+            vec!["intel", "test"],
+            vec!["intel", "scan"],
+            vec!["intel", "analyze"],
+            vec!["test", "intel"]
         ])
     ].into_iter().collect();
 
@@ -198,6 +217,21 @@ fn fuzzy_command_match(input: &str) -> Option<Commands> {
                     },
                     "health" => Some(Commands::Health(HealthCmd::Check)),
                     "metrics" => Some(Commands::Metrics(MetricsCmd::Show)),
+                    "intel" => {
+                        // Extract target from input
+                        let target = input_words.iter()
+                            .find(|w| w.contains('@') || w.contains('.'))
+                            .unwrap_or(&"example.com")
+                            .to_string();
+
+                        if input_words.contains(&"test") {
+                            Some(Commands::Intel(IntelCmd::Test { target }))
+                        } else if input_words.contains(&"scan") {
+                            Some(Commands::Intel(IntelCmd::Scan { target }))
+                        } else {
+                            Some(Commands::Intel(IntelCmd::Analyze { target }))
+                        }
+                    }
                     _ => None, // For now, only implement basic commands
                 };
             }
@@ -269,6 +303,38 @@ fn commands_parser() -> impl Parser<Commands> {
 /// Executa CLI moderna.
 pub async fn run_cli() -> anyhow::Result<()> {
     metrics::init_metrics();
+
+    // Check for intel commands first (bypass bpaf parser)
+    let args: Vec<String> = std::env::args().collect();
+    if args.len() > 1 && args[1] == "intel" {
+        // Handle intel commands
+        if args.len() < 3 {
+            println!("Usage: fenrir intel <test|scan|analyze> <target>");
+            println!("Example: fenrir intel test d7aviation@gmail.com");
+            return Ok(());
+        }
+
+        let action = &args[2];
+        let target = if args.len() > 3 {
+            args[3].clone()
+        } else {
+            println!("❌ Target required");
+            return Ok(());
+        };
+
+        let cmd = match action.as_str() {
+            "test" => IntelCmd::Test { target },
+            "scan" => IntelCmd::Scan { target },
+            "analyze" => IntelCmd::Analyze { target },
+            _ => {
+                println!("❌ Unknown intel action: {}", action);
+                println!("Available: test, scan, analyze");
+                return Ok(());
+            }
+        };
+
+        return handle_intel(cmd).await;
+    }
 
     let parser = commands_parser()
         .to_options()
@@ -377,6 +443,9 @@ pub async fn run_cli() -> anyhow::Result<()> {
             if let Err(e) = crate::kali_tools::demonstrate_tools().await {
                 println!("❌ Demo failed: {}", e);
             }
+        }
+        Commands::Intel(cmd) => {
+            handle_intel(cmd).await?;
         }
         _ => {
             println!("🐺 Command not implemented yet in bpaf parser");
@@ -557,6 +626,124 @@ fn handle_plugins(cmd: PluginCmd) -> anyhow::Result<()> {
         PluginCmd::Run { name, input } => {
             let output = registry.run(&name, &input)?;
             println!("🐺 Plugin output {}", output);
+        }
+    }
+    Ok(())
+}
+
+async fn handle_intel(cmd: IntelCmd) -> anyhow::Result<()> {
+    match cmd {
+        IntelCmd::Test { target } => {
+            println!("╔════════════════════════════════════════════════════════════╗");
+            println!("║     FENRIR INTEL MODULES - COMPREHENSIVE TEST SUITE        ║");
+            println!("╚════════════════════════════════════════════════════════════╝\n");
+            println!("🎯 Target: {}\n", target);
+
+            // Test 1: OSINT Engine
+            println!("━━━ TEST 1: OSINT ENGINE ━━━");
+            println!("📡 Gathering OSINT data...");
+
+            let osint_engine = OSINTEngine::new();
+            let osint_target = OSINTTarget {
+                target_type: if target.contains('@') {
+                    OSINTTargetType::Email
+                } else {
+                    OSINTTargetType::Domain
+                },
+                value: target.clone(),
+                context: Some("Security investigation".to_string()),
+            };
+
+            match osint_engine.gather_intelligence(&osint_target).await {
+                Ok(osint_result) => {
+                    println!("✅ OSINT Collection successful!");
+                    println!("   📊 Findings: {}", osint_result.findings.len());
+                    println!("   🔍 Sources: {}", osint_result.sources.len());
+                    println!("   📈 Confidence: {:.1}%", osint_result.confidence_score * 100.0);
+
+                    // Test 2: CSI Analyzer
+                    println!("\n━━━ TEST 2: CSI ANALYZER ━━━");
+                    println!("🎯 Analyzing OSINT data for threats...");
+
+                    match analyze_osint_threats(&osint_result) {
+                        Ok(csi_report) => {
+                            println!("✅ CSI Analysis successful!");
+                            println!("   🚨 Threat Level: {:?}", csi_report.threat_level);
+                            println!("   🔍 IOCs Detected: {}", csi_report.iocs.len());
+                            println!("   📊 Risk Score: {:.1}/100", csi_report.risk_assessment.overall_score);
+
+                            // Test 3: Dashboard
+                            println!("\n━━━ TEST 3: INTEL DASHBOARD ━━━");
+                            display_quick_summary(Some(&osint_result), Some(&csi_report), None)?;
+                            println!("✅ Dashboard display successful!");
+
+                            // Test 4: Quick Workflow
+                            println!("\n━━━ TEST 4: QUICK WORKFLOW ━━━");
+                            let mut workflow = WorkflowTemplates::quick_osint_scan(osint_target.clone());
+                            let workflow_result = workflow.execute().await?;
+                            println!("✅ Workflow complete: {:?}", workflow_result.status);
+
+                            // Test 5: Full Workflow
+                            println!("\n━━━ TEST 5: FULL WORKFLOW ━━━");
+                            let mut full_workflow = WorkflowTemplates::full_intelligence_analysis(osint_target.clone());
+                            let full_result = full_workflow.execute().await?;
+                            println!("✅ Full workflow complete: {:?}", full_result.status);
+
+                            // Test 6: Intel Mode
+                            println!("\n━━━ TEST 6: INTEL MODE ORCHESTRATOR ━━━");
+                            let config = intel_mode::IntelConfig::default();
+                            let intel_mode = intel_mode::IntelMode::new(config)?;
+                            let report = intel_mode.process_target(&target).await?;
+                            println!("✅ Intel Mode complete!");
+                            println!("   📋 Report ID: {}", report.report_id);
+                            println!("   ⚠️  Risk Score: {:.1}/100", report.overall_risk_score);
+
+                            println!("\n╔════════════════════════════════════════════════════════════╗");
+                            println!("║           ALL 6 INTEL MODULES TESTED SUCCESSFULLY          ║");
+                            println!("╚════════════════════════════════════════════════════════════╝");
+                        }
+                        Err(e) => {
+                            println!("❌ CSI Analysis failed: {}", e);
+                        }
+                    }
+                }
+                Err(e) => {
+                    println!("❌ OSINT Engine failed: {}", e);
+                    println!("💡 This may be expected if API keys are not configured");
+                }
+            }
+        }
+        IntelCmd::Scan { target } => {
+            println!("📡 Running OSINT scan on: {}", target);
+            let osint_engine = OSINTEngine::new();
+            let osint_target = OSINTTarget {
+                target_type: if target.contains('@') {
+                    OSINTTargetType::Email
+                } else {
+                    OSINTTargetType::Domain
+                },
+                value: target,
+                context: None,
+            };
+
+            match osint_engine.gather_intelligence(&osint_target).await {
+                Ok(result) => {
+                    println!("✅ Scan complete!");
+                    println!("   Findings: {}", result.findings.len());
+                    println!("   Confidence: {:.1}%", result.confidence_score * 100.0);
+                }
+                Err(e) => {
+                    println!("❌ Scan failed: {}", e);
+                }
+            }
+        }
+        IntelCmd::Analyze { target } => {
+            println!("🕵️ Running full intelligence analysis on: {}", target);
+            let config = intel_mode::IntelConfig::default();
+            match intel_mode::run_intel_mode(&target, config).await {
+                Ok(_) => println!("✅ Analysis complete!"),
+                Err(e) => println!("❌ Analysis failed: {}", e),
+            }
         }
     }
     Ok(())

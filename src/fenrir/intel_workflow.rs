@@ -90,7 +90,7 @@ pub enum ExportFormat {
 /// Automated workflow engine
 pub struct IntelWorkflow {
     workflow_id: String,
-    workflow_name: String,
+    pub workflow_name: String,
     steps: Vec<WorkflowStep>,
     results: WorkflowResult,
     output_directory: PathBuf,
