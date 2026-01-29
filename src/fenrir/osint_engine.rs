@@ -35,6 +35,10 @@ pub struct IntelligenceFinding {
     pub evidence: Vec<String>,
     pub confidence: f32,
     pub severity: FindingSeverity,
+    #[serde(default)]
+    pub recommendations: Vec<String>,
+    #[serde(default)]
+    pub ai_generated: bool,
 }
 
 // ============================================================================
@@ -292,36 +296,31 @@ impl OSINTEngine {
         let osint_target = self.classify_target(target)?;
         let mut findings = Vec::new();
 
-        // Parallel gathering from multiple sources
-        let mut tasks = Vec::new();
-
         // Social media intelligence
         if matches!(osint_target.target_type, OSINTTargetType::Username) {
-            tasks.push(self.gather_social_media_intel(&osint_target));
+            if let Ok(mut social_findings) = self.gather_social_media_intel(&osint_target).await {
+                findings.append(&mut social_findings);
+            }
         }
 
         // Domain intelligence
         if matches!(osint_target.target_type, OSINTTargetType::Domain) {
-            tasks.push(self.gather_domain_intel(&osint_target));
+            if let Ok(mut domain_findings) = self.gather_domain_intel(&osint_target).await {
+                findings.append(&mut domain_findings);
+            }
         }
 
         // Email intelligence
         if matches!(osint_target.target_type, OSINTTargetType::Email) {
-            tasks.push(self.gather_email_intel(&osint_target));
+            if let Ok(mut email_findings) = self.gather_email_intel(&osint_target).await {
+                findings.append(&mut email_findings);
+            }
         }
 
         // IP intelligence
         if matches!(osint_target.target_type, OSINTTargetType::IPAddress) {
-            tasks.push(self.gather_ip_intel(&osint_target));
-        }
-
-        // Execute all gathering tasks
-        let results = futures::future::join_all(tasks).await;
-
-        // Collect findings from all sources
-        for result in results {
-            if let Ok(mut source_findings) = result {
-                findings.append(&mut source_findings);
+            if let Ok(mut ip_findings) = self.gather_ip_intel(&osint_target).await {
+                findings.append(&mut ip_findings);
             }
         }
 
@@ -1220,20 +1219,22 @@ impl OSINTEngine {
             .join("\n");
 
         let request = AIRequest {
-            provider: AIProvider::Gemini,
+            provider: AIProvider::ZaiFenrirOrchestrator,
             system_prompt: "You are an OSINT analysis expert. Analyze the provided findings and suggest correlations, patterns, and additional investigation avenues.".to_string(),
             user_message: format!("Analyze these OSINT findings for target '{}':\n\n{}", target.value, findings_summary),
             max_tokens: Some(500),
             temperature: Some(0.3),
         };
 
-        if let Ok(response) = call_ai(request).await {
-            // Add AI-generated finding
+        let response = call_ai(request).await;
+
+        // Add AI-generated finding
+        if response.success {
             findings.push(OSINTFinding {
                 category: "AI Analysis".to_string(),
                 title: "AI-Enhanced OSINT Analysis".to_string(),
                 description: "AI-powered correlation and pattern analysis".to_string(),
-                evidence: vec![response],
+                evidence: vec![response.content.clone()],
                 confidence: 0.8,
                 severity: FindingSeverity::Info,
                 source: "AI Enhancement".to_string(),
@@ -1303,6 +1304,11 @@ impl OSINTEngine {
 
         (avg_confidence * 0.6) + (source_diversity * 0.2) + (finding_volume * 0.2)
     }
+
+    /// Main entry point for gathering intelligence on any target type (OSINTTarget wrapper)
+    pub async fn gather_intelligence(&self, target: &OSINTTarget) -> Result<OSINTResult, Box<dyn std::error::Error>> {
+        self.gather_comprehensive_osint(&target.value).await
+    }
 }
 
 // ============================================================================
@@ -1324,6 +1330,7 @@ pub fn convert_to_intelligence_findings(osint_result: &OSINTResult) -> Vec<Intel
             confidence: finding.confidence,
             severity: finding.severity.clone(),
             category: finding.category.clone(),
+            title: finding.title.clone(),
             description: finding.description.clone(),
             evidence: finding.evidence.clone(),
             recommendations: vec!["Review OSINT findings for further investigation".to_string()],

@@ -26,7 +26,7 @@ use std::io::{stdout, Write};
 use std::time::Duration;
 
 /// Dashboard view modes
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum DashboardMode {
     Osint,
     Csi,
@@ -79,10 +79,10 @@ impl IntelDashboard {
         enable_raw_mode()?;
         execute!(stdout(), EnterAlternateScreen, Hide)?;
 
-        let mut stdout = stdout();
+        let mut stdout_handle = stdout();
 
         while self.running {
-            self.render(&mut stdout)?;
+            self.render(&mut stdout_handle)?;
 
             // Handle input
             if event::poll(Duration::from_millis(100))? {
@@ -94,7 +94,7 @@ impl IntelDashboard {
 
         // Cleanup
         disable_raw_mode()?;
-        execute!(stdout(), LeaveAlternateScreen, Show)?;
+        execute!(stdout_handle, LeaveAlternateScreen, Show)?;
 
         Ok(())
     }

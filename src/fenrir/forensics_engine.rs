@@ -526,9 +526,10 @@ impl ForensicsEngine {
 
         // Check for suspicious extensions
         if let Some(ext) = metadata.path.extension() {
-            match ext.to_str().unwrap_or("").to_lowercase().as_str() {
+            let ext_str = ext.to_str().unwrap_or("").to_lowercase();
+            match ext_str.as_str() {
                 "vbs" | "js" | "jar" | "sh" | "bat" => {
-                    indicators.push(format!("Suspicious executable script: .{}", ext));
+                    indicators.push(format!("Suspicious executable script: .{}", ext_str));
                 }
                 _ => {}
             }

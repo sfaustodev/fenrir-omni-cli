@@ -368,11 +368,11 @@ impl CSIAnalyzer {
         }
 
         // Remove duplicates while preserving confidence
-        let mut unique_iocs = HashMap::new();
+        let mut unique_iocs: HashMap<String, IOC> = HashMap::new();
         for ioc in iocs {
-            let key = format!("{}:{}", std::mem::discriminant(&ioc.ioc_type), ioc.value);
+            let key = format!("{:?}:{}", ioc.ioc_type, ioc.value);
             unique_iocs.entry(key)
-                .and_modify(|existing| {
+                .and_modify(|existing: &mut IOC| {
                     if ioc.confidence > existing.confidence {
                         *existing = ioc.clone();
                     }
@@ -565,8 +565,8 @@ impl CSIAnalyzer {
         if !ips.is_empty() && !domains.is_empty() {
             patterns.push(ThreatPattern {
                 pattern_id: uuid::Uuid::new_v4().to_string(),
-                pattern_type: PatternType::Infrastructure,
-                description: "Infrastructure correlation: IPs and domains detected together",
+                pattern_type: PatternType::CommandAndControl,
+                description: "Infrastructure correlation: IPs and domains detected together".to_string(),
                 matches: vec![
                     format!("{} IPs", ips.len()),
                     format!("{} domains", domains.len()),
@@ -604,7 +604,7 @@ impl CSIAnalyzer {
                 pattern_id: uuid::Uuid::new_v4().to_string(),
                 pattern_type: PatternType::Exploitation,
                 description: format!("Vulnerability intelligence: {} CVE(s) detected", cves.len()),
-                matches: cves.clone(),
+                matches: cves.iter().map(|s| s.to_string()).collect(),
                 severity: IOCSeverity::High,
             });
         }

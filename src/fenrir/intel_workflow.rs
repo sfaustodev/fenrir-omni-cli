@@ -144,7 +144,7 @@ impl IntelWorkflow {
         let mut completed_steps = HashMap::new();
         let mut osint_data: Option<OSINTResult> = None;
 
-        for step in &self.steps {
+        for step in self.steps.clone() {
             if !step.enabled {
                 println!("⏭️  Skipping disabled step: {}", step.name);
                 completed_steps.insert(step.step_id.clone(), WorkflowStatus::Skipped);
@@ -170,7 +170,7 @@ impl IntelWorkflow {
 
             println!("▶️  Executing step: {}", step.name);
 
-            let step_result = self.execute_step(step, osint_data.as_ref()).await;
+            let step_result = self.execute_step(&step, osint_data.as_ref()).await;
 
             match step_result {
                 Ok(step_output) => {
@@ -212,7 +212,8 @@ impl IntelWorkflow {
         match &step.step_type {
             WorkflowStepType::OsintCollection { target } => {
                 let engine = OSINTEngine::new();
-                let result = engine.gather_intelligence(target).await?;
+                let result = engine.gather_intelligence(target).await
+                    .map_err(|e| anyhow::anyhow!("OSINT collection failed: {}", e))?;
 
                 self.results.osint_results.push(result.clone());
 
@@ -291,7 +292,7 @@ impl IntelWorkflow {
             WorkflowStepType::ExportResults { format, output_path } => {
                 let full_path = self.output_directory.join(output_path);
                 self.export_results(format, &full_path)?;
-                self.results.output_files.push(full_path);
+                self.results.output_files.push(full_path.clone());
 
                 println!("📄 Exported results to: {:?}", full_path);
 
@@ -301,7 +302,7 @@ impl IntelWorkflow {
             WorkflowStepType::GenerateReport { output_path } => {
                 let full_path = self.output_directory.join(output_path);
                 self.generate_comprehensive_report(&full_path)?;
-                self.results.output_files.push(full_path);
+                self.results.output_files.push(full_path.clone());
 
                 println!("📋 Generated report: {:?}", full_path);
 
