@@ -608,7 +608,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "nmap".to_string(),
             typical_args: vec!["-sV".to_string(), "-sC".to_string(), "-T4".to_string()],
             requires_root: true,
-            install_command: Some("sudo apt install nmap".to_string()),
+            install_command: Some("brew install nmap".to_string()),
             execution_time_estimate: 60,
         },
         KaliTool {
@@ -618,7 +618,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "masscan".to_string(),
             typical_args: vec!["-p80,8000-8100".to_string()],
             requires_root: true,
-            install_command: Some("sudo apt install masscan".to_string()),
+            install_command: Some("brew install masscan".to_string()),
             execution_time_estimate: 120,
         },
         KaliTool {
@@ -640,7 +640,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "dnsenum".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install dnsenum".to_string()),
+            install_command: Some("brew install dnsenum".to_string()),
             execution_time_estimate: 45,
         },
         KaliTool {
@@ -650,7 +650,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "dnsrecon".to_string(),
             typical_args: vec!["-d".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install dnsrecon".to_string()),
+            install_command: Some("brew install dnsrecon".to_string()),
             execution_time_estimate: 60,
         },
 
@@ -662,7 +662,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "theHarvester".to_string(),
             typical_args: vec!["-d".to_string(), "-b".to_string(), "google".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install theharvester".to_string()),
+            install_command: Some("brew install theharvester".to_string()),
             execution_time_estimate: 90,
         },
         KaliTool {
@@ -682,7 +682,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "maltego".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install maltego".to_string()),
+            install_command: Some("brew install maltego".to_string()),
             execution_time_estimate: 0,
         },
 
@@ -694,7 +694,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "tshark".to_string(),
             typical_args: vec!["-i".to_string(), "eth0".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install tshark".to_string()),
+            install_command: Some("brew install tshark".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -704,7 +704,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "tcpdump".to_string(),
             typical_args: vec!["-i".to_string(), "eth0".to_string()],
             requires_root: true,
-            install_command: Some("sudo apt install tcpdump".to_string()),
+            install_command: Some("brew install tcpdump".to_string()),
             execution_time_estimate: 0,
         },
 
@@ -716,7 +716,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "nikto".to_string(),
             typical_args: vec!["-h".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install nikto".to_string()),
+            install_command: Some("brew install nikto".to_string()),
             execution_time_estimate: 120,
         },
         KaliTool {
@@ -726,7 +726,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "sqlmap".to_string(),
             typical_args: vec!["-u".to_string(), "--batch".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install sqlmap".to_string()),
+            install_command: Some("brew install sqlmap".to_string()),
             execution_time_estimate: 180,
         },
         KaliTool {
@@ -746,7 +746,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "nessus".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install nessus".to_string()),
+            install_command: Some("brew install nessus".to_string()),
             execution_time_estimate: 600,
         },
         KaliTool {
@@ -756,7 +756,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "openvas".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install openvas".to_string()),
+            install_command: Some("brew install openvas".to_string()),
             execution_time_estimate: 600,
         },
 
@@ -768,7 +768,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "msfconsole".to_string(),
             typical_args: vec!["-q".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install metasploit-framework".to_string()),
+            install_command: Some("brew install metasploit-framework".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -778,7 +778,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "searchsploit".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install exploitdb".to_string()),
+            install_command: Some("brew install exploitdb".to_string()),
             execution_time_estimate: 10,
         },
         KaliTool {
@@ -788,7 +788,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "empire".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install empire".to_string()),
+            install_command: Some("brew install empire".to_string()),
             execution_time_estimate: 0,
         },
 
@@ -800,7 +800,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "john".to_string(),
             typical_args: vec!["--wordlist".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install john".to_string()),
+            install_command: Some("brew install john".to_string()),
             execution_time_estimate: 300,
         },
         KaliTool {
@@ -810,7 +810,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "hashcat".to_string(),
             typical_args: vec!["-m".to_string(), "0".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install hashcat".to_string()),
+            install_command: Some("brew install hashcat".to_string()),
             execution_time_estimate: 300,
         },
         KaliTool {
@@ -820,7 +820,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "hydra".to_string(),
             typical_args: vec!["-l".to_string(), "user".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install hydra".to_string()),
+            install_command: Some("brew install hydra".to_string()),
             execution_time_estimate: 180,
         },
         KaliTool {
@@ -840,7 +840,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "cewl".to_string(),
             typical_args: vec!["-w".to_string(), "wordlist.txt".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install cewl".to_string()),
+            install_command: Some("brew install cewl".to_string()),
             execution_time_estimate: 60,
         },
         KaliTool {
@@ -850,7 +850,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "crunch".to_string(),
             typical_args: vec!["8".to_string(), "8".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install crunch".to_string()),
+            install_command: Some("brew install crunch".to_string()),
             execution_time_estimate: 30,
         },
 
@@ -862,7 +862,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "aircrack-ng".to_string(),
             typical_args: vec!["-w".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install aircrack-ng".to_string()),
+            install_command: Some("brew install aircrack-ng".to_string()),
             execution_time_estimate: 300,
         },
         KaliTool {
@@ -872,7 +872,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "wifite".to_string(),
             typical_args: vec!["--all".to_string()],
             requires_root: true,
-            install_command: Some("sudo apt install wifite".to_string()),
+            install_command: Some("brew install wifite".to_string()),
             execution_time_estimate: 300,
         },
         KaliTool {
@@ -882,7 +882,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "reaver".to_string(),
             typical_args: vec!["-b".to_string()],
             requires_root: true,
-            install_command: Some("sudo apt install reaver".to_string()),
+            install_command: Some("brew install reaver".to_string()),
             execution_time_estimate: 600,
         },
         KaliTool {
@@ -892,7 +892,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "bully".to_string(),
             typical_args: vec![],
             requires_root: true,
-            install_command: Some("sudo apt install bully".to_string()),
+            install_command: Some("brew install bully".to_string()),
             execution_time_estimate: 600,
         },
         KaliTool {
@@ -902,7 +902,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "kismet".to_string(),
             typical_args: vec![],
             requires_root: true,
-            install_command: Some("sudo apt install kismet".to_string()),
+            install_command: Some("brew install kismet".to_string()),
             execution_time_estimate: 0,
         },
 
@@ -914,7 +914,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "burpsuite".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install burpsuite".to_string()),
+            install_command: Some("brew install burpsuite".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -924,7 +924,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "zap-cli".to_string(),
             typical_args: vec!["quick-scan".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install zaproxy".to_string()),
+            install_command: Some("brew install zaproxy".to_string()),
             execution_time_estimate: 300,
         },
         KaliTool {
@@ -934,7 +934,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "dirb".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install dirb".to_string()),
+            install_command: Some("brew install dirb".to_string()),
             execution_time_estimate: 120,
         },
         KaliTool {
@@ -944,7 +944,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "gobuster".to_string(),
             typical_args: vec!["dir".to_string(), "-u".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install gobuster".to_string()),
+            install_command: Some("brew install gobuster".to_string()),
             execution_time_estimate: 90,
         },
         KaliTool {
@@ -966,7 +966,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "ettercap".to_string(),
             typical_args: vec!["-T".to_string(), "-M".to_string(), "arp".to_string()],
             requires_root: true,
-            install_command: Some("sudo apt install ettercap-text-only".to_string()),
+            install_command: Some("brew install ettercap-text-only".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -976,7 +976,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "bettercap".to_string(),
             typical_args: vec![],
             requires_root: true,
-            install_command: Some("sudo apt install bettercap".to_string()),
+            install_command: Some("brew install bettercap".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -986,7 +986,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "mitmproxy".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install mitmproxy".to_string()),
+            install_command: Some("brew install mitmproxy".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -1008,7 +1008,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "ghidraRun".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install ghidra".to_string()),
+            install_command: Some("brew install ghidra".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -1018,7 +1018,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "r2".to_string(),
             typical_args: vec!["-A".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install radare2".to_string()),
+            install_command: Some("brew install radare2".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -1028,7 +1028,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "objdump".to_string(),
             typical_args: vec!["-d".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install binutils".to_string()),
+            install_command: Some("brew install binutils".to_string()),
             execution_time_estimate: 10,
         },
         KaliTool {
@@ -1038,7 +1038,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "strings".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install binutils".to_string()),
+            install_command: Some("brew install binutils".to_string()),
             execution_time_estimate: 5,
         },
         KaliTool {
@@ -1048,7 +1048,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "gdb".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install gdb".to_string()),
+            install_command: Some("brew install gdb".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -1058,7 +1058,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "binaryninja".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install binaryninja".to_string()),
+            install_command: Some("brew install binaryninja".to_string()),
             execution_time_estimate: 0,
         },
 
@@ -1070,7 +1070,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "autopsy".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install autopsy".to_string()),
+            install_command: Some("brew install autopsy".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -1080,7 +1080,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "binwalk".to_string(),
             typical_args: vec!["-e".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install binwalk".to_string()),
+            install_command: Some("brew install binwalk".to_string()),
             execution_time_estimate: 60,
         },
         KaliTool {
@@ -1090,7 +1090,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "vol".to_string(),
             typical_args: vec!["-f".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install volatility".to_string()),
+            install_command: Some("brew install volatility".to_string()),
             execution_time_estimate: 120,
         },
         KaliTool {
@@ -1100,7 +1100,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "fls".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install sleuthkit".to_string()),
+            install_command: Some("brew install sleuthkit".to_string()),
             execution_time_estimate: 60,
         },
         KaliTool {
@@ -1110,7 +1110,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "foremost".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install foremost".to_string()),
+            install_command: Some("brew install foremost".to_string()),
             execution_time_estimate: 180,
         },
 
@@ -1122,7 +1122,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "mimikatz".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install mimikatz".to_string()),
+            install_command: Some("brew install mimikatz".to_string()),
             execution_time_estimate: 30,
         },
         KaliTool {
@@ -1154,7 +1154,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "afl-fuzz".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install afl++".to_string()),
+            install_command: Some("brew install afl++".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -1164,7 +1164,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "zzuf".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install zzuf".to_string()),
+            install_command: Some("brew install zzuf".to_string()),
             execution_time_estimate: 0,
         },
 
@@ -1206,7 +1206,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "fierce".to_string(),
             typical_args: vec!["-dns".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install fierce".to_string()),
+            install_command: Some("brew install fierce".to_string()),
             execution_time_estimate: 180,
         },
         KaliTool {
@@ -1216,7 +1216,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "dnsrecon".to_string(),
             typical_args: vec!["-d".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install dnsrecon".to_string()),
+            install_command: Some("brew install dnsrecon".to_string()),
             execution_time_estimate: 120,
         },
         KaliTool {
@@ -1226,7 +1226,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "recon-ng".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install recon-ng".to_string()),
+            install_command: Some("brew install recon-ng".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -1236,7 +1236,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "spiderfoot".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install spiderfoot".to_string()),
+            install_command: Some("brew install spiderfoot".to_string()),
             execution_time_estimate: 0,
         },
 
@@ -1248,7 +1248,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "qualys".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install qualys".to_string()),
+            install_command: Some("brew install qualys".to_string()),
             execution_time_estimate: 600,
         },
         KaliTool {
@@ -1258,7 +1258,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "rapid7".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install rapid7".to_string()),
+            install_command: Some("brew install rapid7".to_string()),
             execution_time_estimate: 600,
         },
         KaliTool {
@@ -1268,7 +1268,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "acunetix".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install acunetix".to_string()),
+            install_command: Some("brew install acunetix".to_string()),
             execution_time_estimate: 600,
         },
 
@@ -1280,7 +1280,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "dirbuster".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install dirbuster".to_string()),
+            install_command: Some("brew install dirbuster".to_string()),
             execution_time_estimate: 300,
         },
         KaliTool {
@@ -1300,7 +1300,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "wfuzz".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install wfuzz".to_string()),
+            install_command: Some("brew install wfuzz".to_string()),
             execution_time_estimate: 120,
         },
         KaliTool {
@@ -1310,7 +1310,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "sqlninja".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install sqlninja".to_string()),
+            install_command: Some("brew install sqlninja".to_string()),
             execution_time_estimate: 180,
         },
         KaliTool {
@@ -1320,7 +1320,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "commix".to_string(),
             typical_args: vec!["--url".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install commix".to_string()),
+            install_command: Some("brew install commix".to_string()),
             execution_time_estimate: 120,
         },
         KaliTool {
@@ -1330,7 +1330,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "joomlavs".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install joomlavs".to_string()),
+            install_command: Some("brew install joomlavs".to_string()),
             execution_time_estimate: 120,
         },
         KaliTool {
@@ -1340,7 +1340,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "wpscan".to_string(),
             typical_args: vec!["--url".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install wpscan".to_string()),
+            install_command: Some("brew install wpscan".to_string()),
             execution_time_estimate: 180,
         },
         KaliTool {
@@ -1350,7 +1350,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "droopescan".to_string(),
             typical_args: vec!["scan".to_string(), "drupal".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install droopescan".to_string()),
+            install_command: Some("brew install droopescan".to_string()),
             execution_time_estimate: 120,
         },
         KaliTool {
@@ -1360,7 +1360,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "cmsmap".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install cmsmap".to_string()),
+            install_command: Some("brew install cmsmap".to_string()),
             execution_time_estimate: 90,
         },
 
@@ -1382,7 +1382,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "pixiewps".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install pixiewps".to_string()),
+            install_command: Some("brew install pixiewps".to_string()),
             execution_time_estimate: 300,
         },
         KaliTool {
@@ -1392,7 +1392,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "fern-wifi-cracker".to_string(),
             typical_args: vec![],
             requires_root: true,
-            install_command: Some("sudo apt install fern-wifi-cracker".to_string()),
+            install_command: Some("brew install fern-wifi-cracker".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -1402,7 +1402,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "ghost-phisher".to_string(),
             typical_args: vec![],
             requires_root: true,
-            install_command: Some("sudo apt install ghost-phisher".to_string()),
+            install_command: Some("brew install ghost-phisher".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -1434,7 +1434,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "hydra".to_string(),
             typical_args: vec!["-l".to_string(), "user".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install hydra".to_string()),
+            install_command: Some("brew install hydra".to_string()),
             execution_time_estimate: 300,
         },
         KaliTool {
@@ -1454,7 +1454,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "crowbar".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install crowbar".to_string()),
+            install_command: Some("brew install crowbar".to_string()),
             execution_time_estimate: 300,
         },
         KaliTool {
@@ -1464,7 +1464,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "rsmangler".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install rsmangler".to_string()),
+            install_command: Some("brew install rsmangler".to_string()),
             execution_time_estimate: 60,
         },
         KaliTool {
@@ -1474,7 +1474,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "cupp".to_string(),
             typical_args: vec!["-i".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install cupp".to_string()),
+            install_command: Some("brew install cupp".to_string()),
             execution_time_estimate: 30,
         },
 
@@ -1486,7 +1486,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "armitage".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install armitage".to_string()),
+            install_command: Some("brew install armitage".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -1506,7 +1506,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "veil-evasion".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install veil".to_string()),
+            install_command: Some("brew install veil".to_string()),
             execution_time_estimate: 60,
         },
         KaliTool {
@@ -1526,7 +1526,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "msfvenom".to_string(),
             typical_args: vec!["-p".to_string(), "windows/meterpreter/reverse_tcp".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install metasploit-framework".to_string()),
+            install_command: Some("brew install metasploit-framework".to_string()),
             execution_time_estimate: 30,
         },
         KaliTool {
@@ -1536,7 +1536,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "ysoserial".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install ysoserial".to_string()),
+            install_command: Some("brew install ysoserial".to_string()),
             execution_time_estimate: 30,
         },
 
@@ -1548,7 +1548,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "guymager".to_string(),
             typical_args: vec![],
             requires_root: true,
-            install_command: Some("sudo apt install guymager".to_string()),
+            install_command: Some("brew install guymager".to_string()),
             execution_time_estimate: 1800,
         },
         KaliTool {
@@ -1558,7 +1558,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "dc3dd".to_string(),
             typical_args: vec![],
             requires_root: true,
-            install_command: Some("sudo apt install dc3dd".to_string()),
+            install_command: Some("brew install dc3dd".to_string()),
             execution_time_estimate: 1800,
         },
         KaliTool {
@@ -1568,7 +1568,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "extundelete".to_string(),
             typical_args: vec![],
             requires_root: true,
-            install_command: Some("sudo apt install extundelete".to_string()),
+            install_command: Some("brew install extundelete".to_string()),
             execution_time_estimate: 300,
         },
         KaliTool {
@@ -1578,7 +1578,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "scalpel".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install scalpel".to_string()),
+            install_command: Some("brew install scalpel".to_string()),
             execution_time_estimate: 600,
         },
         KaliTool {
@@ -1588,7 +1588,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "testdisk".to_string(),
             typical_args: vec![],
             requires_root: true,
-            install_command: Some("sudo apt install testdisk".to_string()),
+            install_command: Some("brew install testdisk".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -1598,7 +1598,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "photorec".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install testdisk".to_string()),
+            install_command: Some("brew install testdisk".to_string()),
             execution_time_estimate: 600,
         },
         KaliTool {
@@ -1608,7 +1608,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "bulk_extractor".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install bulk-extractor".to_string()),
+            install_command: Some("brew install bulk-extractor".to_string()),
             execution_time_estimate: 600,
         },
 
@@ -1620,7 +1620,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "setoolkit".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install set".to_string()),
+            install_command: Some("brew install set".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -1630,7 +1630,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "king-phisher".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install king-phisher".to_string()),
+            install_command: Some("brew install king-phisher".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -1672,7 +1672,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "honggfuzz".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install honggfuzz".to_string()),
+            install_command: Some("brew install honggfuzz".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -1692,7 +1692,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "radamsa".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install radamsa".to_string()),
+            install_command: Some("brew install radamsa".to_string()),
             execution_time_estimate: 0,
         },
 
@@ -1704,7 +1704,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "dradis".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install dradis".to_string()),
+            install_command: Some("brew install dradis".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -1714,7 +1714,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "faraday".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install faraday".to_string()),
+            install_command: Some("brew install faraday".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -1724,7 +1724,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "pipal".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install pipal".to_string()),
+            install_command: Some("brew install pipal".to_string()),
             execution_time_estimate: 60,
         },
 
@@ -1736,7 +1736,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "chaosreader".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install chaosreader".to_string()),
+            install_command: Some("brew install chaosreader".to_string()),
             execution_time_estimate: 120,
         },
         KaliTool {
@@ -1746,7 +1746,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "tcpflow".to_string(),
             typical_args: vec![],
             requires_root: true,
-            install_command: Some("sudo apt install tcpflow".to_string()),
+            install_command: Some("brew install tcpflow".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -1756,7 +1756,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "bro".to_string(),
             typical_args: vec![],
             requires_root: true,
-            install_command: Some("sudo apt install bro".to_string()),
+            install_command: Some("brew install bro".to_string()),
             execution_time_estimate: 0,
         },
 
@@ -1800,7 +1800,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "ropgadget".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install ropgadget".to_string()),
+            install_command: Some("brew install ropgadget".to_string()),
             execution_time_estimate: 30,
         },
         KaliTool {
@@ -1832,7 +1832,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "hping3".to_string(),
             typical_args: vec!["--flood".to_string()],
             requires_root: true,
-            install_command: Some("sudo apt install hping3".to_string()),
+            install_command: Some("brew install hping3".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -1842,7 +1842,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "slowloris".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install slowloris".to_string()),
+            install_command: Some("brew install slowloris".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -1852,7 +1852,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "t50".to_string(),
             typical_args: vec![],
             requires_root: true,
-            install_command: Some("sudo apt install t50".to_string()),
+            install_command: Some("brew install t50".to_string()),
             execution_time_estimate: 0,
         },
 
@@ -1864,7 +1864,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "sslstrip".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install sslstrip".to_string()),
+            install_command: Some("brew install sslstrip".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -1874,7 +1874,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "sslsplit".to_string(),
             typical_args: vec![],
             requires_root: true,
-            install_command: Some("sudo apt install sslsplit".to_string()),
+            install_command: Some("brew install sslsplit".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -1884,7 +1884,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "responder".to_string(),
             typical_args: vec!["-I".to_string(), "eth0".to_string()],
             requires_root: true,
-            install_command: Some("sudo apt install responder".to_string()),
+            install_command: Some("brew install responder".to_string()),
             execution_time_estimate: 0,
         },
 
@@ -1896,7 +1896,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "macchanger".to_string(),
             typical_args: vec!["-r".to_string(), "eth0".to_string()],
             requires_root: true,
-            install_command: Some("sudo apt install macchanger".to_string()),
+            install_command: Some("brew install macchanger".to_string()),
             execution_time_estimate: 5,
         },
         KaliTool {
@@ -1906,7 +1906,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "arpspoof".to_string(),
             typical_args: vec![],
             requires_root: true,
-            install_command: Some("sudo apt install dsniff".to_string()),
+            install_command: Some("brew install dsniff".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -1916,7 +1916,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "dnsspoof".to_string(),
             typical_args: vec![],
             requires_root: true,
-            install_command: Some("sudo apt install dsniff".to_string()),
+            install_command: Some("brew install dsniff".to_string()),
             execution_time_estimate: 0,
         },
 
@@ -1928,7 +1928,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "empire".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install powershell-empire".to_string()),
+            install_command: Some("brew install powershell-empire".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -1960,7 +1960,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "msfconsole".to_string(),
             typical_args: vec!["-x".to_string(), "use exploit/windows/local/persistence".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install metasploit-framework".to_string()),
+            install_command: Some("brew install metasploit-framework".to_string()),
             execution_time_estimate: 60,
         },
         KaliTool {
@@ -1982,7 +1982,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "shred".to_string(),
             typical_args: vec!["-u".to_string(), "-z".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install coreutils".to_string()),
+            install_command: Some("brew install coreutils".to_string()),
             execution_time_estimate: 30,
         },
         KaliTool {
@@ -1992,7 +1992,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "wipe".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install wipe".to_string()),
+            install_command: Some("brew install wipe".to_string()),
             execution_time_estimate: 60,
         },
         KaliTool {
@@ -2002,7 +2002,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "srm".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install secure-delete".to_string()),
+            install_command: Some("brew install secure-delete".to_string()),
             execution_time_estimate: 30,
         },
 
@@ -2014,7 +2014,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "sqlninja".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install sqlninja".to_string()),
+            install_command: Some("brew install sqlninja".to_string()),
             execution_time_estimate: 180,
         },
         KaliTool {
@@ -2024,7 +2024,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "tnscmd10g".to_string(),
             typical_args: vec!["ping".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install tnscmd10g".to_string()),
+            install_command: Some("brew install tnscmd10g".to_string()),
             execution_time_estimate: 30,
         },
         KaliTool {
@@ -2044,7 +2044,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "mssqlclient".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install impacket-scripts".to_string()),
+            install_command: Some("brew install impacket-scripts".to_string()),
             execution_time_estimate: 60,
         },
         KaliTool {
@@ -2054,7 +2054,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "cassandra".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install cassandra".to_string()),
+            install_command: Some("brew install cassandra".to_string()),
             execution_time_estimate: 0,
         },
 
@@ -2066,7 +2066,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "skipfish".to_string(),
             typical_args: vec!["-o".to_string(), "output".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install skipfish".to_string()),
+            install_command: Some("brew install skipfish".to_string()),
             execution_time_estimate: 300,
         },
         KaliTool {
@@ -2076,7 +2076,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "w3af".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install w3af".to_string()),
+            install_command: Some("brew install w3af".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -2086,7 +2086,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "webscarab".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install webscarab".to_string()),
+            install_command: Some("brew install webscarab".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -2096,7 +2096,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "paros".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install paros".to_string()),
+            install_command: Some("brew install paros".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -2106,7 +2106,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "webshag".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install webshag".to_string()),
+            install_command: Some("brew install webshag".to_string()),
             execution_time_estimate: 120,
         },
         KaliTool {
@@ -2116,7 +2116,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "whatweb".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install whatweb".to_string()),
+            install_command: Some("brew install whatweb".to_string()),
             execution_time_estimate: 60,
         },
         KaliTool {
@@ -2126,7 +2126,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "httprint".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install httprint".to_string()),
+            install_command: Some("brew install httprint".to_string()),
             execution_time_estimate: 60,
         },
         KaliTool {
@@ -2136,7 +2136,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "httrack".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install httrack".to_string()),
+            install_command: Some("brew install httrack".to_string()),
             execution_time_estimate: 300,
         },
 
@@ -2148,7 +2148,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "mdk3".to_string(),
             typical_args: vec![],
             requires_root: true,
-            install_command: Some("sudo apt install mdk3".to_string()),
+            install_command: Some("brew install mdk3".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -2158,7 +2158,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "mdk4".to_string(),
             typical_args: vec![],
             requires_root: true,
-            install_command: Some("sudo apt install mdk4".to_string()),
+            install_command: Some("brew install mdk4".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -2168,7 +2168,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "hostapd".to_string(),
             typical_args: vec![],
             requires_root: true,
-            install_command: Some("sudo apt install hostapd".to_string()),
+            install_command: Some("brew install hostapd".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -2178,7 +2178,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "hostapd-wpe".to_string(),
             typical_args: vec![],
             requires_root: true,
-            install_command: Some("sudo apt install hostapd-wpe".to_string()),
+            install_command: Some("brew install hostapd-wpe".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -2188,7 +2188,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "freeradius".to_string(),
             typical_args: vec![],
             requires_root: true,
-            install_command: Some("sudo apt install freeradius".to_string()),
+            install_command: Some("brew install freeradius".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -2198,7 +2198,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "asleap".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install asleap".to_string()),
+            install_command: Some("brew install asleap".to_string()),
             execution_time_estimate: 300,
         },
 
@@ -2210,7 +2210,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "msfvenom".to_string(),
             typical_args: vec!["-p".to_string(), "windows/meterpreter/reverse_tcp".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install metasploit-framework".to_string()),
+            install_command: Some("brew install metasploit-framework".to_string()),
             execution_time_estimate: 30,
         },
 
@@ -2232,7 +2232,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "setoolkit".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install set".to_string()),
+            install_command: Some("brew install set".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -2242,7 +2242,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "maltego".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install maltego".to_string()),
+            install_command: Some("brew install maltego".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -2252,7 +2252,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "recon-ng".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install recon-ng".to_string()),
+            install_command: Some("brew install recon-ng".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -2262,7 +2262,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "spiderfoot".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install spiderfoot".to_string()),
+            install_command: Some("brew install spiderfoot".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -2272,7 +2272,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "theharvester".to_string(),
             typical_args: vec!["-d".to_string(), "-b".to_string(), "all".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install theharvester".to_string()),
+            install_command: Some("brew install theharvester".to_string()),
             execution_time_estimate: 120,
         },
         KaliTool {
@@ -2404,7 +2404,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "john".to_string(),
             typical_args: vec!["--wordlist=/usr/share/wordlists/rockyou.txt".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install john".to_string()),
+            install_command: Some("brew install john".to_string()),
             execution_time_estimate: 600,
         },
         KaliTool {
@@ -2414,7 +2414,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "hashcat".to_string(),
             typical_args: vec!["-m".to_string(), "0".to_string(), "-a".to_string(), "0".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install hashcat".to_string()),
+            install_command: Some("brew install hashcat".to_string()),
             execution_time_estimate: 600,
         },
         KaliTool {
@@ -2424,7 +2424,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "hydra".to_string(),
             typical_args: vec!["-l".to_string(), "username".to_string(), "-P".to_string(), "wordlist.txt".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install hydra".to_string()),
+            install_command: Some("brew install hydra".to_string()),
             execution_time_estimate: 300,
         },
         KaliTool {
@@ -2434,7 +2434,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "patator".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install patator".to_string()),
+            install_command: Some("brew install patator".to_string()),
             execution_time_estimate: 300,
         },
         KaliTool {
@@ -2444,7 +2444,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "medusa".to_string(),
             typical_args: vec!["-h".to_string(), "target".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install medusa".to_string()),
+            install_command: Some("brew install medusa".to_string()),
             execution_time_estimate: 300,
         },
         KaliTool {
@@ -2454,7 +2454,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "ncrack".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install ncrack".to_string()),
+            install_command: Some("brew install ncrack".to_string()),
             execution_time_estimate: 300,
         },
         KaliTool {
@@ -2464,7 +2464,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "cewl".to_string(),
             typical_args: vec!["-d".to_string(), "2".to_string(), "-m".to_string(), "5".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install cewl".to_string()),
+            install_command: Some("brew install cewl".to_string()),
             execution_time_estimate: 120,
         },
         KaliTool {
@@ -2474,7 +2474,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "crunch".to_string(),
             typical_args: vec!["8".to_string(), "8".to_string(), "-t".to_string(), "@@@@%%%%".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install crunch".to_string()),
+            install_command: Some("brew install crunch".to_string()),
             execution_time_estimate: 60,
         },
         KaliTool {
@@ -2484,7 +2484,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "cupp".to_string(),
             typical_args: vec!["-i".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install cupp".to_string()),
+            install_command: Some("brew install cupp".to_string()),
             execution_time_estimate: 30,
         },
         KaliTool {
@@ -2494,7 +2494,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "rsmangler".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install rsmangler".to_string()),
+            install_command: Some("brew install rsmangler".to_string()),
             execution_time_estimate: 60,
         },
 
@@ -2516,7 +2516,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "king-phisher".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install king-phisher".to_string()),
+            install_command: Some("brew install king-phisher".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -2620,7 +2620,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "swaks".to_string(),
             typical_args: vec!["--to".to_string(), "target@example.com".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install swaks".to_string()),
+            install_command: Some("brew install swaks".to_string()),
             execution_time_estimate: 30,
         },
         KaliTool {
@@ -2630,7 +2630,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "smtp-user-enum".to_string(),
             typical_args: vec!["-M".to_string(), "VRFY".to_string(), "-u".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install smtp-user-enum".to_string()),
+            install_command: Some("brew install smtp-user-enum".to_string()),
             execution_time_estimate: 60,
         },
         KaliTool {
@@ -2660,7 +2660,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "veil".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install veil".to_string()),
+            install_command: Some("brew install veil".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -2670,7 +2670,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "backdoor-factory".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install the-backdoor-factory".to_string()),
+            install_command: Some("brew install the-backdoor-factory".to_string()),
             execution_time_estimate: 60,
         },
         KaliTool {
@@ -2680,7 +2680,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "shellter".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install shellter".to_string()),
+            install_command: Some("brew install shellter".to_string()),
             execution_time_estimate: 60,
         },
         KaliTool {
@@ -2690,7 +2690,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "hyperion".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install hyperion".to_string()),
+            install_command: Some("brew install hyperion".to_string()),
             execution_time_estimate: 30,
         },
         KaliTool {
@@ -2700,7 +2700,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "upx".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install upx-ucl".to_string()),
+            install_command: Some("brew install upx-ucl".to_string()),
             execution_time_estimate: 30,
         },
 
@@ -2712,7 +2712,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "chkrootkit".to_string(),
             typical_args: vec![],
             requires_root: true,
-            install_command: Some("sudo apt install chkrootkit".to_string()),
+            install_command: Some("brew install chkrootkit".to_string()),
             execution_time_estimate: 120,
         },
         KaliTool {
@@ -2722,7 +2722,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "rkhunter".to_string(),
             typical_args: vec!["--check".to_string()],
             requires_root: true,
-            install_command: Some("sudo apt install rkhunter".to_string()),
+            install_command: Some("brew install rkhunter".to_string()),
             execution_time_estimate: 180,
         },
         KaliTool {
@@ -2732,7 +2732,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "clamscan".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install clamav".to_string()),
+            install_command: Some("brew install clamav".to_string()),
             execution_time_estimate: 300,
         },
         KaliTool {
@@ -2742,7 +2742,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "yara".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install yara".to_string()),
+            install_command: Some("brew install yara".to_string()),
             execution_time_estimate: 60,
         },
         KaliTool {
@@ -2752,7 +2752,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "ssdeep".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install ssdeep".to_string()),
+            install_command: Some("brew install ssdeep".to_string()),
             execution_time_estimate: 30,
         },
         KaliTool {
@@ -2762,7 +2762,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "exiftool".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install libimage-exiftool-perl".to_string()),
+            install_command: Some("brew install libimage-exiftool-perl".to_string()),
             execution_time_estimate: 30,
         },
         KaliTool {
@@ -2772,7 +2772,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "pdf-parser".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install pdf-parser".to_string()),
+            install_command: Some("brew install pdf-parser".to_string()),
             execution_time_estimate: 30,
         },
         KaliTool {
@@ -2782,7 +2782,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "pdfid".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install pdfid".to_string()),
+            install_command: Some("brew install pdfid".to_string()),
             execution_time_estimate: 30,
         },
         KaliTool {
@@ -2792,7 +2792,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "peepdf".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install peepdf".to_string()),
+            install_command: Some("brew install peepdf".to_string()),
             execution_time_estimate: 60,
         },
         KaliTool {
@@ -2802,7 +2802,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "oledump".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install oledump".to_string()),
+            install_command: Some("brew install oledump".to_string()),
             execution_time_estimate: 30,
         },
         KaliTool {
@@ -2824,7 +2824,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "edb".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install edb-debugger".to_string()),
+            install_command: Some("brew install edb-debugger".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -2834,7 +2834,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "nemesis".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install nemesis".to_string()),
+            install_command: Some("brew install nemesis".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -2906,7 +2906,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "beef".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install beef-xss".to_string()),
+            install_command: Some("brew install beef-xss".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -2916,7 +2916,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "termineter".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install termineter".to_string()),
+            install_command: Some("brew install termineter".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -2926,7 +2926,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "king-phisher".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install king-phisher".to_string()),
+            install_command: Some("brew install king-phisher".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -2936,7 +2936,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "wifiphisher".to_string(),
             typical_args: vec![],
             requires_root: true,
-            install_command: Some("sudo apt install wifiphisher".to_string()),
+            install_command: Some("brew install wifiphisher".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -2946,7 +2946,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "sslstrip".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install sslstrip".to_string()),
+            install_command: Some("brew install sslstrip".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -2956,7 +2956,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "sslsplit".to_string(),
             typical_args: vec![],
             requires_root: true,
-            install_command: Some("sudo apt install sslsplit".to_string()),
+            install_command: Some("brew install sslsplit".to_string()),
             execution_time_estimate: 0,
         },
 
@@ -2968,7 +2968,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "rcrack".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install rainbowcrack".to_string()),
+            install_command: Some("brew install rainbowcrack".to_string()),
             execution_time_estimate: 300,
         },
         KaliTool {
@@ -2978,7 +2978,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "ophcrack".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install ophcrack".to_string()),
+            install_command: Some("brew install ophcrack".to_string()),
             execution_time_estimate: 300,
         },
         KaliTool {
@@ -2988,7 +2988,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "lc7".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install l0phtcrack".to_string()),
+            install_command: Some("brew install l0phtcrack".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -2998,7 +2998,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "fcrackzip".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install fcrackzip".to_string()),
+            install_command: Some("brew install fcrackzip".to_string()),
             execution_time_estimate: 300,
         },
         KaliTool {
@@ -3008,7 +3008,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "rarcrack".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install rarcrack".to_string()),
+            install_command: Some("brew install rarcrack".to_string()),
             execution_time_estimate: 300,
         },
         KaliTool {
@@ -3018,7 +3018,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "pdfcrack".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install pdfcrack".to_string()),
+            install_command: Some("brew install pdfcrack".to_string()),
             execution_time_estimate: 300,
         },
         KaliTool {
@@ -3028,7 +3028,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "vnc-crack".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install vnc-crack".to_string()),
+            install_command: Some("brew install vnc-crack".to_string()),
             execution_time_estimate: 300,
         },
 
@@ -3040,7 +3040,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "spike".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install spike".to_string()),
+            install_command: Some("brew install spike".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -3050,7 +3050,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "peach".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install peach".to_string()),
+            install_command: Some("brew install peach".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -3092,7 +3092,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "casefile".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install casefile".to_string()),
+            install_command: Some("brew install casefile".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -3102,7 +3102,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "maltego".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install maltego".to_string()),
+            install_command: Some("brew install maltego".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -3112,7 +3112,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "recon-ng".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install recon-ng".to_string()),
+            install_command: Some("brew install recon-ng".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -3122,7 +3122,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "keepnote".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install keepnote".to_string()),
+            install_command: Some("brew install keepnote".to_string()),
             execution_time_estimate: 0,
         },
         KaliTool {
@@ -3132,7 +3132,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "cherrytree".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install cherrytree".to_string()),
+            install_command: Some("brew install cherrytree".to_string()),
             execution_time_estimate: 0,
         },
 
@@ -3144,7 +3144,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "chkconfig".to_string(),
             typical_args: vec![],
             requires_root: true,
-            install_command: Some("sudo apt install chkconfig".to_string()),
+            install_command: Some("brew install chkconfig".to_string()),
             execution_time_estimate: 30,
         },
         KaliTool {
@@ -3154,7 +3154,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "sysctl".to_string(),
             typical_args: vec!["-a".to_string()],
             requires_root: true,
-            install_command: Some("sudo apt install procps".to_string()),
+            install_command: Some("brew install procps".to_string()),
             execution_time_estimate: 10,
         },
         KaliTool {
@@ -3164,7 +3164,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "lsof".to_string(),
             typical_args: vec![],
             requires_root: true,
-            install_command: Some("sudo apt install lsof".to_string()),
+            install_command: Some("brew install lsof".to_string()),
             execution_time_estimate: 30,
         },
         KaliTool {
@@ -3174,7 +3174,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "ps".to_string(),
             typical_args: vec!["aux".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install procps".to_string()),
+            install_command: Some("brew install procps".to_string()),
             execution_time_estimate: 5,
         },
         KaliTool {
@@ -3184,7 +3184,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "netstat".to_string(),
             typical_args: vec!["-tuln".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install net-tools".to_string()),
+            install_command: Some("brew install net-tools".to_string()),
             execution_time_estimate: 10,
         },
         KaliTool {
@@ -3194,7 +3194,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "ss".to_string(),
             typical_args: vec!["-tuln".to_string()],
             requires_root: false,
-            install_command: Some("sudo apt install iproute2".to_string()),
+            install_command: Some("brew install iproute2".to_string()),
             execution_time_estimate: 10,
         },
         KaliTool {
@@ -3204,7 +3204,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "iptables".to_string(),
             typical_args: vec!["-L".to_string()],
             requires_root: true,
-            install_command: Some("sudo apt install iptables".to_string()),
+            install_command: Some("brew install iptables".to_string()),
             execution_time_estimate: 10,
         },
         KaliTool {
@@ -3214,7 +3214,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "ufw".to_string(),
             typical_args: vec!["status".to_string()],
             requires_root: true,
-            install_command: Some("sudo apt install ufw".to_string()),
+            install_command: Some("brew install ufw".to_string()),
             execution_time_estimate: 5,
         },
 
@@ -3226,7 +3226,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "whois".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install whois".to_string()),
+            install_command: Some("brew install whois".to_string()),
             execution_time_estimate: 10,
         },
         KaliTool {
@@ -3236,7 +3236,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "dig".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install dnsutils".to_string()),
+            install_command: Some("brew install dnsutils".to_string()),
             execution_time_estimate: 5,
         },
         KaliTool {
@@ -3246,7 +3246,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "nslookup".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install dnsutils".to_string()),
+            install_command: Some("brew install dnsutils".to_string()),
             execution_time_estimate: 5,
         },
         KaliTool {
@@ -3256,7 +3256,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "host".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install bind9-host".to_string()),
+            install_command: Some("brew install bind9-host".to_string()),
             execution_time_estimate: 5,
         },
         KaliTool {
@@ -3266,7 +3266,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "traceroute".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install traceroute".to_string()),
+            install_command: Some("brew install traceroute".to_string()),
             execution_time_estimate: 30,
         },
         KaliTool {
@@ -3276,7 +3276,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "tracepath".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install iputils-tracepath".to_string()),
+            install_command: Some("brew install iputils-tracepath".to_string()),
             execution_time_estimate: 30,
         },
         KaliTool {
@@ -3286,7 +3286,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "mtr".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install mtr".to_string()),
+            install_command: Some("brew install mtr".to_string()),
             execution_time_estimate: 60,
         },
         KaliTool {
@@ -3296,7 +3296,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "hping3".to_string(),
             typical_args: vec!["--traceroute".to_string()],
             requires_root: true,
-            install_command: Some("sudo apt install hping3".to_string()),
+            install_command: Some("brew install hping3".to_string()),
             execution_time_estimate: 60,
         },
         KaliTool {
@@ -3306,7 +3306,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "fping".to_string(),
             typical_args: vec![],
             requires_root: false,
-            install_command: Some("sudo apt install fping".to_string()),
+            install_command: Some("brew install fping".to_string()),
             execution_time_estimate: 30,
         },
         KaliTool {
@@ -3316,7 +3316,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "arping".to_string(),
             typical_args: vec![],
             requires_root: true,
-            install_command: Some("sudo apt install arping".to_string()),
+            install_command: Some("brew install arping".to_string()),
             execution_time_estimate: 10,
         },
         KaliTool {
@@ -3326,7 +3326,7 @@ pub fn get_all_kali_tools() -> Vec<KaliTool> {
             command: "arp-scan".to_string(),
             typical_args: vec!["--localnet".to_string()],
             requires_root: true,
-            install_command: Some("sudo apt install arp-scan".to_string()),
+            install_command: Some("brew install arp-scan".to_string()),
             execution_time_estimate: 15,
         },
     ]

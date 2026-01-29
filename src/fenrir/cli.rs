@@ -33,6 +33,7 @@ pub enum Commands {
     Plugins(PluginCmd),
     Daemon(DaemonCmd),
     Intel(IntelCmd),
+    InstallTools(InstallToolsCmd),
     Breach,
     Status,
     Demo,
@@ -136,6 +137,13 @@ pub enum IntelCmd {
     Analyze { target: String },
 }
 
+#[derive(Debug, Clone)]
+pub enum InstallToolsCmd {
+    All,
+    Category { category: String },
+    List,
+}
+
 // Fuzzy command detection with smart matching
 fn fuzzy_command_match(input: &str) -> Option<Commands> {
     let input_lower = input.to_lowercase();
@@ -195,6 +203,12 @@ fn fuzzy_command_match(input: &str) -> Option<Commands> {
             vec!["intel", "scan"],
             vec!["intel", "analyze"],
             vec!["test", "intel"]
+        ]),
+        ("install-tools", vec![
+            vec!["install", "tools"],
+            vec!["install-tools"],
+            vec!["install", "kali"],
+            vec!["tools", "install"]
         ])
     ].into_iter().collect();
 
@@ -230,6 +244,20 @@ fn fuzzy_command_match(input: &str) -> Option<Commands> {
                             Some(Commands::Intel(IntelCmd::Scan { target }))
                         } else {
                             Some(Commands::Intel(IntelCmd::Analyze { target }))
+                        }
+                    }
+                    "install-tools" => {
+                        if input_words.contains(&"list") {
+                            Some(Commands::InstallTools(InstallToolsCmd::List))
+                        } else if input_words.contains(&"category") || input_words.contains(&"cat") {
+                            // Find category name
+                            let cat_index = input_words.iter().position(|&w| w == "category" || w == "cat");
+                            let category = cat_index.and_then(|i| input_words.get(i + 1))
+                                .unwrap_or(&"recon")
+                                .to_string();
+                            Some(Commands::InstallTools(InstallToolsCmd::Category { category }))
+                        } else {
+                            Some(Commands::InstallTools(InstallToolsCmd::All))
                         }
                     }
                     _ => None, // For now, only implement basic commands
@@ -334,6 +362,32 @@ pub async fn run_cli() -> anyhow::Result<()> {
         };
 
         return handle_intel(cmd).await;
+    }
+
+    // Check for install-tools commands (bypass bpaf parser)
+    if args.len() > 1 && (args[1] == "install-tools" || args[1] == "install_tools") {
+        // Handle install-tools commands
+        if args.len() < 3 {
+            let cmd = InstallToolsCmd::All;
+            return handle_install_tools(cmd).await;
+        }
+
+        let action = &args[2];
+        let cmd = match action.as_str() {
+            "list" => InstallToolsCmd::List,
+            "category" | "cat" => {
+                let category = if args.len() > 3 {
+                    args[3].clone()
+                } else {
+                    "recon".to_string()
+                };
+                InstallToolsCmd::Category { category }
+            }
+            "all" => InstallToolsCmd::All,
+            _ => InstallToolsCmd::All,
+        };
+
+        return handle_install_tools(cmd).await;
     }
 
     let parser = commands_parser()
@@ -446,6 +500,9 @@ pub async fn run_cli() -> anyhow::Result<()> {
         }
         Commands::Intel(cmd) => {
             handle_intel(cmd).await?;
+        }
+        Commands::InstallTools(cmd) => {
+            handle_install_tools(cmd).await?;
         }
         _ => {
             println!("🐺 Command not implemented yet in bpaf parser");
@@ -744,6 +801,73 @@ async fn handle_intel(cmd: IntelCmd) -> anyhow::Result<()> {
                 Ok(_) => println!("✅ Analysis complete!"),
                 Err(e) => println!("❌ Analysis failed: {}", e),
             }
+        }
+    }
+    Ok(())
+}
+
+async fn handle_install_tools(cmd: InstallToolsCmd) -> anyhow::Result<()> {
+    match cmd {
+        InstallToolsCmd::All => {
+            println!("╔════════════════════════════════════════════════════════════╗");
+            println!("║     FENRIR KALI TOOLS - MASS INSTALLATION                  ║");
+            println!("╚════════════════════════════════════════════════════════════╝");
+            println!();
+            println!("🚀 Installing all missing Kali tools for macOS...");
+            println!("⏱️  Estimated time: 15-30 minutes");
+            println!();
+            
+            let script_path = std::path::PathBuf::from("./install_all_kali_tools.sh");
+            
+            if !script_path.exists() {
+                println!("❌ Installation script not found at: {:?}", script_path);
+                println!("💡 Please ensure install_all_kali_tools.sh is in the current directory");
+                return Ok(());
+            }
+            
+            println!("▶️  Running installation script...");
+            println!();
+            
+            let status = std::process::Command::new("bash")
+                .arg(&script_path)
+                .status()?;
+            
+            if status.success() {
+                println!();
+                println!("╔════════════════════════════════════════════════════════════╗");
+                println!("║          INSTALLATION COMPLETE!                          ║");
+                println!("╚════════════════════════════════════════════════════════════╝");
+                println!();
+                println!("✅ All Kali tools have been installed!");
+                println!("💡 Run 'fenrir demo' or any FENRIR command to verify tools are detected");
+            } else {
+                println!("❌ Installation failed with exit code: {:?}", status);
+                println!("💡 Check /tmp/fenrir_install_log.txt for details");
+            }
+        }
+        InstallToolsCmd::Category { category } => {
+            println!("📦 Installing tools for category: {}", category);
+            println!("💡 Use 'fenrir install-tools all' to install everything");
+            println!("📋 Available categories: recon, web, password, social, wireless, etc.");
+            println!();
+            println!("⚠️  Category-specific installation not yet implemented.");
+            println!("💡 Use 'fenrir install-tools all' instead");
+        }
+        InstallToolsCmd::List => {
+            println!("📋 FENRIR Kali Tools Categories:");
+            println!();
+            println!("  📡 RECON - Network reconnaissance and mapping");
+            println!("  🌐 WEB - Web application testing");
+            println!("  🔐 PASSWORD - Password cracking and recovery");
+            println!("  👤 SOCIAL - Social engineering and OSINT");
+            println!("  📶 WIRELESS - WiFi and wireless testing");
+            println!("  🐚 SHELL - Reverse shells and C2");
+            println!("  ⬆️  PRIVESC - Privilege escalation");
+            println!("  🔎 FORENSICS - Digital forensics and analysis");
+            println!();
+            println!("Usage:");
+            println!("  fenrir install-tools all        # Install all tools");
+            println!("  fenrir install-tools category <name>  # Install specific category");
         }
     }
     Ok(())
