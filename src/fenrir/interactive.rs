@@ -7,6 +7,7 @@
 use crate::fenrir_ai_layer;
 use crate::nlp::{self, get_keyword_info, get_all_keywords, get_keyword_tools};
 use futures::future::join_all;
+use regex::Regex;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -162,49 +163,171 @@ impl SmartAttackExecutor {
             .unwrap_or(false)
     }
 
-    /// Execute attack sequence
-    pub async fn execute_sequence(&self, sequence: &SmartAttackSequence, target: &str) -> Vec<String> {
+    /// Detect target type
+    fn detect_target_type(target: &str) -> &'static str {
+        if target.contains('@') && !target.contains('/') {
+            "EMAIL"
+        } else if target.parse::<std::net::IpAddr>().is_ok() ||
+                  regex::Regex::new(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$").unwrap().is_match(target) {
+            "IP"
+        } else if target.contains('.') && !target.contains('@') {
+            "DOMAIN"
+        } else if !target.contains('.') && !target.contains('@') {
+            "USERNAME"
+        } else {
+            "UNKNOWN"
+        }
+    }
+
+    /// Build tool arguments based on tool and target
+    fn build_tool_args(tool: &str, target: &str) -> Vec<String> {
+        match tool {
+            "nmap" => vec!["-sV".to_string(), "-sC".to_string(), "-T4".to_string(), target.to_string()],
+            "gobuster" => vec!["dir".to_string(), "-u".to_string(), target.to_string(), "-w".to_string(), "/usr/share/wordlists/dirb/common.txt".to_string()],
+            "ffuf" => vec!["-u".to_string(), format!("{}/FUZZ", target), "-w".to_string(), "/usr/share/wordlists/dirb/common.txt".to_string()],
+            "hydra" => vec!["-l".to_string(), "root".to_string(), "-P".to_string(), "/usr/share/wordlists/rockyou.txt".to_string(), target.to_string(), "ssh".to_string()],
+            "sqlmap" => vec!["-u".to_string(), target.to_string(), "--batch".to_string()],
+            "nikto" => vec!["-h".to_string(), target.to_string()],
+            "whatweb" => vec![target.to_string()],
+            "whois" => vec![target.to_string()],
+            "dig" => vec!["ANY".to_string(), target.to_string()],
+            "nslookup" => vec![target.to_string()],
+            _ => vec![target.to_string()],
+        }
+    }
+
+    /// Execute attack sequence with actual tool execution and result capture
+    pub async fn execute_sequence(&self, sequence: &SmartAttackSequence, target: &str, mode: &str) -> Vec<String> {
         let mut results = Vec::new();
-        let mode = if sequence.async_execution { "ASYNC" } else { "SEQUENTIAL" };
-        
-        results.push(format!("\n🔥 {} SEQUENCE: {} ({}MB limit)", 
-            mode, sequence.keyword.to_uppercase(), sequence.memory_limit_mb));
+        let exec_mode = if sequence.async_execution { "ASYNC" } else { "SEQUENTIAL" };
+
+        results.push(format!("\n🔥 {} SEQUENCE: {} ({}MB limit)",
+            exec_mode, sequence.keyword.to_uppercase(), sequence.memory_limit_mb));
         results.push(format!("   📝 {}", sequence.description));
-        results.push(format!("   🎯 Target: {}", target));
+        results.push(format!("   🎯 Target: {} [Type: {}]", target, Self::detect_target_type(target)));
+        results.push(format!("   ⚡ Mode: {}", mode.to_uppercase()));
         results.push("   ─────────────────────────────────────────".to_string());
 
         for tool in &sequence.tools {
             let tool_name = tool.split('.').next().unwrap_or(tool);
-            if Self::check_tool_available(tool_name) {
-                results.push(format!("   ✅ {} - Ready", tool));
-            } else {
-                results.push(format!("   ❌ {} - Not installed", tool));
+            let tool_name_owned = tool_name.to_string();  // Clone for move into closure
+
+            results.push(format!("\n   ▶️  Executing: {}...", tool));
+
+            if !Self::check_tool_available(tool_name) {
+                results.push(format!("   ❌ {} - Not installed (skipped)", tool));
+                continue;
+            }
+
+            // Build command arguments
+            let args = Self::build_tool_args(tool_name, target);
+            let target_owned = target.to_string();  // Clone for move into closure
+
+            // Execute tool with timeout
+            let result = task::spawn_blocking(move || {
+                let timeout = std::time::Duration::from_secs(60);
+                let output = Command::new(&tool_name_owned)
+                    .args(&args)
+                    .stdout(Stdio::piped())
+                    .stderr(Stdio::piped())
+                    .output();
+
+                match output {
+                    Ok(out) => {
+                        let stdout = String::from_utf8_lossy(&out.stdout).to_string();
+                        let stderr = String::from_utf8_lossy(&out.stderr).to_string();
+
+                        if out.status.success() {
+                            Ok((stdout, stderr))
+                        } else {
+                            Err((stdout, stderr))
+                        }
+                    }
+                    Err(e) => Err((String::new(), format!("Execution error: {}", e)))
+                }
+            }).await;
+
+            match result {
+                Ok(Ok((stdout, stderr))) => {
+                    // Success - show what was obtained
+                    results.push(format!("   ✅ {} - Success", tool));
+
+                    // Show key findings from output
+                    if !stdout.is_empty() {
+                        let lines: Vec<&str> = stdout.lines().collect();
+                        if lines.len() > 20 {
+                            results.push(format!("   📊 Output ({} lines, showing first 20):", lines.len()));
+                            for line in lines.iter().take(20) {
+                                if !line.trim().is_empty() {
+                                    results.push(format!("      │ {}", line));
+                                }
+                            }
+                            results.push(format!("      ... ({} more lines)", lines.len() - 20));
+                        } else {
+                            results.push(format!("   📊 Output:"));
+                            for line in lines {
+                                if !line.trim().is_empty() {
+                                    results.push(format!("      │ {}", line));
+                                }
+                            }
+                        }
+                    }
+
+                    if !stderr.is_empty() && !stderr.contains("warning") {
+                        results.push(format!("   ⚠️  Warnings: {}", truncate_str(&stderr, 100)));
+                    }
+                }
+                Ok(Err((stdout, stderr))) => {
+                    // Failed - show what happened
+                    results.push(format!("   ❌ {} - Failed", tool));
+
+                    if !stdout.is_empty() {
+                        results.push(format!("   📤 Partial output: {}", truncate_str(&stdout, 200)));
+                    }
+
+                    if !stderr.is_empty() {
+                        results.push(format!("   ⚠️  Error: {}", truncate_str(&stderr, 200)));
+                    }
+                }
+                Err(e) => {
+                    results.push(format!("   ❌ {} - Task error: {}", tool, e));
+                }
             }
         }
 
         results
     }
 
-    /// Main execution
-    pub async fn execute_smart_attack(&self, input: &UserInput) -> Vec<String> {
+    /// Main execution with mode parameter
+    pub async fn execute_smart_attack(&self, input: &UserInput, mode: &str) -> Vec<String> {
         let mut all_results = Vec::new();
         let sequences = get_all_smart_sequences();
         let target = input.subject.as_deref().unwrap_or("localhost");
 
-        // Phase 1: Stealth Scan (unless forensic)
+        all_results.push(format!("\n╔══════════════════════════════════════════════════════════╗"));
+        all_results.push(format!("║  🐺 FENRIR ATTACK EXECUTION - {} MODE              ║", mode.to_uppercase()));
+        all_results.push(format!("╚══════════════════════════════════════════════════════════╝"));
+
+        // Phase 1: Stealth Scan (skip for forensic, use selected mode)
         if !input.keywords.iter().any(|k| k == "forensic") {
             all_results.push("\n═══════════════════════════════════════════════════════════".to_string());
-            all_results.push("🐺 FENRIR STEALTH SCAN PHASE".to_string());
+            all_results.push(format!("🔍 INITIAL SCAN PHASE [{}]", mode.to_uppercase()));
             all_results.push("═══════════════════════════════════════════════════════════".to_string());
-            
-            match self.execute_stealth_scan(target).await {
-                Ok(result) => all_results.push(result),
-                Err(e) => {
-                    all_results.push(format!("⚠️  Stealth failed: {}", e));
-                    all_results.push("   Switching to aggressive mode...".to_string());
-                    match self.execute_aggressive_scan(target).await {
-                        Ok(result) => all_results.push(result),
-                        Err(e) => all_results.push(format!("❌ Aggressive also failed: {}", e)),
+
+            if mode == "stealth" {
+                match self.execute_stealth_scan(target).await {
+                    Ok(result) => all_results.push(result),
+                    Err(e) => {
+                        all_results.push(format!("⚠️  Stealth scan failed: {}", e));
+                        all_results.push("   📤 Output: May require elevated privileges or target is down".to_string());
+                    }
+                }
+            } else {
+                match self.execute_aggressive_scan(target).await {
+                    Ok(result) => all_results.push(result),
+                    Err(e) => {
+                        all_results.push(format!("⚠️  Aggressive scan failed: {}", e));
+                        all_results.push("   📤 Output: May require elevated privileges or target is down".to_string());
                     }
                 }
             }
@@ -231,7 +354,7 @@ impl SmartAttackExecutor {
             all_results.push("═══════════════════════════════════════════════════════════".to_string());
 
             for seq in async_seqs {
-                let results = self.execute_sequence(&seq, target).await;
+                let results = self.execute_sequence(&seq, target, mode).await;
                 all_results.extend(results);
             }
         }
@@ -243,10 +366,15 @@ impl SmartAttackExecutor {
             all_results.push("═══════════════════════════════════════════════════════════".to_string());
 
             for seq in seq_seqs {
-                let results = self.execute_sequence(&seq, target).await;
+                let results = self.execute_sequence(&seq, target, mode).await;
                 all_results.extend(results);
             }
         }
+
+        // Summary
+        all_results.push("\n═══════════════════════════════════════════════════════════".to_string());
+        all_results.push("✅ ATTACK SEQUENCE COMPLETE".to_string());
+        all_results.push("═══════════════════════════════════════════════════════════".to_string());
 
         all_results
     }
@@ -373,6 +501,24 @@ pub async fn run_interactive_mode() -> Result<(), Box<dyn std::error::Error>> {
                         }
                         println!("╚══════════════════════════════════════════════════════════╝");
 
+                        // Ask for execution mode
+                        print!("\n⚡ Select execution mode:\n");
+                        print!("   [1] STEALTH    - Quiet, slow, avoids detection (recommended for OSINT/screening/CSI)\n");
+                        print!("   [2] AGGRESSIVE - Fast, loud, thorough detection\n");
+                        print!("   ❓ Choice (1/2): ");
+                        io::stdout().flush()?;
+
+                        let mut mode_choice = String::new();
+                        stdin.read_line(&mut mode_choice)?;
+                        let execution_mode = match mode_choice.trim() {
+                            "1" | "stealth" | "s" => "stealth",
+                            "2" | "aggressive" | "a" => "aggressive",
+                            _ => "stealth", // Default to stealth
+                        };
+
+                        println!("\n🎯 Mode: {} {}", execution_mode.to_uppercase(),
+                            if execution_mode == "stealth" { "🤫" } else { "💥" });
+
                         // Confirm with user
                         print!("\n❓ Execute this attack? (yes/no/edit): ");
                         io::stdout().flush()?;
@@ -393,14 +539,14 @@ pub async fn run_interactive_mode() -> Result<(), Box<dyn std::error::Error>> {
                                 };
 
                                 println!("\n🚀 Executing smart attack sequence...\n");
-                                let results = executor.execute_smart_attack(&user_input).await;
+                                let results = executor.execute_smart_attack(&user_input, execution_mode).await;
                                 for result in results {
                                     println!("{}", result);
                                 }
                             }
                             "edit" | "e" => {
                                 println!("\n📝 Edit mode:");
-                                
+
                                 // Edit target
                                 print!("   Target [{}]: ", parsed.subject.as_deref().unwrap_or(""));
                                 io::stdout().flush()?;
@@ -416,15 +562,15 @@ pub async fn run_interactive_mode() -> Result<(), Box<dyn std::error::Error>> {
                                 let new_keywords = new_keywords.trim();
 
                                 let user_input = UserInput {
-                                    subject: if new_target.is_empty() { 
-                                        parsed.subject.clone() 
-                                    } else { 
-                                        Some(new_target.to_string()) 
+                                    subject: if new_target.is_empty() {
+                                        parsed.subject.clone()
+                                    } else {
+                                        Some(new_target.to_string())
                                     },
-                                    keywords: if new_keywords.is_empty() { 
-                                        parsed.keywords.clone() 
-                                    } else { 
-                                        new_keywords.split(',').map(|s| s.trim().to_lowercase()).collect() 
+                                    keywords: if new_keywords.is_empty() {
+                                        parsed.keywords.clone()
+                                    } else {
+                                        new_keywords.split(',').map(|s| s.trim().to_lowercase()).collect()
                                     },
                                     context: parsed.context.clone(),
                                     original_text: user_text.to_string(),
@@ -433,7 +579,7 @@ pub async fn run_interactive_mode() -> Result<(), Box<dyn std::error::Error>> {
                                 };
 
                                 println!("\n🚀 Executing with updated parameters...\n");
-                                let results = executor.execute_smart_attack(&user_input).await;
+                                let results = executor.execute_smart_attack(&user_input, execution_mode).await;
                                 for result in results {
                                     println!("{}", result);
                                 }
