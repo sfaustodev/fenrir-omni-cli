@@ -35,5 +35,4 @@ fenrir_logs/
 Cargo.lock
 
 # Ignore specific directories
-Formula/
 Ai/
