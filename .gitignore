@@ -1,43 +1,229 @@
+# ============================================================================
+# FENRIR SECURITY - COMPREHENSIVE GITIGNORE
+# ============================================================================
+# This file protects sensitive data from being committed to git
+
+# ============================================================================
+# BUILD ARTIFACTS
+# ============================================================================
 target/
+Cargo.lock
+*.pdb
+*.dll
+*.dylib
+*.so
+*.rlib
+*.a
 
-# Environment variables with API keys
+# ============================================================================
+# ENVIRONMENT & SECRETS (CRITICAL)
+# ============================================================================
+# Environment files with API keys
 .env
+.env.local
+.env.*.local
+.env.production
+.env.development
+.env.test
+
+# API key templates (never commit actual keys)
 .env.template
+*.key
+*.secret
+*.credentials
+credentials.json
+secrets.json
+api_keys.json
+api_keys.txt
 
-# AI MODE Data (private)
+# ============================================================================
+# AI MODE DATA (PRIVATE)
+# ============================================================================
+# Knowledge base (contains execution history)
 .fenrir_knowledge_base.json
+.fenrir_knowledge_base.json.*
+knowledge_base/
+
+# Conversation logs (may contain target info)
 .fenrir_conversations/
+conversations/
+conversation_logs/
+*.conversation.json
+
+# AI system prompts (custom prompts may contain sensitive info)
 prompts/*.md
+prompts/*.json
+!prompts/.gitkeep
 
-# IDE
-.vscode/
-.idea/
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Claude Code
-.claude/
-
-# Documentation drafts only
-*_DRAFT.md
-*_TODO.md
-
-# Test scripts
-test_*.rs
-
-# Log files
+# ============================================================================
+# LOGS & DEBUGGING
+# ============================================================================
 fenrir_logs/
+logs/
+*.log
+*.log.*
+log.txt
+debug.log
+error.log
+access.log
 
-# Temporary files
+# ============================================================================
+# TEMPORARY & CACHE FILES
+# ============================================================================
 *.tmp
 *.bak
 *.swp
 *~
+*.old
+*.backup
+*.cache
+.cache/
 
-# Build artifacts
-Cargo.lock
+# ============================================================================
+# TEST DATA & RESULTS
+# ============================================================================
+test_results/
+test_output/
+*.test.log
+test_*.rs
 
-# Ignore specific directories
+# ============================================================================
+# OS-SPECIFIC FILES
+# ============================================================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# ============================================================================
+# IDE & EDITOR CONFIGS
+# ============================================================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+*.sublime-workspace
+.vscode/
+
+# ============================================================================
+# DOCUMENTATION DRAFTS
+# ============================================================================
+*_DRAFT.md
+*_TODO.md
+*_WIP.md
+drafts/
+
+# ============================================================================
+# DEPENDENCY DIRECTORIES
+# ============================================================================
 Ai/
+node_modules/
+vendor/
+.bundle/
+bower_components/
+
+# ============================================================================
+# DATABASE & DATA FILES
+# ============================================================================
+*.db
+*.sqlite
+*.sqlite3
+*.fdb
+*.json.bak
+
+# ============================================================================
+# SPECIFIC TOOLS
+# ============================================================================
+# Claude Code
+.claude/
+
+# Rust
+**/*.rs.bk
+*.orig
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+venv/
+env/
+ENV/
+*.egg-info/
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Go
+*.sum
+
+# ============================================================================
+# BACKUP & ARCHIVE FILES
+# ============================================================================
+*.zip
+*.tar
+*.tar.gz
+*.rar
+*.7z
+backup/
+backups/
+archive/
+*.old
+*.backup
+
+# ============================================================================
+# SECURITY & PRIVACY SPECIFIC
+# ============================================================================
+# Private keys
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+
+# Certificates
+*.cer
+*.der
+*.crl
+
+# Password files
+passwords.txt
+passwords.json
+secrets.txt
+secrets.json
+
+# Configuration with secrets
+config.local.json
+config.secrets.json
+private_config.json
+
+# ============================================================================
+# USER-SPECIFIC FILES
+# ============================================================================
+*.user
+*.local
+*.personal
+
+# ============================================================================
+# MISC
+# ============================================================================
+*.pid
+*.seed
+*.pidb
+.suo
+.user
+user.ini
+*.sln.docstates

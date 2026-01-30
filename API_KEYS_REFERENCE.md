@@ -8,9 +8,11 @@ All API keys have been reconfigured and are loading correctly in FENRIR.
 
 ## 🎯 VENICE AI (via OpenRouter) - Primary Configuration
 
-**Your New API Key:**
+**⚠️ SECURITY NOTE: Replace with your own API key**
+
+Your OpenRouter API Key format:
 ```
-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
+sk-or-v1-YOUR_API_KEY_HERE
 ```
 
 **Configuration:**
@@ -30,9 +32,10 @@ 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
 ## 🧪 Test Venice API
 
 ```bash
+# Replace YOUR_API_KEY below with your actual OpenRouter API key
 curl https://openrouter.ai/api/v1/chat/completions \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer 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" \
+  -H "Authorization: Bearer sk-or-v1-YOUR_API_KEY_HERE" \
   -H "HTTP-Referer: https://github.com/sfaustodev/fenrir-omni-cli" \
   -d '{
     "model": "cognitivecomputations/dolphin-mistral-24b-venice-edition:free",
