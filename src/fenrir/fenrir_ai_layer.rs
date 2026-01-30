@@ -6,6 +6,11 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::time::Duration;
+use std::sync::Arc;
+use tokio::sync::RwLock;
+
+// Import new AI MODE components
+use crate::ai_mode::AICoordinator;
 
 // Load .env file at startup
 pub fn load_env() {
@@ -45,6 +50,49 @@ pub fn load_env() {
     } else {
         println!("⚠️  VENICE_API_KEY not found");
     }
+}
+
+// ============================================================================
+// NEW AI MODE - DUAL-AI COORDINATOR
+// ============================================================================
+
+/// Global AI coordinator instance
+static mut AI_COORDINATOR: Option<Arc<AICoordinator>> = None;
+static AI_COORDINATOR_INIT: std::sync::Once = std::sync::Once::new();
+
+/// Initialize the global AI coordinator (call once at startup)
+pub async fn init_ai_mode() -> anyhow::Result<()> {
+    let mut result = Ok(());
+
+    AI_COORDINATOR_INIT.call_once(|| {
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        let coordinator = rt.block_on(AICoordinator::new());
+
+        match coordinator {
+            Ok(coord) => {
+                unsafe {
+                    AI_COORDINATOR = Some(Arc::new(coord));
+                }
+                println!("✅ AI MODE initialized with ZAI + VENICE");
+            }
+            Err(e) => {
+                eprintln!("⚠️  Failed to initialize AI MODE: {}", e);
+                result = Err(e);
+            }
+        }
+    });
+
+    result
+}
+
+/// Get the global AI coordinator instance
+pub fn get_ai_coordinator() -> Option<Arc<AICoordinator>> {
+    unsafe { AI_COORDINATOR.clone() }
+}
+
+/// Check if AI MODE is available
+pub fn is_ai_mode_available() -> bool {
+    unsafe { AI_COORDINATOR.is_some() }
 }
 
 // ============================================================================

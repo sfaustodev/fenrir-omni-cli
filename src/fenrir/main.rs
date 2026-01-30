@@ -9,6 +9,11 @@ mod daemon;
 mod dark_index;
 mod executor;
 mod fenrir_ai_layer;
+// NEW AI MODE MODULES
+mod ai_mode;
+mod ai_prompts;
+mod knowledge_base;
+mod conversation_manager;
 mod fenrir_orchestrator;
 mod ferramentas;
 mod git_automation;

@@ -4,6 +4,11 @@ target/
 .env
 .env.template
 
+# AI MODE Data (private)
+.fenrir_knowledge_base.json
+.fenrir_conversations/
+prompts/*.md
+
 # IDE
 .vscode/
 .idea/

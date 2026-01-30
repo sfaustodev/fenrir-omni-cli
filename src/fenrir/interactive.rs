@@ -5,7 +5,10 @@
 // No external API dependencies for interpretation
 
 use crate::fenrir_ai_layer;
+use crate::fenrir_ai_layer::{init_ai_mode, get_ai_coordinator, is_ai_mode_available};
 use crate::nlp::{self, get_keyword_info, get_all_keywords, get_keyword_tools};
+use crate::ai_mode::{AICommandRequest, ExecutionResult as AIExecResult};
+use crate::conversation_manager::{ConversationManager, MessageRole};
 use futures::future::join_all;
 use regex::Regex;
 use reqwest::Client;
@@ -14,7 +17,7 @@ use std::collections::HashMap;
 use std::io::{self, Write};
 use std::process::{Command, Stdio};
 use std::sync::Arc;
-use tokio::sync::Semaphore;
+use tokio::sync::{Semaphore, RwLock};
 use tokio::task;
 
 // ============================================================================
@@ -91,12 +94,27 @@ impl UserInput {
 
 pub struct SmartAttackExecutor {
     semaphore: Arc<Semaphore>,
+    conversation_manager: Arc<RwLock<ConversationManager>>,
+    current_session: Arc<RwLock<Option<String>>>,
 }
 
 impl SmartAttackExecutor {
-    pub fn new() -> Self {
+    pub async fn new() -> Self {
+        let conv_manager = ConversationManager::new()
+            .await
+            .unwrap_or_else(|e| {
+                eprintln!("⚠️  Failed to create conversation manager: {}", e);
+                // Create empty manager as fallback
+                ConversationManager {
+                    conversations: HashMap::new(),
+                    storage_path: String::new(),
+                }
+            });
+
         SmartAttackExecutor {
             semaphore: Arc::new(Semaphore::new(MAX_CONCURRENT_ASYNC_TASKS)),
+            conversation_manager: Arc::new(RwLock::new(conv_manager)),
+            current_session: Arc::new(RwLock::new(None)),
         }
     }
 
@@ -179,6 +197,139 @@ impl SmartAttackExecutor {
         }
     }
 
+// ============================================================================
+// AI-POWERED COMMAND GENERATION (Phase 2)
+// ============================================================================
+
+    /// Initialize AI MODE on first use
+    async fn ensure_ai_initialized() {
+        if !is_ai_mode_available() {
+            let _ = init_ai_mode().await;
+        }
+    }
+
+    /// Generate command using AI (with fallback to templates)
+    async fn generate_command_with_ai(
+        tool: &str,
+        target: &str,
+        target_type: &str,
+        operation_type: &str,
+        mode: &str,
+    ) -> Option<Vec<String>> {
+        // Ensure AI MODE is initialized
+        Self::ensure_ai_initialized().await;
+
+        // Try to get AI coordinator
+        let coordinator = match get_ai_coordinator() {
+            Some(c) => c,
+            None => {
+                // AI not available, fall back to template
+                return Some(Self::build_tool_args(tool, target));
+            }
+        };
+
+        // Check knowledge base first for similar successful commands
+        let kb_commands = coordinator.get_kb_commands_for_target(target_type, operation_type).await;
+
+        // If we have high-confidence successful commands, use them
+        if !kb_commands.is_empty() && kb_commands[0].success_rate > 0.7 {
+            let cmd = &kb_commands[0];
+            println!("   🧠 Using KB command ({}% success rate): {}", cmd.confidence * 100.0, cmd.command);
+            return Some(Self::parse_command_string(&cmd.command));
+        }
+
+        // Request AI to generate command
+        let ai_request = AICommandRequest {
+            target: target.to_string(),
+            target_type: target_type.to_string(),
+            operation_type: operation_type.to_string(),
+            mode: mode.to_string(),
+            previous_results: None,
+            context: Some(format!("Tool: {}", tool)),
+        };
+
+        match coordinator.generate_command(&ai_request).await {
+            Ok(ai_response) => {
+                if ai_response.confidence > 0.6 {
+                    println!("   🤖 AI-generated command: {}", ai_response.command);
+                    println!("      📊 Reasoning: {}", ai_response.reasoning);
+                    println!("      ✯ Confidence: {:.1}%", ai_response.confidence * 100.0);
+
+                    // Store in knowledge base for future use
+                    let _ = coordinator.store_kb_command(
+                        target_type,
+                        operation_type,
+                        &ai_response
+                    ).await;
+
+                    Some(Self::parse_command_string(&ai_response.command))
+                } else {
+                    println!("   ⚠️  AI confidence too low ({:.1}%), using template", ai_response.confidence * 100.0);
+                    Some(Self::build_tool_args(tool, target))
+                }
+            }
+            Err(e) => {
+                println!("   ⚠️  AI generation failed: {}, using template", e);
+                Some(Self::build_tool_args(tool, target))
+            }
+        }
+    }
+
+    /// Parse command string into arguments vector
+    fn parse_command_string(command: &str) -> Vec<String> {
+        // Simple shell-like parsing (handles quotes)
+        let mut args = Vec::new();
+        let mut current = String::new();
+        let mut in_quotes = false;
+        let mut escape_next = false;
+
+        for ch in command.chars() {
+            if escape_next {
+                current.push(ch);
+                escape_next = false;
+            } else if ch == '\\' {
+                escape_next = true;
+            } else if ch == '"' {
+                in_quotes = !in_quotes;
+            } else if ch.is_whitespace() && !in_quotes {
+                if !current.is_empty() {
+                    args.push(current.clone());
+                    current.clear();
+                }
+            } else {
+                current.push(ch);
+            }
+        }
+
+        if !current.is_empty() {
+            args.push(current);
+        }
+
+        // Remove tool name if present (first argument)
+        if args.len() > 1 {
+            args[1..].to_vec()
+        } else {
+            args
+        }
+    }
+
+    /// Build tool arguments with AI generation (Phase 2) or template fallback
+    async fn build_tool_args_with_ai(
+        tool: &str,
+        target: &str,
+        target_type: &str,
+        operation_type: &str,
+        mode: &str,
+    ) -> Vec<String> {
+        // Try AI generation first
+        if let Some(args) = Self::generate_command_with_ai(tool, target, target_type, operation_type, mode).await {
+            return args;
+        }
+
+        // Fallback to template-based generation
+        Self::build_tool_args(tool, target)
+    }
+
     /// Build tool arguments based on tool and target
     fn build_tool_args(tool: &str, target: &str) -> Vec<String> {
         match tool {
@@ -201,11 +352,35 @@ impl SmartAttackExecutor {
         let mut results = Vec::new();
         let exec_mode = if sequence.async_execution { "ASYNC" } else { "SEQUENTIAL" };
 
+        // Start conversation session
+        let target_type = Self::detect_target_type(target);
+        let session_id = {
+            let mut conv_manager = self.conversation_manager.write().await;
+            conv_manager.start_conversation(target, target_type, mode)
+        };
+
+        // Update current session
+        {
+            let mut session = self.current_session.write().await;
+            *session = Some(session_id.clone());
+        }
+
+        // Add initial message to conversation
+        {
+            let mut conv_manager = self.conversation_manager.write().await;
+            let _ = conv_manager.add_message(
+                &session_id,
+                MessageRole::User,
+                &format!("Execute {} sequence on {} in {} mode", sequence.keyword, target, mode)
+            );
+        }
+
         results.push(format!("\n🔥 {} SEQUENCE: {} ({}MB limit)",
             exec_mode, sequence.keyword.to_uppercase(), sequence.memory_limit_mb));
         results.push(format!("   📝 {}", sequence.description));
-        results.push(format!("   🎯 Target: {} [Type: {}]", target, Self::detect_target_type(target)));
+        results.push(format!("   🎯 Target: {} [Type: {}]", target, target_type));
         results.push(format!("   ⚡ Mode: {}", mode.to_uppercase()));
+        results.push(format!("   💬 Session: {}", session_id));
         results.push("   ─────────────────────────────────────────".to_string());
 
         for tool in &sequence.tools {
@@ -219,8 +394,11 @@ impl SmartAttackExecutor {
                 continue;
             }
 
-            // Build command arguments
-            let args = Self::build_tool_args(tool_name, target);
+            // Build command arguments with AI generation (Phase 2)
+            let target_type = Self::detect_target_type(target);
+            let operation_type = &sequence.keyword;
+            let args = Self::build_tool_args_with_ai(tool_name, target, target_type, operation_type, mode).await;
+            let command_str = args.join(" ");  // Save for recording later
             let target_owned = target.to_string();  // Clone for move into closure
 
             // Execute tool with timeout
@@ -276,6 +454,20 @@ impl SmartAttackExecutor {
                     if !stderr.is_empty() && !stderr.contains("warning") {
                         results.push(format!("   ⚠️  Warnings: {}", truncate_str(&stderr, 100)));
                     }
+
+                    // Record successful execution in conversation
+                    {
+                        let mut conv_manager = self.conversation_manager.write().await;
+                        let _ = conv_manager.record_execution(
+                            &session_id,
+                            tool_name,
+                            &command_str,
+                            0,  // exit code 0 = success
+                            60.0, // placeholder duration
+                            true,
+                            &stdout
+                        );
+                    }
                 }
                 Ok(Err((stdout, stderr))) => {
                     // Failed - show what happened
@@ -288,11 +480,35 @@ impl SmartAttackExecutor {
                     if !stderr.is_empty() {
                         results.push(format!("   ⚠️  Error: {}", truncate_str(&stderr, 200)));
                     }
+
+                    // Record failed execution in conversation
+                    {
+                        let mut conv_manager = self.conversation_manager.write().await;
+                        let _ = conv_manager.record_execution(
+                            &session_id,
+                            tool_name,
+                            &command_str,
+                            1,  // exit code 1 = failure
+                            60.0,
+                            false,
+                            &stderr
+                        );
+                    }
                 }
                 Err(e) => {
                     results.push(format!("   ❌ {} - Task error: {}", tool, e));
                 }
             }
+        }
+
+        // Add completion message to conversation
+        {
+            let mut conv_manager = self.conversation_manager.write().await;
+            let _ = conv_manager.add_message(
+                &session_id,
+                MessageRole::Assistant,
+                &format!("Completed {} sequence with {} tools", sequence.keyword, sequence.tools.len())
+            );
         }
 
         results
@@ -388,7 +604,7 @@ pub async fn run_interactive_mode() -> Result<(), Box<dyn std::error::Error>> {
     fenrir_ai_layer::load_env();
 
     let http_client = Client::new();
-    let executor = SmartAttackExecutor::new();
+    let executor = SmartAttackExecutor::new().await;
     let stdin = io::stdin();
 
     print_banner();
