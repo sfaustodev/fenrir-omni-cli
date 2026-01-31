@@ -116,8 +116,9 @@ Desktop.ini
 # ============================================================================
 # DOCUMENTATION DRAFTS & MARKDOWN FILES
 # ============================================================================
-# ALL markdown files - NEVER commit documentation with potential secrets
+# Ignore ALL markdown files EXCEPT README.md
 *.md
+!README.md
 *_DRAFT.md
 *_TODO.md
 *_WIP.md
@@ -127,6 +128,8 @@ API_*.md
 *_GUIDE.md
 *_REFERENCE.md
 *_INTEGRATION.md
+BLACKBOX.md
+TESTING_GUIDE.md
 
 # ============================================================================
 # DEPENDENCY DIRECTORIES
