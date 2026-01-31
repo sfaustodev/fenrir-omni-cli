@@ -114,12 +114,19 @@ Desktop.ini
 .vscode/
 
 # ============================================================================
-# DOCUMENTATION DRAFTS
+# DOCUMENTATION DRAFTS & MARKDOWN FILES
 # ============================================================================
+# ALL markdown files - NEVER commit documentation with potential secrets
+*.md
 *_DRAFT.md
 *_TODO.md
 *_WIP.md
 drafts/
+docs/
+API_*.md
+*_GUIDE.md
+*_REFERENCE.md
+*_INTEGRATION.md
 
 # ============================================================================
 # DEPENDENCY DIRECTORIES
